@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/xavierfriteskorner-hue/reivaxmc-progress/issues"
+
+[[mods]]
+modId="reivaxmc_progress"
+version="0.2.0"
+displayName="ReivaxMC Progress"
+authors="Reivax"
+credits="Conception : Reivax. Reconstruction Alpha 18."
+description='''
+Une campagne cooperative narrative dans Minecraft : batir une civilisation a travers 7 Ages pendant qu'un mystere ancien, les Origines, reagit a vos choix. La Voix ne connait pas votre avenir. Elle se souvient de quelque chose que vous avez oublie.
+'''
+
+[[dependencies.reivaxmc_progress]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.reivaxmc_progress]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1]"
+ordering="NONE"
+side="BOTH"

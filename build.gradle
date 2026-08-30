@@ -1,0 +1,32 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.34'
+}
+
+version = '0.2.0'
+group = 'fr.reivaxmc.progress'
+
+base {
+    archivesName = 'reivaxmc_progress'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+neoForge {
+    // Version de NeoForge pour Minecraft 1.21.1 (celle du mod d'origine).
+    version = '21.1.248'
+
+    // Déclare le mod pour la validation de neoforge.mods.toml.
+    mods {
+        reivaxmc_progress {
+            sourceSet sourceSets.main
+        }
+    }
+}

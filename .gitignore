@@ -1,0 +1,15 @@
+# Gradle / build
+.gradle/
+build/
+run/
+runs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.eclipse/
+bin/
+
+# Divers
+*.log

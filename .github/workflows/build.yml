@@ -1,0 +1,34 @@
+name: Build ReivaxMC Progress
+
+# Se lance à chaque envoi de code, et peut aussi être lancé à la main.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Installer Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+
+      - name: Compiler le mod
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Publier le fichier du mod (.jar)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReivaxMC-Progress-mod
+          path: build/libs/*.jar
+          if-no-files-found: error
