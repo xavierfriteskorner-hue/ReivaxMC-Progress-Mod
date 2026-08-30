@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "reivaxmc_progress:item/destiny_of_origins"
+  }
+}
