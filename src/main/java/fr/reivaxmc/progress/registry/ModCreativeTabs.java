@@ -22,9 +22,17 @@ public final class ModCreativeTabs {
                     .title(Component.translatable("itemGroup.reivaxmc_progress.origins"))
                     .icon(() -> new ItemStack(ModItems.ORIGIN_SEAL.get()))
                     .displayItems((params, output) -> {
+                        // Objets
                         output.accept(ModItems.ORIGIN_SEAL.get());
                         output.accept(ModItems.UNKNOWN_FRAGMENT.get());
                         output.accept(ModItems.DESTINY_OF_ORIGINS.get());
+                        // Blocs
+                        output.accept(ModBlocks.FOUNDATION_BEACON.get());
+                        output.accept(ModBlocks.ORIGIN_MATRIX.get());
+                        output.accept(ModBlocks.STORY_TRACE.get());
+                        output.accept(ModBlocks.ORIGIN_RELIQUARY.get());
+                        output.accept(ModBlocks.FRAGMENT_ALTAR.get());
+                        output.accept(ModBlocks.MEMORIAL_PLAQUE.get());
                     })
                     .build());
 

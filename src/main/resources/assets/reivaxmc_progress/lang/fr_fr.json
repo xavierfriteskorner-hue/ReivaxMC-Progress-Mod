@@ -3,5 +3,12 @@
 
   "item.reivaxmc_progress.origin_seal": "Sceau des Origines",
   "item.reivaxmc_progress.unknown_fragment": "Fragment inconnu",
-  "item.reivaxmc_progress.destiny_of_origins": "Le Destin des Origines"
+  "item.reivaxmc_progress.destiny_of_origins": "Le Destin des Origines",
+
+  "block.reivaxmc_progress.foundation_beacon": "Borne de Fondation",
+  "block.reivaxmc_progress.origin_matrix": "Matrice des Origines",
+  "block.reivaxmc_progress.story_trace": "Trace inconnue",
+  "block.reivaxmc_progress.origin_reliquary": "Reliquaire des Origines",
+  "block.reivaxmc_progress.fragment_altar": "Autel du Fragment",
+  "block.reivaxmc_progress.memorial_plaque": "Plaque commémorative"
 }

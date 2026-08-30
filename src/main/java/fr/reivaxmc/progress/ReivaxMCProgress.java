@@ -1,6 +1,7 @@
 package fr.reivaxmc.progress;
 
 import com.mojang.logging.LogUtils;
+import fr.reivaxmc.progress.registry.ModBlocks;
 import fr.reivaxmc.progress.registry.ModCreativeTabs;
 import fr.reivaxmc.progress.registry.ModItems;
 import net.neoforged.bus.api.IEventBus;
@@ -21,6 +22,8 @@ public class ReivaxMCProgress {
 
     public ReivaxMCProgress(IEventBus modEventBus) {
         // Enregistrement du contenu du mod sur le bus d'événements.
+        // Les blocs d'abord (ils déclarent aussi leurs objets-blocs dans ModItems.ITEMS).
+        ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
