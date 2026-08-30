@@ -1,5 +1,6 @@
 plugins {
-    id 'net.neoforged.moddev' version '2.0.34'
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
 }
 
 version = '0.2.0'
@@ -9,14 +10,11 @@ base {
     archivesName = 'reivaxmc_progress'
 }
 
+// Mojang livre Java 21 avec Minecraft 1.21.1 : le mod cible donc Java 21.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 neoForge {
@@ -25,8 +23,12 @@ neoForge {
 
     // Déclare le mod pour la validation de neoforge.mods.toml.
     mods {
-        reivaxmc_progress {
-            sourceSet sourceSets.main
+        "reivaxmc_progress" {
+            sourceSet(sourceSets.main)
         }
     }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
