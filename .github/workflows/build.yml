@@ -24,7 +24,33 @@ jobs:
           gradle-version: '9.2.1'
 
       - name: Compiler le mod
-        run: gradle build --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle build --no-daemon --stacktrace 2>&1 | tee build_output.txt
+          code=${PIPESTATUS[0]}
+          if [ $code -ne 0 ]; then
+            {
+              echo "## ❌ Échec de compilation"
+              echo '```'
+              grep -nE "error:|\.java:|Caused by|FAILURE:|What went wrong|> Task|BUILD FAILED" build_output.txt | tail -n 80
+              echo '```'
+              echo "<details><summary>Fin du journal complet</summary>"
+              echo ''
+              echo '```'
+              tail -n 150 build_output.txt
+              echo '```'
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
+
+      - name: Publier le journal de build (toujours)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build_output.txt
+          if-no-files-found: warn
 
       - name: Publier le fichier du mod (.jar)
         uses: actions/upload-artifact@v4

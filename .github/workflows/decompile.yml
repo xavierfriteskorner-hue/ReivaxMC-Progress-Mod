@@ -1,0 +1,75 @@
+name: Récupération du mod (décompilation)
+
+# Se déclenche quand on ajoute/modifie le jar à récupérer, ou à la main.
+on:
+  push:
+    paths:
+      - '_recovery/**'
+      - '.github/workflows/decompile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Télécharger Vineflower (décompileur)
+        run: curl -fL -o vineflower.jar https://repo1.maven.org/maven2/org/vineflower/vineflower/1.10.1/vineflower-1.10.1.jar
+
+      - name: Décompiler les classes en code source
+        run: |
+          set -e
+          rm -rf src/main/java
+          mkdir -p src/main/java /tmp/vfout
+          java -jar vineflower.jar _recovery/input.jar /tmp/vfout
+          echo "Sortie Vineflower :"; ls -la /tmp/vfout || true
+          for j in /tmp/vfout/*.jar; do
+            [ -f "$j" ] && unzip -o "$j" '*.java' -d src/main/java || true
+          done
+          find /tmp/vfout -name '*.java' | while read -r f; do
+            rel="${f#/tmp/vfout/}"
+            mkdir -p "src/main/java/$(dirname "$rel")"
+            cp "$f" "src/main/java/$rel"
+          done
+          COUNT=$(find src/main/java -name '*.java' | wc -l)
+          echo "JAVA_COUNT=$COUNT" >> "$GITHUB_ENV"
+          echo "## 🔧 Décompilation" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Classes .java récupérées : **$COUNT**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rafraîchir les ressources (textures, sons, données) depuis le jar
+        run: |
+          rm -rf src/main/resources/assets src/main/resources/data
+          mkdir -p src/main/resources
+          (cd src/main/resources && unzip -o "$GITHUB_WORKSPACE/_recovery/input.jar" 'assets/*' 'data/*') || true
+          RES=$(find src/main/resources/assets src/main/resources/data -type f 2>/dev/null | wc -l)
+          echo "- Fichiers de ressources récupérés : **$RES**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Committer le mod récupéré
+        id: commitstep
+        run: |
+          set +e
+          git config user.name "reivax-recovery-bot"
+          git config user.email "recovery@reivax.local"
+          git add -A
+          git commit -m "Récupération : mod décompilé (code source + ressources)"
+          git push 2>push_err.txt
+          PUSH=$?
+          if [ $PUSH -ne 0 ]; then
+            echo "- ❌ **Échec de l'écriture dans le dépôt** (autorisation manquante ?)" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            cat push_err.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- ✅ **Code récupéré déposé dans le dépôt.** Fais un « Pull » dans GitHub Desktop." >> "$GITHUB_STEP_SUMMARY"

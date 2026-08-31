@@ -1,14 +1,14 @@
 package fr.reivaxmc.progress.story;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
+import fr.reivaxmc.progress.network.NarrationPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * La Voix des Origines : le rendu final d'une intervention.
- * « Monde commun, action attribuée, réaction partagée » — l'acteur entend sa phrase,
- * les autres joueurs en voient une variante à la troisième personne.
+ * La Voix des Origines : le rendu final d'une intervention, envoyé au client sous forme de panneau.
+ * « Monde commun, action attribuée, réaction partagée » — l'acteur reçoit sa phrase,
+ * les autres joueurs en reçoivent une variante à la troisième personne.
  */
 public final class Voix {
 
@@ -17,22 +17,22 @@ public final class Voix {
         if (server == null) {
             return;
         }
-        Component actorLine = style(event.actorText());
+        String name = actor.getGameProfile().getName();
+
+        NarrationPayload toActor = new NarrationPayload(
+                nz(event.title()), nz(event.actorText()), event.agePoints());
+
         String otherRaw = event.otherText() != null ? event.otherText() : event.actorText();
-        Component otherLine = style(replacePlayer(otherRaw, actor.getGameProfile().getName()));
+        NarrationPayload toOthers = new NarrationPayload(
+                nz(event.title()), nz(otherRaw).replace("{player}", name), event.agePoints());
 
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            p.displayClientMessage(p == actor ? actorLine : otherLine, false);
+            PacketDistributor.sendToPlayer(p, p == actor ? toActor : toOthers);
         }
     }
 
-    private static String replacePlayer(String text, String name) {
-        return text == null ? "" : text.replace("{player}", name);
-    }
-
-    private static Component style(String text) {
-        return Component.literal(text == null ? "" : text)
-                .withStyle(ChatFormatting.GOLD, ChatFormatting.ITALIC);
+    private static String nz(String s) {
+        return s == null ? "" : s;
     }
 
     private Voix() {}

@@ -12,15 +12,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * La mémoire persistante de la campagne, au niveau du monde.
- * Pour l'instant : la liste des interventions déjà déclenchées (pour ne jamais les rejouer).
- * Stockée sur l'Overworld (jamais déchargé) car c'est une vérité globale du monde.
+ * La mémoire persistante de la campagne, au niveau du monde (stockée sur l'Overworld).
+ * Tient la liste des interventions déjà jouées (jamais rejouées) + les compteurs de progression.
  */
 public class CampaignSavedData extends SavedData {
 
     private static final String NAME = "reivaxmc_campaign";
 
     private final Set<String> firedEvents = new HashSet<>();
+    private int agePoints = 0;
+    private int civScore = 0;
 
     public static CampaignSavedData create() {
         return new CampaignSavedData();
@@ -32,6 +33,8 @@ public class CampaignSavedData extends SavedData {
         for (int i = 0; i < list.size(); i++) {
             data.firedEvents.add(list.getString(i));
         }
+        data.agePoints = tag.getInt("age_points");
+        data.civScore = tag.getInt("civ_score");
         return data;
     }
 
@@ -42,6 +45,8 @@ public class CampaignSavedData extends SavedData {
             list.add(StringTag.valueOf(s));
         }
         tag.put("fired_events", list);
+        tag.putInt("age_points", agePoints);
+        tag.putInt("civ_score", civScore);
         return tag;
     }
 
@@ -56,6 +61,22 @@ public class CampaignSavedData extends SavedData {
             setDirty();
         }
         return added;
+    }
+
+    public void addPoints(int age, int civ) {
+        if (age != 0 || civ != 0) {
+            agePoints += age;
+            civScore += civ;
+            setDirty();
+        }
+    }
+
+    public int agePoints() {
+        return agePoints;
+    }
+
+    public int civScore() {
+        return civScore;
     }
 
     public static CampaignSavedData get(MinecraftServer server) {

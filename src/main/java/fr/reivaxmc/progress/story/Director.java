@@ -3,22 +3,12 @@ package fr.reivaxmc.progress.story;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Map;
-
 /**
  * Le metteur en scène. Il décide SI la Voix doit parler.
- * Ici : il relie un fait observé à une intervention du narrateur, et ne la joue qu'une seule
- * fois par monde (grâce à la mémoire persistante). Aucune récompense n'est dupliquée.
+ * Il compare le fait observé aux déclencheurs déclarés dans les données, et ne joue une
+ * intervention qu'une seule fois par monde. Une seule intervention par fait (anti-spam).
  */
 public final class Director {
-
-    /** Association fait observé -> intervention pilote. Le câblage est ici ; le texte, dans les données. */
-    private static final Map<String, String> FACT_TO_EVENT = Map.of(
-            "mine_wood", "A1-001",
-            "mine_stone", "A1-005",
-            "mine_coal", "A1-007",
-            "mine_iron", "A1-009"
-    );
 
     public static void handle(StoryFact fact) {
         ServerPlayer actor = fact.actor();
@@ -29,18 +19,21 @@ public final class Director {
         if (server == null) {
             return;
         }
-        String eventId = FACT_TO_EVENT.get(fact.factKey());
-        if (eventId == null) {
-            return;
-        }
-        PilotEvent event = NarratorData.get(eventId);
-        if (event == null) {
-            return;
-        }
         CampaignSavedData memory = CampaignSavedData.get(server);
-        // markFired renvoie true seulement la première fois : la Voix ne se répète jamais.
-        if (memory.markFired(eventId)) {
+
+        for (PilotEvent event : NarratorData.all()) {
+            Trigger trigger = event.trigger();
+            if (trigger == null || !trigger.matches(fact)) {
+                continue;
+            }
+            if (memory.hasFired(event.id())) {
+                continue; // déjà vécu : la Voix ne se répète pas
+            }
+            memory.markFired(event.id());
+            memory.addPoints(event.agePoints(), event.civScore());
             Voix.speak(actor, event);
+            Reward.give(actor, event);
+            return; // une seule intervention par fait
         }
     }
 
