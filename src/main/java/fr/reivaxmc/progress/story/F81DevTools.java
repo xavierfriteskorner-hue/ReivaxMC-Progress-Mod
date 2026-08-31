@@ -333,8 +333,8 @@ public final class F81DevTools {
       runCommand(var0, "time set day");
       int[] var2 = F8SanctuaryEngine.target(var0);
       String var3 = F8SanctuaryEngine.playerName(var1);
-      "tp " + var3 + " " + var2[0] + " " + (var2[1] + 3) + " " + (var2[2] + 62);
-      boolean var10000 = false;
+      // Téléport DEV volontairement désactivé (test du trajet réel). Chaîne conservée mais inutilisée.
+      String unusedDevTeleportCmd = "tp " + var3 + " " + var2[0] + " " + (var2[1] + 3) + " " + (var2[2] + 62);
       F7NarrativeEngine.routeStoryMessage(
          var1, "§6OBJECTIF PRINCIPAL §8· §fSuivez la Résonance jusqu'au Sanctuaire. La commande DEV ne vous téléporte plus : testez le trajet réel.", true
       );
