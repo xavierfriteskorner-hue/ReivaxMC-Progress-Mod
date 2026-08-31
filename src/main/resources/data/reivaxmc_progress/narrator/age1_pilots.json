@@ -9,11 +9,7 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "block_break",
-        "tag": "minecraft:logs"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-003",
@@ -23,11 +19,7 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "craft",
-        "item": "minecraft:crafting_table"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-005",
@@ -37,11 +29,7 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "block_break",
-        "block": "minecraft:stone"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-007",
@@ -53,11 +41,7 @@
       "priority": 65,
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:torch",
-      "reward_count": 4,
-      "trigger": {
-        "type": "block_break",
-        "block": "minecraft:coal_ore"
-      }
+      "reward_count": 4
     },
     {
       "id": "A1-009",
@@ -67,11 +51,7 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 65,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "block_break",
-        "block": "minecraft:iron_ore"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-010",
@@ -81,11 +61,7 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 65,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "smelt",
-        "item": "minecraft:iron_ingot"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-018",
@@ -105,11 +81,7 @@
       "other_container_text": "{player} vient de trouver le premier diamant de votre civilisation déjà bien rangé. Quelqu’un avait pris de l’avance sur vous.",
       "low_health_text": "Un diamant. Maintenant, essayer de ressortir vivant serait une excellente deuxième étape.",
       "reward_item": "minecraft:experience_bottle",
-      "reward_count": 3,
-      "trigger": {
-        "type": "block_break",
-        "block": "minecraft:diamond_ore"
-      }
+      "reward_count": 3
     },
     {
       "id": "A1-024",
@@ -119,11 +91,7 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "place",
-        "tag": "minecraft:saplings"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-031",
@@ -242,11 +210,7 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 56,
-      "kind": "NARRATOR_ACHIEVEMENT",
-      "trigger": {
-        "type": "kill",
-        "entity": "minecraft:creeper"
-      }
+      "kind": "NARRATOR_ACHIEVEMENT"
     },
     {
       "id": "A1-083",
@@ -272,10 +236,7 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:potato",
       "reward_count": 1,
-      "reward_name": "Pomme de terre de consolation",
-      "trigger": {
-        "type": "death"
-      }
+      "reward_name": "Pomme de terre de consolation"
     },
     {
       "id": "A1-087",

@@ -1,6 +1,1 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "reivaxmc_progress:item/origin_seal"
-  }
-}
+{"parent": "minecraft:item/generated", "textures": {"layer0": "reivaxmc_progress:item/origin_seal"}}

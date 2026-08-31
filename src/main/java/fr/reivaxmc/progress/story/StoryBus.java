@@ -1,15 +1,36 @@
 package fr.reivaxmc.progress.story;
 
-/**
- * Le Story Bus : un point de passage unique entre « ce qui est observé » et « ce qui en est fait ».
- * Volontairement mince pour l'instant, mais c'est la couture sur laquelle brancheront demain
- * la Campagne, les Archives, la Chronologie, la Progression…
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public final class StoryBus {
+   private final CopyOnWriteArrayList<StoryListener> listeners = new CopyOnWriteArrayList<>();
 
-    public static void post(StoryFact fact) {
-        Director.handle(fact);
-    }
+   public void subscribe(StoryListener var1) {
+      if (var1 != null && !this.listeners.contains(var1)) {
+         this.listeners.add(var1);
+      }
+   }
 
-    private StoryBus() {}
+   public List<TopicDecision> publish(StoryFact var1) {
+      if (var1 == null) {
+         return List.of();
+      } else {
+         ArrayList var2 = new ArrayList();
+
+         for (StoryListener var4 : this.listeners) {
+            List var5 = var4.onFact(var1);
+            if (var5 != null && !var5.isEmpty()) {
+               var2.addAll(var5);
+            }
+         }
+
+         return List.copyOf(var2);
+      }
+   }
+
+   public int listenerCount() {
+      return this.listeners.size();
+   }
 }

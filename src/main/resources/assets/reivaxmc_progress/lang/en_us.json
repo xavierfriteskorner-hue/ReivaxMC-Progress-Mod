@@ -1,14 +1,1 @@
-{
-  "itemGroup.reivaxmc_progress.origins": "ReivaxMC — Origins",
-
-  "item.reivaxmc_progress.origin_seal": "Seal of the Origins",
-  "item.reivaxmc_progress.unknown_fragment": "Unknown Fragment",
-  "item.reivaxmc_progress.destiny_of_origins": "The Destiny of the Origins",
-
-  "block.reivaxmc_progress.foundation_beacon": "Foundation Beacon",
-  "block.reivaxmc_progress.origin_matrix": "Matrix of the Origins",
-  "block.reivaxmc_progress.story_trace": "Unknown Trace",
-  "block.reivaxmc_progress.origin_reliquary": "Reliquary of the Origins",
-  "block.reivaxmc_progress.sanctuary_lumen": "Luminous Sanctuary Stone",
-  "block.reivaxmc_progress.sanctuary_stone": "Sanctuary Stone"
-}
+{"block.reivaxmc_progress.foundation_beacon":"Borne de Fondation","block.reivaxmc_progress.origin_reliquary":"Sanctuary Reliquary","block.reivaxmc_progress.origin_matrix":"Seal Stele","block.reivaxmc_progress.memorial_plaque":"Sanctuary Stone","block.reivaxmc_progress.fragment_altar":"Sanctuary Lumen","item.reivaxmc_progress.origin_seal":"Sceau des Origines","item.reivaxmc_progress.unknown_fragment":"Fragment inconnu","item.reivaxmc_progress.destiny_of_origins":"Le Destin des Origines","key.reivaxmc_progress.open":"Ouvrir ReivaxMC Progress","key.categories.reivaxmc_progress":"ReivaxMC Progress","block.reivaxmc_progress.story_trace":"Unknown Trace"}
