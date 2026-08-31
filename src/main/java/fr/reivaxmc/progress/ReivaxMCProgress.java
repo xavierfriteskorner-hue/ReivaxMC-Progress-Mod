@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import fr.reivaxmc.progress.registry.ModBlocks;
 import fr.reivaxmc.progress.registry.ModCreativeTabs;
 import fr.reivaxmc.progress.registry.ModItems;
+import fr.reivaxmc.progress.story.NarratorData;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
@@ -26,6 +27,9 @@ public class ReivaxMCProgress {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+
+        // Charge les interventions du narrateur (data-driven) au démarrage du mod.
+        NarratorData.load();
 
         LOGGER.info("[ReivaxMC Progress] Reconstruction propre chargee. La Voix se souvient de ce que vous avez oublie.");
     }
