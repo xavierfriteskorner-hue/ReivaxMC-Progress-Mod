@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 public final class ProgressScreen extends Screen {
    private static final String[] TABS = new String[]{"CAMPAGNE", "QUÊTES", "PROGRESSION", "RÉCOMPENSES", "CHRONOLOGIE", "ARCHIVES"};
    private int tab;
+   private int scroll;
    private int px;
    private int py;
    private int pw;
@@ -176,22 +177,25 @@ public final class ProgressScreen extends Screen {
 
    private void timeline(GuiGraphics g, int x, int y, int w, int h) {
       this.title(g, "CHRONOLOGIE DU MONDE", x, y);
-      int yy = y + 35;
+      int yy = y + 35 - this.scroll;
       if (ClientCampaignState.timeline.isEmpty()) {
-         g.drawString(this.font, "Votre histoire n'a pas encore commencé.", x, yy, -7368309, false);
+         g.drawString(this.font, "Votre histoire n'a pas encore commencé.", x, y + 35, -7368309, false);
       } else {
          for (String line : ClientCampaignState.timeline.split("\\n")) {
-            if (yy > y + h - 50) {
-               break;
-            }
-
             String[] p = line.split("¦", -1);
             if (p.length >= 4) {
-               this.box(g, x, yy, w, 55);
-               g.drawString(this.font, "Jour " + p[0] + " — " + p[2], x + 14, yy + 10, -2046857, false);
-               Alpha15UiHelper.drawWrapped2(g, this.font, p[1] + " • " + p[3], x + 14, yy + 30, -4210504, false, w - 28);
+               if (yy + 60 > y + 30 && yy < y + h) {
+                  this.box(g, x, yy, w, 55);
+                  g.drawString(this.font, "Jour " + p[0] + " — " + p[2], x + 14, yy + 10, -2046857, false);
+                  Alpha15UiHelper.drawWrapped2(g, this.font, p[1] + " • " + p[3], x + 14, yy + 30, -4210504, false, w - 28);
+               }
+
                yy += 66;
             }
+         }
+
+         if (this.scroll > 0) {
+            g.drawString(this.font, "▲", x + w - 12, y + 30, -6710887, false);
          }
       }
    }
@@ -208,16 +212,19 @@ public final class ProgressScreen extends Screen {
          false
       );
       g.drawString(this.font, "Fragments reconnus : " + this.count(ClientCampaignState.artifacts), x + 18, y + 72, -2764603, false);
-      int yy = y + 125;
+      int yy = y + 125 - this.scroll;
 
       for (String line : ClientCampaignState.artifacts.split("\\n")) {
          if (!line.isEmpty()) {
             String[] p = line.split("¦", -1);
             if (p.length >= 6) {
-               this.box(g, x, yy, w, 66);
-               g.drawString(this.font, "◆ " + p[1], x + 16, yy + 11, -8927590, false);
-               g.drawString(this.font, "Découvert par " + p[2] + " • Jour " + p[3] + " • " + p[4], x + 16, yy + 31, -3553860, false);
-               g.drawString(this.font, "Signification : " + p[5], x + 16, yy + 48, -6710122, false);
+               if (yy + 70 > y + 120 && yy < y + h) {
+                  this.box(g, x, yy, w, 66);
+                  g.drawString(this.font, "◆ " + p[1], x + 16, yy + 11, -8927590, false);
+                  g.drawString(this.font, "Découvert par " + p[2] + " • Jour " + p[3] + " • " + p[4], x + 16, yy + 31, -3553860, false);
+                  g.drawString(this.font, "Signification : " + p[5], x + 16, yy + 48, -6710122, false);
+               }
+
                yy += 76;
             }
          }
@@ -274,11 +281,25 @@ public final class ProgressScreen extends Screen {
          int i = (int)((mx - (double)(this.px + 12)) / (double)tw);
          if (i >= 0 && i < TABS.length) {
             this.tab = i;
+            this.scroll = 0;
             return true;
          }
       }
 
       return super.mouseClicked(mx, my, b);
+   }
+
+   public boolean mouseScrolled(double mx, double my, double dx, double dy) {
+      if (this.tab == 4 || this.tab == 5) {
+         int count = this.tab == 4 ? this.count(ClientCampaignState.timeline) : this.count(ClientCampaignState.artifacts);
+         int itemH = this.tab == 4 ? 66 : 76;
+         int visibleH = Math.max(60, this.ph - 220);
+         int maxScroll = Math.max(0, count * itemH - visibleH);
+         this.scroll = (int)Math.max(0.0, Math.min((double)maxScroll, (double)this.scroll - dy * 28.0));
+         return true;
+      }
+
+      return super.mouseScrolled(mx, my, dx, dy);
    }
 
    public boolean isPauseScreen() {

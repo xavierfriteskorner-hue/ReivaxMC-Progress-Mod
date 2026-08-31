@@ -170,7 +170,7 @@ public final class F8InteractionBridge {
                if (F8SanctuaryEngine.isBookPedestalPos(var4, var5)) {
                   cancel(var0);
                   if (!F8SanctuaryEngine.completed(var8, "F82_FOUNDATION_GUARDS_CLEARED")) {
-                     message(var17, "§6LIVRE §8• §fLes Protecteurs vous empêchent encore d'atteindre le pupitre.");
+                     message(var17, "§6LIVRE §8• §fLe Protecteur vous empêche encore d'atteindre le pupitre.");
                      return;
                   }
 
@@ -191,7 +191,7 @@ public final class F8InteractionBridge {
                if (F8SanctuaryEngine.isReliquaryPos(var4, var5)) {
                   cancel(var0);
                   if (!F8SanctuaryEngine.completed(var8, "F82_FOUNDATION_GUARDS_CLEARED")) {
-                     message(var17, "§6RELIQUAIRE §8• §fLe mécanisme est verrouillé tant que les Protecteurs sont actifs.");
+                     message(var17, "§6RELIQUAIRE §8• §fLe mécanisme est verrouillé tant que le Protecteur veille.");
                      return;
                   }
 
@@ -241,11 +241,9 @@ public final class F8InteractionBridge {
                }
 
                cancel(var0);
-               int var9 = (F8SanctuaryEngine.completed(var8, "F82_FOUNDATION_GUARD_1_DEFEATED") ? 1 : 0)
-                  + (F8SanctuaryEngine.completed(var8, "F82_FOUNDATION_GUARD_2_DEFEATED") ? 1 : 0);
-               if (var9 < 2) {
-                  message(var17, "§6BORNE §8• §fLa Borne reste protégée tant que les Gardiens de Fondation sont actifs.");
-                  F7NarrativeEngine.routeStoryMessage(var17, "§6OBJECTIF PRINCIPAL §8• §fNeutralisez les Gardiens de Fondation · " + var9 + "/2.", true);
+               if (!F8SanctuaryEngine.completed(var8, "F82_FOUNDATION_GUARD_1_DEFEATED")) {
+                  message(var17, "§6BORNE §8• §fLa Borne reste protégée tant que le Protecteur veille sur elle.");
+                  F7NarrativeEngine.routeStoryMessage(var17, "§6OBJECTIF PRINCIPAL §8• §fNeutralisez le Protecteur de la Borne.", true);
                   return;
                }
 
@@ -329,15 +327,23 @@ public final class F8InteractionBridge {
                   return;
                }
 
-               String var5;
-               if (var3.contains("reivax_f83_fg2") || var3.contains("reivax_f82_fg2")) {
-                  var5 = "fg2";
-               } else if (var3.contains("reivax_f83_fg1") || var3.contains("reivax_f82_fg1")) {
+               String var5 = null;
+               if (var3.contains("reivax_f83_fg1")
+                  || var3.contains("reivax_f82_fg1")
+                  || var3.contains("reivax_f83_fg2")
+                  || var3.contains("reivax_f82_fg2")) {
                   var5 = "fg1";
-               } else if (!var3.contains("reivax_f83_w2") && !var3.contains("reivax_f82_w2") && !var3.contains("reivax_f8_g2")) {
-                  var5 = "g1";
                } else {
-                  var5 = "g2";
+                  for (int var11 = 6; var11 >= 1; var11--) {
+                     if (var3.contains("reivax_f83_w" + var11) || var3.contains("reivax_f82_w" + var11)) {
+                        var5 = "g" + var11;
+                        break;
+                     }
+                  }
+
+                  if (var5 == null) {
+                     var5 = "g1";
+                  }
                }
 
                Object var6 = null;

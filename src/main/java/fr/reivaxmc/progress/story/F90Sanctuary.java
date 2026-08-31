@@ -150,10 +150,16 @@ public final class F90Sanctuary {
             TICKS.put(var0, 0);
 
             try {
-               leash(var0, "reivax_f83_w1", var1[0] - 5, var1[1] + 1, var1[2] + 14, 46);
-               leash(var0, "reivax_f83_w2", var1[0] + 5, var1[1] + 1, var1[2] + 14, 46);
-               leash(var0, "reivax_f83_fg1", var1[0] - 5, var1[1] + 1, var1[2] - 15, 54);
-               leash(var0, "reivax_f83_fg2", var1[0] + 5, var1[1] + 1, var1[2] - 15, 54);
+               // 6 Veilleurs : patrouillent une large zone autour de leur poste ; ne quittent pas
+               // les abords du Sanctuaire. Le Protecteur reste rivé à la chambre de la Borne.
+               String[] var5 = F8SanctuaryEngine.TAG_WATCHERS;
+               int[][] var6 = F8SanctuaryEngine.WATCHER_OFFSETS;
+
+               for (int var7 = 0; var7 < var5.length; var7++) {
+                  leash(var0, var5[var7], var1[0] + var6[var7][0], var1[1] + 1, var1[2] + var6[var7][1], 30);
+               }
+
+               leash(var0, "reivax_f83_fg1", var1[0], var1[1] + 1, var1[2] - 15, 16);
             } catch (Throwable var4) {
             }
          }
@@ -185,16 +191,20 @@ public final class F90Sanctuary {
    public static void tuneProtector(Object var0, String var1, boolean var2, boolean var3) {
       try {
          String var4 = "@e[tag=" + var1 + ",limit=1]";
-         double var5 = var2 ? 28.0 : 20.0;
-         double var7 = var2 ? 1.92 : 1.48;
-         double var9 = var2 ? 0.245 : 0.275;
-         double var11 = var2 ? 4.6 : 3.5;
-         double var13 = var2 ? 6.0 : 3.0;
+         // Valeurs V1 (brief Veilleur/Protecteur) — doivent rester cohérentes avec
+         // F8SanctuaryEngine.summonProtector / activateProtectorGroup.
+         // var2 = true -> Protecteur (massif) ; false -> Veilleur (fin, vertical).
+         double var5 = var2 ? 100.0 : 40.0;
+         double var7 = var2 ? 1.7 : 1.25;
+         double var9 = var2 ? 0.19 : 0.26;
+         double var11 = var2 ? 8.0 : 5.0;
+         double var13 = var2 ? 8.0 : 4.0;
          command(var0, "attribute " + var4 + " minecraft:generic.scale base set " + var7);
          command(var0, "attribute " + var4 + " minecraft:generic.movement_speed base set " + var9);
          command(var0, "attribute " + var4 + " minecraft:generic.max_health base set " + var5);
          command(var0, "attribute " + var4 + " minecraft:generic.attack_damage base set " + var11);
          command(var0, "attribute " + var4 + " minecraft:generic.armor base set " + var13);
+         command(var0, "attribute " + var4 + " minecraft:generic.knockback_resistance base set " + (var2 ? 0.9 : 0.35));
          command(var0, "data merge entity " + var4 + " {Health:" + var5 + "f,PersistenceRequired:1b}");
       } catch (Throwable var15) {
          System.err.println("[REIVAX F9 protector tune] " + var15.getMessage());

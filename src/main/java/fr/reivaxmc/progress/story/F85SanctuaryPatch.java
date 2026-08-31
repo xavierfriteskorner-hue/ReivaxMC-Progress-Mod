@@ -78,10 +78,8 @@ public final class F85SanctuaryPatch {
             }
 
             if (F8SanctuaryEngine.isSanctuaryBeaconPos(var9, var1) && !F8SanctuaryEngine.completed(var5, "F8_FOUNDATION_BEACON_RECOVERED")) {
-               int var10 = (F8SanctuaryEngine.completed(var5, "F82_FOUNDATION_GUARD_1_DEFEATED") ? 1 : 0)
-                  + (F8SanctuaryEngine.completed(var5, "F82_FOUNDATION_GUARD_2_DEFEATED") ? 1 : 0);
-               if (var10 < 2) {
-                  send(var2, "§6BORNE §8• §fLa Borne reste protégée tant que les Gardiens de Fondation sont actifs.");
+               if (!F8SanctuaryEngine.completed(var5, "F82_FOUNDATION_GUARD_1_DEFEATED")) {
+                  send(var2, "§6BORNE §8• §fLa Borne reste protégée tant que le Protecteur veille sur elle.");
                   return true;
                }
 
@@ -281,23 +279,27 @@ public final class F85SanctuaryPatch {
 
    private static void enforceProtectorPresence(Object var0, int[] var1) {
       try {
-         command(var0, "attribute @e[tag=reivax_f83_w1,limit=1] minecraft:generic.scale base set 1.95");
-         command(var0, "attribute @e[tag=reivax_f83_w2,limit=1] minecraft:generic.scale base set 1.95");
-         command(var0, "attribute @e[tag=reivax_f83_fg1,limit=1] minecraft:generic.scale base set 2.25");
-         command(var0, "attribute @e[tag=reivax_f83_fg2,limit=1] minecraft:generic.scale base set 2.25");
-         command(var0, "attribute @e[tag=reivax_f83_w1,limit=1] minecraft:generic.movement_speed base set 0.31");
-         command(var0, "attribute @e[tag=reivax_f83_w2,limit=1] minecraft:generic.movement_speed base set 0.31");
-         command(var0, "attribute @e[tag=reivax_f83_fg1,limit=1] minecraft:generic.movement_speed base set 0.27");
-         command(var0, "attribute @e[tag=reivax_f83_fg2,limit=1] minecraft:generic.movement_speed base set 0.27");
          int var2 = var1[0];
          int var3 = var1[1];
          int var4 = var1[2];
-         leash(var0, "reivax_f83_w1", var2 - 10, var3, var4 + 9, 20, 9, 12, var2 - 5, var3 + 1, var4 + 14);
-         leash(var0, "reivax_f83_w2", var2 - 10, var3, var4 + 9, 20, 9, 12, var2 + 5, var3 + 1, var4 + 14);
-         leash(var0, "reivax_f83_fg1", var2 - 11, var3, var4 - 22, 22, 12, 13, var2 - 5, var3 + 1, var4 - 15);
-         leash(var0, "reivax_f83_fg2", var2 - 11, var3, var4 - 22, 22, 12, 13, var2 + 5, var3 + 1, var4 - 15);
-      } catch (Throwable var5) {
-         System.err.println("[REIVAX F8.5] protector guard failed: " + var5.getClass().getSimpleName() + ": " + var5.getMessage());
+         // 6 Veilleurs : silhouette fine et verticale (~2,3 blocs), patrouillent une large zone
+         // autour de l'entrée et de l'approche du Sanctuaire ; retour à leur poste s'ils s'éloignent trop.
+         String[] var5 = F8SanctuaryEngine.TAG_WATCHERS;
+         int[][] var6 = F8SanctuaryEngine.WATCHER_OFFSETS;
+
+         for (int var7 = 0; var7 < var5.length; var7++) {
+            command(var0, "attribute @e[tag=" + var5[var7] + ",limit=1] minecraft:generic.scale base set 1.25");
+            command(var0, "attribute @e[tag=" + var5[var7] + ",limit=1] minecraft:generic.movement_speed base set 0.26");
+            leash(var0, var5[var7], var2 - 20, var3 - 3, var4 - 6, 40, 18, 42, var2 + var6[var7][0], var3 + 1, var4 + var6[var7][1]);
+         }
+
+         // Protecteur unique : massif (~3,2 blocs), lent, rattaché à la chambre de la Borne
+         // (ne poursuit pas dans tout le Sanctuaire).
+         command(var0, "attribute @e[tag=reivax_f83_fg1,limit=1] minecraft:generic.scale base set 1.70");
+         command(var0, "attribute @e[tag=reivax_f83_fg1,limit=1] minecraft:generic.movement_speed base set 0.19");
+         leash(var0, "reivax_f83_fg1", var2 - 12, var3 - 3, var4 - 24, 24, 18, 18, var2, var3 + 1, var4 - 15);
+      } catch (Throwable var8) {
+         System.err.println("[REIVAX F8.5] protector guard failed: " + var8.getClass().getSimpleName() + ": " + var8.getMessage());
       }
    }
 

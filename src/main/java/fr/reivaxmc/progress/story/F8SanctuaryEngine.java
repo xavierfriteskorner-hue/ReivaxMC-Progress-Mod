@@ -24,6 +24,19 @@ public final class F8SanctuaryEngine {
    static final String K_FG1 = "F82_FOUNDATION_GUARD_1_DEFEATED";
    static final String K_FG2 = "F82_FOUNDATION_GUARD_2_DEFEATED";
    static final String K_FOUNDATION_GUARDS_CLEARED = "F82_FOUNDATION_GUARDS_CLEARED";
+   // --- Refonte Veilleurs (6) + Protecteur (1) ---
+   static final int WATCHER_COUNT = 6;
+   static final String[] K_WATCHERS = {
+      "F8_GUARD_1_DEFEATED", "F8_GUARD_2_DEFEATED", "F8_GUARD_3_DEFEATED", "F8_GUARD_4_DEFEATED", "F8_GUARD_5_DEFEATED", "F8_GUARD_6_DEFEATED"
+   };
+   static final String[] TAG_WATCHERS = {
+      "reivax_f83_w1", "reivax_f83_w2", "reivax_f83_w3", "reivax_f83_w4", "reivax_f83_w5", "reivax_f83_w6"
+   };
+   // Offsets [dx, dz] autour du centre du Sanctuaire (entrée = +z, chambre = -z).
+   // 2 devant l'entrée + 4 qui patrouillent l'approche/les flancs.
+   static final int[][] WATCHER_OFFSETS = {
+      {-5, 14}, {5, 14}, {-11, 22}, {11, 22}, {-15, 3}, {15, 3}
+   };
    static final String K_VOICE_FOUNDATION_1 = "F8_VOICE_FOUNDATION_1";
    static final String K_VOICE_FOUNDATION_2 = "F8_VOICE_FOUNDATION_2";
    static final String K_BEACON_RECOVERED = "F8_FOUNDATION_BEACON_RECOVERED";
@@ -172,6 +185,21 @@ public final class F8SanctuaryEngine {
             }
 
             clearGuidance(var1);
+            // Les Veilleurs détectent les joueurs à l'approche du Sanctuaire et passent en offensif,
+            // même avant l'insertion des Sceaux (postes de garde du périmètre).
+            if (!completed(var5, "F8_GUARDS_AWAKENED") && nearestDistance(var1, var7[0], var7[1] + 1, var7[2] + 14) <= 26.0) {
+               activateProtectorGroup(var0, var7, false, var1.size());
+               complete(var5, "F8_GUARDS_AWAKENED");
+               chronicleOnce(
+                  var0,
+                  "Les Veilleurs du Sanctuaire",
+                  "Tout autour du Sanctuaire, des silhouettes jusque-là immobiles se sont éveillées d'un coup. Elles semblaient exister pour une seule fonction : empêcher quiconque d'approcher.",
+                  "Le Sanctuaire"
+               );
+               history(var1, "§6VEILLEURS §8• §fLes Veilleurs du Sanctuaire viennent de s'éveiller · " + WATCHER_COUNT + " sentinelles.");
+               playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 3, var7[2] + 13, 1.8, 0.78);
+            }
+
             if (!completed(var5, "F84_SEAL_INSERTED")) {
                int[] var17 = sealStelePos(var7);
                double var18 = nearestDistance(var1, var17[0], var17[1], var17[2]);
@@ -202,10 +230,10 @@ public final class F8SanctuaryEngine {
                chronicleOnce(
                   var0,
                   "Les Veilleurs du Sanctuaire",
-                  "Deux silhouettes jusque-là immobiles se sont éveillées dans le hall. Elles semblaient exister pour une seule fonction : empêcher quiconque de poursuivre.",
+                  "Tout autour du Sanctuaire, des silhouettes jusque-là immobiles se sont éveillées d'un coup. Elles semblaient exister pour une seule fonction : empêcher quiconque d'approcher.",
                   "Le Sanctuaire"
                );
-               history(var1, "§6VEILLEURS §8• §fLes deux silhouettes du hall viennent de s'éveiller.");
+               history(var1, "§6VEILLEURS §8• §fLes Veilleurs du Sanctuaire viennent de s'éveiller · " + WATCHER_COUNT + " sentinelles.");
                playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 3, var7[2] + 13, 1.8, 0.78);
             } else {
                activateProtectorGroup(var0, var7, false, var1.size());
@@ -219,9 +247,9 @@ public final class F8SanctuaryEngine {
                }
             }
 
-            int var16 = (completed(var5, "F8_GUARD_1_DEFEATED") ? 1 : 0) + (completed(var5, "F8_GUARD_2_DEFEATED") ? 1 : 0);
-            if (var16 < 2) {
-               objective(var1, "Neutralisez les Veilleurs du Sanctuaire · " + var16 + "/2.");
+            int var16 = watchersDefeated(var5);
+            if (var16 < WATCHER_COUNT) {
+               objective(var1, "Neutralisez les Veilleurs du Sanctuaire · " + var16 + "/" + WATCHER_COUNT + ".");
                return;
             }
 
@@ -276,11 +304,11 @@ public final class F8SanctuaryEngine {
                complete(var5, "F82_FOUNDATION_GUARDS_AWAKENED");
                chronicleOnce(
                   var0,
-                  "Les Gardiens de Fondation",
-                  "Derrière la porte, deux protecteurs attendaient déjà dans la chambre de Fondation. Ils n'avaient pas été invoqués : ils montaient la garde depuis bien avant votre arrivée.",
+                  "Le Protecteur de la Borne",
+                  "Derrière la porte, une silhouette massive attendait déjà, dressée devant la Borne. Elle n'avait pas été invoquée : elle montait la garde depuis bien avant votre arrivée, vouée à une seule chose — que nul ne touche à ce qu'elle protège.",
                   "Le Sanctuaire"
                );
-               history(var1, "§6GARDIENS §8• §fLa chambre de Fondation est gardée.");
+               history(var1, "§6PROTECTEUR §8• §fUn Protecteur veille sur la Borne de Fondation.");
                playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 4, var7[2] - 15, 2.0, 0.62);
             } else {
                openFoundationGate(var0, var7, 3);
@@ -295,9 +323,9 @@ public final class F8SanctuaryEngine {
                }
             }
 
-            int var19 = (completed(var5, "F82_FOUNDATION_GUARD_1_DEFEATED") ? 1 : 0) + (completed(var5, "F82_FOUNDATION_GUARD_2_DEFEATED") ? 1 : 0);
-            if (var19 < 2) {
-               objective(var1, "Neutralisez les Gardiens de Fondation · " + var19 + "/2.");
+            int var19 = completed(var5, "F82_FOUNDATION_GUARD_1_DEFEATED") ? 1 : 0;
+            if (var19 < 1) {
+               objective(var1, "Affrontez le Protecteur de la Borne · défendez-vous jusqu'à le neutraliser.");
                return;
             }
 
@@ -307,10 +335,10 @@ public final class F8SanctuaryEngine {
                chronicleOnce(
                   var0,
                   "La chambre de Fondation",
-                  "Les derniers protecteurs ont été neutralisés. Au fond de la chambre, la Borne demeure intacte sur son autel.",
+                  "Le Protecteur a été neutralisé. Au fond de la chambre, la Borne demeure intacte sur son autel.",
                   "Vous"
                );
-               history(var1, "§6GARDIENS §8• §fLa Borne de Fondation est désormais accessible.");
+               history(var1, "§6PROTECTEUR §8• §fLe Protecteur est tombé · la Borne de Fondation est désormais accessible.");
                playSanctuarySound(var0, "protector_fall", var7[0], var7[1] + 4, var7[2] - 16, 1.0, 0.7);
             }
 
@@ -416,14 +444,23 @@ public final class F8SanctuaryEngine {
          Object var3 = campaign(var0);
          boolean var4 = var1 != null && var1.startsWith("fg");
          String var5;
-         if ("g2".equals(var1)) {
-            var5 = "F8_GUARD_2_DEFEATED";
-         } else if ("fg1".equals(var1)) {
+         if (var4) {
             var5 = "F82_FOUNDATION_GUARD_1_DEFEATED";
-         } else if ("fg2".equals(var1)) {
-            var5 = "F82_FOUNDATION_GUARD_2_DEFEATED";
          } else {
-            var5 = "F8_GUARD_1_DEFEATED";
+            int var14 = 1;
+
+            try {
+               if (var1 != null && var1.length() > 1) {
+                  var14 = Integer.parseInt(var1.substring(1));
+               }
+            } catch (Throwable var13) {
+            }
+
+            if (var14 < 1 || var14 > WATCHER_COUNT) {
+               var14 = 1;
+            }
+
+            var5 = K_WATCHERS[var14 - 1];
          }
 
          if (completed(var3, var5)) {
@@ -433,14 +470,8 @@ public final class F8SanctuaryEngine {
          complete(var3, var5);
          List var6 = players(var0);
          if (var4) {
-            int var7 = (completed(var3, "F82_FOUNDATION_GUARD_1_DEFEATED") ? 1 : 0) + (completed(var3, "F82_FOUNDATION_GUARD_2_DEFEATED") ? 1 : 0);
-            history(var6, "§6GARDIENS §8• §fGardien de Fondation neutralisé · " + var7 + "/2.");
-            objective(
-               var6,
-               var7 < 2
-                  ? "Neutralisez les Gardiens de Fondation · " + var7 + "/2."
-                  : "Restez dans la chambre de Fondation · la Borne est maintenant accessible."
-            );
+            history(var6, "§6PROTECTEUR §8• §fLe Protecteur de la Borne a été neutralisé.");
+            objective(var6, "Restez dans la chambre de Fondation · la Borne est maintenant accessible.");
 
             try {
                int[] var8 = target(var0);
@@ -448,11 +479,13 @@ public final class F8SanctuaryEngine {
             } catch (Throwable var10) {
             }
          } else {
-            int var12 = (completed(var3, "F8_GUARD_1_DEFEATED") ? 1 : 0) + (completed(var3, "F8_GUARD_2_DEFEATED") ? 1 : 0);
-            history(var6, "§6VEILLEURS §8• §fVeilleur du Sanctuaire neutralisé · " + var12 + "/2.");
+            int var12 = watchersDefeated(var3);
+            history(var6, "§6VEILLEURS §8• §fVeilleur du Sanctuaire neutralisé · " + var12 + "/" + WATCHER_COUNT + ".");
             objective(
                var6,
-               var12 < 2 ? "Neutralisez les Veilleurs du Sanctuaire · " + var12 + "/2." : "Avancez vers la chambre intérieure · le passage vient de s'ouvrir."
+               var12 < WATCHER_COUNT
+                  ? "Neutralisez les Veilleurs du Sanctuaire · " + var12 + "/" + WATCHER_COUNT + "."
+                  : "Avancez vers la chambre intérieure · le passage vient de s'ouvrir."
             );
 
             try {
@@ -472,6 +505,17 @@ public final class F8SanctuaryEngine {
       }
 
       return false;
+   }
+
+   static int watchersDefeated(Object var0) throws Exception {
+      int var1 = 0;
+      for (String var3 : K_WATCHERS) {
+         if (completed(var0, var3)) {
+            var1++;
+         }
+      }
+
+      return var1;
    }
 
    static void complete(Object var0, String var1) throws Exception {
@@ -1288,20 +1332,23 @@ public final class F8SanctuaryEngine {
    private static void ensureProtectors(Object var0, int[] var1, Object var2) {
       try {
          Object var3 = invokeNoArg(var0, "overworld");
-         if (!completed(var2, "F8_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w1") && canRespawn("reivax_f83_w1")) {
-            summonProtector(var0, var1[0] - 5, var1[1] + 1, var1[2] + 14, "reivax_f83_w1", "Veilleur du Sanctuaire", false, false);
-         }
-
-         if (!completed(var2, "F8_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w2") && canRespawn("reivax_f83_w2")) {
-            summonProtector(var0, var1[0] + 5, var1[1] + 1, var1[2] + 14, "reivax_f83_w2", "Veilleur du Sanctuaire", false, true);
+         for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
+            if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(TAG_WATCHERS[var5])) {
+               summonProtector(
+                  var0,
+                  var1[0] + WATCHER_OFFSETS[var5][0],
+                  var1[1] + 1,
+                  var1[2] + WATCHER_OFFSETS[var5][1],
+                  TAG_WATCHERS[var5],
+                  "Veilleur du Sanctuaire",
+                  false,
+                  var5 % 2 == 1
+               );
+            }
          }
 
          if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn("reivax_f83_fg1")) {
-            summonProtector(var0, var1[0] - 5, var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Gardien de Fondation", true, false);
-         }
-
-         if (!completed(var2, "F82_FOUNDATION_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg2") && canRespawn("reivax_f83_fg2")) {
-            summonProtector(var0, var1[0] + 5, var1[1] + 1, var1[2] - 15, "reivax_f83_fg2", "Gardien de Fondation", true, true);
+            summonProtector(var0, var1[0], var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Protecteur de la Borne", true, true);
          }
 
          if (completed(var2, "F8_GUARDS_AWAKENED")) {
@@ -1361,14 +1408,15 @@ public final class F8SanctuaryEngine {
       } catch (Throwable var17) {
       }
 
-      double var13 = var6 ? (var12 >= 2 ? 36.0 : 30.0) : (var12 >= 2 ? 24.0 : 18.0);
+      double var13 = var6 ? 100.0 : 40.0;
       runCommand(var0, "attribute " + var10 + " minecraft:generic.max_health base set " + var13);
       runCommand(var0, "attribute " + var10 + " minecraft:generic.follow_range base set 48");
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.movement_speed base set " + (var6 ? 0.28 : (var7 ? 0.30 : 0.32)));
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.attack_damage base set " + (var6 ? (var7 ? 6.0 : 5.5) : (var7 ? 4.0 : 3.5)));
+      runCommand(var0, "attribute " + var10 + " minecraft:generic.movement_speed base set " + (var6 ? 0.19 : 0.26));
+      runCommand(var0, "attribute " + var10 + " minecraft:generic.attack_damage base set " + (var6 ? 8.0 : 5.0));
+      runCommand(var0, "attribute " + var10 + " minecraft:generic.armor base set " + (var6 ? 8 : 4));
 
       try {
-         runCommand(var0, "attribute " + var10 + " minecraft:generic.knockback_resistance base set " + (var6 ? 0.30 : 0.10));
+         runCommand(var0, "attribute " + var10 + " minecraft:generic.knockback_resistance base set " + (var6 ? 0.9 : 0.35));
       } catch (Throwable var16) {
       }
 
@@ -1383,21 +1431,18 @@ public final class F8SanctuaryEngine {
             return;
          }
 
-         String[] var5 = var2 ? new String[]{"reivax_f83_fg1", "reivax_f83_fg2"} : new String[]{"reivax_f83_w1", "reivax_f83_w2"};
+         String[] var5 = var2 ? new String[]{"reivax_f83_fg1"} : TAG_WATCHERS;
 
          for (int var6 = 0; var6 < var5.length; var6++) {
             String var7 = "@e[tag=" + var5[var6] + ",sort=nearest,limit=1]";
             runCommand(var0, "data merge entity " + var7 + " {NoAI:0b,Silent:1b,IsImmuneToZombification:1b}");
-            double var8 = var2 ? (var3 >= 2 ? 36.0 : 30.0) : (var3 >= 2 ? 24.0 : 18.0);
+            double var8 = var2 ? 100.0 : 40.0;
             double var10;
-            if (var2) {
-               var10 = var6 == 1 ? (var3 >= 2 ? 6.5 : 5.5) : (var3 >= 2 ? 6.0 : 5.0);
-            } else {
-               var10 = var6 == 1 ? (var3 >= 2 ? 4.0 : 3.5) : (var3 >= 2 ? 3.5 : 3.0);
-            }
+            var10 = var2 ? 8.0 : 5.0;
 
             runCommand(var0, "attribute " + var7 + " minecraft:generic.max_health base set " + var8);
             runCommand(var0, "attribute " + var7 + " minecraft:generic.attack_damage base set " + var10);
+            runCommand(var0, "attribute " + var7 + " minecraft:generic.armor base set " + (var2 ? 8 : 4));
             if (var2) {
                try {
                   runCommand(var0, "attribute " + var7 + " minecraft:generic.scale base set 1.70");
