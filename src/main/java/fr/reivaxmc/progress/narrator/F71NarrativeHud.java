@@ -252,9 +252,10 @@ public final class F71NarrativeHud {
       int var15 = clampAlpha((int)(70.0F * var7));
       int var16 = clampAlpha((int)(115.0F * var7));
       int var17 = clampAlpha((int)(255.0F * var7));
-      fill(var0, var12, var13 - 14, var12 + var11, var13 + 24, var15 << 24 | 526603);
-      fill(var0, var12 + 34, var13 - 9, var12 + var11 - 34, var13 - 8, var16 << 24 | 14209992);
-      fill(var0, var12 + 70, var13 + 18, var12 + var11 - 70, var13 + 19, clampAlpha((int)(65.0F * var7)) << 24 | 14209992);
+      net.minecraft.client.gui.GuiGraphics gg = (net.minecraft.client.gui.GuiGraphics) var0;
+      fr.reivaxmc.progress.client.ReivaxUi.alpha(gg, var7);
+      fr.reivaxmc.progress.client.ReivaxUi.tex(gg, fr.reivaxmc.progress.client.ReivaxUi.VOICE, var12, var13 - 16, var11, 44, 768, 256);
+      fr.reivaxmc.progress.client.ReivaxUi.resetColor(gg);
       drawCentered(var0, var1, var9, var14, var13, var17 << 24 | 15986920);
    }
 

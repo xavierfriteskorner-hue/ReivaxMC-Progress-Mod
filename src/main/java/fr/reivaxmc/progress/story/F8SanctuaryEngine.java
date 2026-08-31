@@ -1270,22 +1270,37 @@ public final class F8SanctuaryEngine {
       }
    }
 
+   // Anti-boucle de spawn : un protecteur donné ne peut réapparaître qu'au plus toutes les 5 s.
+   // Le temps que la vérification d'existence (hasTaggedEntity) prenne le relais, ça empêche
+   // l'entassement d'entités au même endroit (mort « a subi trop de pression » = cramming).
+   private static final java.util.Map<String, Long> LAST_SPAWN_MS = new java.util.concurrent.ConcurrentHashMap<>();
+
+   private static boolean canRespawn(String key) {
+      long now = System.currentTimeMillis();
+      Long last = LAST_SPAWN_MS.get(key);
+      if (last != null && now - last < 5000L) {
+         return false;
+      }
+      LAST_SPAWN_MS.put(key, now);
+      return true;
+   }
+
    private static void ensureProtectors(Object var0, int[] var1, Object var2) {
       try {
          Object var3 = invokeNoArg(var0, "overworld");
-         if (!completed(var2, "F8_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w1")) {
+         if (!completed(var2, "F8_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w1") && canRespawn("reivax_f83_w1")) {
             summonProtector(var0, var1[0] - 5, var1[1] + 1, var1[2] + 14, "reivax_f83_w1", "Veilleur du Sanctuaire", false, false);
          }
 
-         if (!completed(var2, "F8_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w2")) {
+         if (!completed(var2, "F8_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_w2") && canRespawn("reivax_f83_w2")) {
             summonProtector(var0, var1[0] + 5, var1[1] + 1, var1[2] + 14, "reivax_f83_w2", "Veilleur du Sanctuaire", false, true);
          }
 
-         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1")) {
+         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn("reivax_f83_fg1")) {
             summonProtector(var0, var1[0] - 5, var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Gardien de Fondation", true, false);
          }
 
-         if (!completed(var2, "F82_FOUNDATION_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg2")) {
+         if (!completed(var2, "F82_FOUNDATION_GUARD_2_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg2") && canRespawn("reivax_f83_fg2")) {
             summonProtector(var0, var1[0] + 5, var1[1] + 1, var1[2] - 15, "reivax_f83_fg2", "Gardien de Fondation", true, true);
          }
 
@@ -1340,14 +1355,14 @@ public final class F8SanctuaryEngine {
       } catch (Throwable var17) {
       }
 
-      double var13 = var6 ? (var12 >= 2 ? 72.0 : 56.0) : (var12 >= 2 ? 46.0 : 36.0);
+      double var13 = var6 ? (var12 >= 2 ? 36.0 : 30.0) : (var12 >= 2 ? 24.0 : 18.0);
       runCommand(var0, "attribute " + var10 + " minecraft:generic.max_health base set " + var13);
       runCommand(var0, "attribute " + var10 + " minecraft:generic.follow_range base set 48");
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.movement_speed base set " + (var6 ? 0.34 : (var7 ? 0.32 : 0.39)));
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.attack_damage base set " + (var6 ? (var7 ? 11.0 : 9.5) : (var7 ? 8.0 : 6.5)));
+      runCommand(var0, "attribute " + var10 + " minecraft:generic.movement_speed base set " + (var6 ? 0.28 : (var7 ? 0.30 : 0.32)));
+      runCommand(var0, "attribute " + var10 + " minecraft:generic.attack_damage base set " + (var6 ? (var7 ? 6.0 : 5.5) : (var7 ? 4.0 : 3.5)));
 
       try {
-         runCommand(var0, "attribute " + var10 + " minecraft:generic.knockback_resistance base set " + (var6 ? 0.45 : 0.18));
+         runCommand(var0, "attribute " + var10 + " minecraft:generic.knockback_resistance base set " + (var6 ? 0.30 : 0.10));
       } catch (Throwable var16) {
       }
 
@@ -1367,12 +1382,12 @@ public final class F8SanctuaryEngine {
          for (int var6 = 0; var6 < var5.length; var6++) {
             String var7 = "@e[tag=" + var5[var6] + ",sort=nearest,limit=1]";
             runCommand(var0, "data merge entity " + var7 + " {NoAI:0b,Silent:1b,IsImmuneToZombification:1b}");
-            double var8 = var2 ? (var3 >= 2 ? 72.0 : 56.0) : (var3 >= 2 ? 46.0 : 36.0);
+            double var8 = var2 ? (var3 >= 2 ? 36.0 : 30.0) : (var3 >= 2 ? 24.0 : 18.0);
             double var10;
             if (var2) {
-               var10 = var6 == 1 ? (var3 >= 2 ? 13.0 : 11.0) : (var3 >= 2 ? 11.5 : 9.5);
+               var10 = var6 == 1 ? (var3 >= 2 ? 6.5 : 5.5) : (var3 >= 2 ? 6.0 : 5.0);
             } else {
-               var10 = var6 == 1 ? (var3 >= 2 ? 9.0 : 8.0) : (var3 >= 2 ? 7.5 : 6.5);
+               var10 = var6 == 1 ? (var3 >= 2 ? 4.0 : 3.5) : (var3 >= 2 ? 3.5 : 3.0);
             }
 
             runCommand(var0, "attribute " + var7 + " minecraft:generic.max_health base set " + var8);

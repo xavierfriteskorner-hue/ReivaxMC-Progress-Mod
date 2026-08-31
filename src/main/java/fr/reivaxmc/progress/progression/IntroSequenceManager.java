@@ -52,7 +52,7 @@ public final class IntroSequenceManager {
                ItemStack st = p.getInventory().getItem(slot);
                st.shrink(1);
                long now = s.overworld().getGameTime();
-               d.startIntro(now + 340L);
+               d.startIntro(now + 520L);
                d.addTimeline(
                   ProgressNetworking.day(s),
                   p.getGameProfile().getName(),
@@ -86,7 +86,7 @@ public final class IntroSequenceManager {
             p.setDeltaMovement(0.0, 0.0, 0.0);
          }
 
-         if (left == 315L || left == 245L || left == 175L || left == 85L) {
+         if (left == 470L || left == 350L || left == 230L || left == 110L) {
             lightning(s.overworld(), d.vestigePos());
          }
 

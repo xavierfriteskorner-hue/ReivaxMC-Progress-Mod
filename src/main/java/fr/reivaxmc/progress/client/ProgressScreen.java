@@ -31,8 +31,9 @@ public final class ProgressScreen extends Screen {
       this.py = (this.height - this.ph) / 2;
       g.fill(this.px + 5, this.py + 5, this.px + this.pw + 5, this.py + this.ph + 5, 1426063360);
       g.fill(this.px, this.py, this.px + this.pw, this.py + this.ph, -267710450);
-      g.fill(this.px, this.py, this.px + 5, this.py + this.ph, -4023733);
-      g.drawString(this.font, "REIVAXMC PROGRESS", this.px + 24, this.py + 19, -1849474, false);
+      ReivaxUi.frame(g, ReivaxUi.PANEL, this.px, this.py, this.pw, this.ph, 512, 96);
+      ReivaxUi.tex(g, ReivaxUi.EMBLEM, this.px + 16, this.py + 9, 28, 28, 256, 256);
+      g.drawString(this.font, "REIVAXMC PROGRESS", this.px + 50, this.py + 19, -1849474, false);
       g.drawString(this.font, "ÂGE I • ORIGINES", this.px + this.pw - 145, this.py + 19, -9061227, false);
       this.tabY = this.py + 48;
       this.tabH = 28;
@@ -42,7 +43,11 @@ public final class ProgressScreen extends Screen {
          int x = this.px + 12 + i * tw;
          boolean active = i == this.tab;
          g.fill(x, this.tabY, x + tw - 3, this.tabY + this.tabH, active ? -14271695 : -15459304);
-         g.drawCenteredString(this.font, TABS[i], x + (tw - 3) / 2, this.tabY + 10, active ? -2047890 : -5658981);
+         if (active) {
+            g.fill(x, this.tabY + this.tabH - 2, x + tw - 3, this.tabY + this.tabH, -4023733);
+         }
+         ReivaxUi.tex(g, ReivaxUi.TABS[i], x + 8, this.tabY + 5, 18, 18, 64, 64);
+         g.drawString(this.font, TABS[i], x + 30, this.tabY + 10, active ? -2047890 : -5658981, false);
       }
 
       int x = this.px + 28;
