@@ -22,8 +22,9 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> ORIGIN_MATRIX     = register("origin_matrix");
     public static final DeferredBlock<Block> STORY_TRACE       = register("story_trace");
     public static final DeferredBlock<Block> ORIGIN_RELIQUARY  = register("origin_reliquary");
-    public static final DeferredBlock<Block> FRAGMENT_ALTAR    = register("fragment_altar");
-    public static final DeferredBlock<Block> MEMORIAL_PLAQUE   = register("memorial_plaque");
+    // Blocs de construction du Sanctuaire (décoratifs).
+    public static final DeferredBlock<Block> SANCTUARY_LUMEN   = register("sanctuary_lumen");
+    public static final DeferredBlock<Block> SANCTUARY_STONE   = register("sanctuary_stone");
 
     /** Enregistre un bloc simple + son objet-bloc (ce qu'on tient en main). */
     private static DeferredBlock<Block> register(String name) {

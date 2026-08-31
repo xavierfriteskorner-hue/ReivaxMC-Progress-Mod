@@ -9,6 +9,6 @@
   "block.reivaxmc_progress.origin_matrix": "Matrice des Origines",
   "block.reivaxmc_progress.story_trace": "Trace inconnue",
   "block.reivaxmc_progress.origin_reliquary": "Reliquaire des Origines",
-  "block.reivaxmc_progress.fragment_altar": "Autel du Fragment",
-  "block.reivaxmc_progress.memorial_plaque": "Plaque commémorative"
+  "block.reivaxmc_progress.sanctuary_lumen": "Pierre lumineuse du Sanctuaire",
+  "block.reivaxmc_progress.sanctuary_stone": "Pierre du Sanctuaire"
 }

@@ -9,6 +9,6 @@
   "block.reivaxmc_progress.origin_matrix": "Matrix of the Origins",
   "block.reivaxmc_progress.story_trace": "Unknown Trace",
   "block.reivaxmc_progress.origin_reliquary": "Reliquary of the Origins",
-  "block.reivaxmc_progress.fragment_altar": "Fragment Altar",
-  "block.reivaxmc_progress.memorial_plaque": "Memorial Plaque"
+  "block.reivaxmc_progress.sanctuary_lumen": "Luminous Sanctuary Stone",
+  "block.reivaxmc_progress.sanctuary_stone": "Sanctuary Stone"
 }

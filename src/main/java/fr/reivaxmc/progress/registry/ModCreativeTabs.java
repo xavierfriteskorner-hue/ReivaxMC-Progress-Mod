@@ -31,8 +31,8 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.ORIGIN_MATRIX.get());
                         output.accept(ModBlocks.STORY_TRACE.get());
                         output.accept(ModBlocks.ORIGIN_RELIQUARY.get());
-                        output.accept(ModBlocks.FRAGMENT_ALTAR.get());
-                        output.accept(ModBlocks.MEMORIAL_PLAQUE.get());
+                        output.accept(ModBlocks.SANCTUARY_LUMEN.get());
+                        output.accept(ModBlocks.SANCTUARY_STONE.get());
                     })
                     .build());
 
