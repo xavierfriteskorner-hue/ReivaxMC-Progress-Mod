@@ -1,11 +1,8 @@
 name: Récupération du mod (décompilation)
 
-# Se déclenche quand on ajoute/modifie le jar à récupérer, ou à la main.
+# Récupération déjà effectuée. On ne le relance QUE manuellement, pour ne jamais
+# écraser les corrections apportées au code récupéré.
 on:
-  push:
-    paths:
-      - '_recovery/**'
-      - '.github/workflows/decompile.yml'
   workflow_dispatch:
 
 permissions:
