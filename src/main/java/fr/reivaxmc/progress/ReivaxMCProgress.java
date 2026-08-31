@@ -90,6 +90,9 @@ public final class ReivaxMCProgress {
                o.accept((ItemLike)UNKNOWN_FRAGMENT.get());
                o.accept((ItemLike)FOUNDATION_BEACON_ITEM.get());
                o.accept((ItemLike)ORIGIN_MATRIX_ITEM.get());
+               o.accept((ItemLike)ORIGIN_RELIQUARY_ITEM.get());
+               o.accept((ItemLike)MEMORIAL_PLAQUE_ITEM.get());
+               o.accept((ItemLike)FRAGMENT_ALTAR_ITEM.get());
             })
             .build()
    );

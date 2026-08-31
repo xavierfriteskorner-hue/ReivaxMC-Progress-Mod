@@ -1331,6 +1331,12 @@ public final class F8SanctuaryEngine {
          + "\"],CustomName:'{\"text\":\""
          + var5
          + "\"}',CustomNameVisible:0b,PersistenceRequired:1b,Silent:1b,NoAI:1b,IsImmuneToZombification:1b,CanPickUpLoot:0b}";
+      // Dégage une poche d'air à l'emplacement du protecteur pour qu'il n'étouffe pas / ne s'entasse pas
+      // (sinon il meurt seul « trop de pression », ce qui débloquait à tort le reliquaire/la borne).
+      try {
+         runCommand(var0, "fill " + var1 + " " + var2 + " " + var3 + " " + var1 + " " + (var2 + 1) + " " + var3 + " minecraft:air");
+      } catch (Throwable var19) {
+      }
       runCommand(var0, var9);
       String var10 = "@e[type=minecraft:piglin_brute,x=" + var1 + ",y=" + var2 + ",z=" + var3 + ",distance=..5,sort=nearest,limit=1]";
       runCommand(var0, "tag " + var10 + " add reivax_f8_guardian");

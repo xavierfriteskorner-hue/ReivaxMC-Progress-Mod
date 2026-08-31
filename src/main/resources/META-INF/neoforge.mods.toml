@@ -5,7 +5,7 @@ issueTrackerURL="https://github.com/xavierfriteskorner-hue/reivaxmc-progress/iss
 
 [[mods]]
 modId="reivaxmc_progress"
-version="0.2.0-visuel"
+version="0.3.0"
 displayName="ReivaxMC Progress"
 logoFile="logo.png"
 authors="Reivax"

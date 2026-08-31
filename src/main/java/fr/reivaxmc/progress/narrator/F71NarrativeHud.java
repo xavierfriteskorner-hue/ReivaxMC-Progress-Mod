@@ -11,7 +11,7 @@ import java.util.List;
 
 public final class F71NarrativeHud {
    private static final long VOICE_LIFETIME_MS = 6500L;
-   private static final long OBJECTIVE_LIFETIME_MS = 30000L;
+   private static final long OBJECTIVE_LIFETIME_MS = 10000L;
    private static final long HINT_LIFETIME_MS = 2600L;
    private static final long GUIDANCE_LIFETIME_MS = 2600L;
    private static final long FOYER_PANEL_LIFETIME_MS = 9000L;
@@ -66,7 +66,7 @@ public final class F71NarrativeHud {
             int var7 = number(call(var0, "guiWidth")).intValue();
             int var8 = number(call(var0, "guiHeight")).intValue();
             long var9 = utilMillis();
-            if (!objective.isBlank() && objectiveAt > 0L && var9 - objectiveAt < 30000L) {
+            if (!objective.isBlank() && objectiveAt > 0L && var9 - objectiveAt < 10000L) {
                drawObjective(var0, var6, objective, var7, var8, var9 - objectiveAt);
             }
 

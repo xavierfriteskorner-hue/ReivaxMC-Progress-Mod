@@ -622,13 +622,11 @@ public final class F7NarrativeEngine {
          return false;
       } else {
          Object var1 = originSealItem();
-         Object var2 = invokeNoArg(var1, "getDefaultInstance");
          Object var3 = invokeNoArg(var0, "getInventory");
-         if (invoke(var3, "add", var2) instanceof Boolean var5 && var5) {
-            return true;
-         }
-
-         return false;
+         // Deux Sceaux jumeaux : un pour chacune des deux Stèles à l'entrée du Sanctuaire (pensé pour le duo).
+         invoke(var3, "add", invokeNoArg(var1, "getDefaultInstance"));
+         invoke(var3, "add", invokeNoArg(var1, "getDefaultInstance"));
+         return true;
       }
    }
 

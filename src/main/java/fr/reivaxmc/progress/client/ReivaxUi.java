@@ -54,19 +54,20 @@ public final class ReivaxUi {
      * @param texSize taille de la texture carrée (ex. 512)
      * @param corner  taille du coin en pixels source (ex. 96)
      */
-    public static void frame(GuiGraphics g, ResourceLocation t, int x, int y, int w, int h, int texSize, int corner) {
-        int c = corner;
-        int mid = texSize - 2 * c;
-        // Coins
-        part(g, t, x, y, c, c, 0, 0, c, c, texSize, texSize);
-        part(g, t, x + w - c, y, c, c, texSize - c, 0, c, c, texSize, texSize);
-        part(g, t, x, y + h - c, c, c, 0, texSize - c, c, c, texSize, texSize);
-        part(g, t, x + w - c, y + h - c, c, c, texSize - c, texSize - c, c, c, texSize, texSize);
-        // Bords
-        part(g, t, x + c, y, w - 2 * c, c, c, 0, mid, c, texSize, texSize);
-        part(g, t, x + c, y + h - c, w - 2 * c, c, c, texSize - c, mid, c, texSize, texSize);
-        part(g, t, x, y + c, c, h - 2 * c, 0, c, c, mid, texSize, texSize);
-        part(g, t, x + w - c, y + c, c, h - 2 * c, texSize - c, c, c, mid, texSize, texSize);
+    public static void frame(GuiGraphics g, ResourceLocation t, int x, int y, int w, int h, int texSize, int srcCorner, int dstCorner) {
+        int s = srcCorner;   // taille du coin dans la texture source
+        int d = dstCorner;   // épaisseur de la bordure à l'écran (fine)
+        int mid = texSize - 2 * s;
+        // Coins (source s×s -> écran d×d)
+        part(g, t, x, y, d, d, 0, 0, s, s, texSize, texSize);
+        part(g, t, x + w - d, y, d, d, texSize - s, 0, s, s, texSize, texSize);
+        part(g, t, x, y + h - d, d, d, 0, texSize - s, s, s, texSize, texSize);
+        part(g, t, x + w - d, y + h - d, d, d, texSize - s, texSize - s, s, s, texSize, texSize);
+        // Bords (source mid étiré sur la longueur, épaisseur écran = d)
+        part(g, t, x + d, y, w - 2 * d, d, s, 0, mid, s, texSize, texSize);
+        part(g, t, x + d, y + h - d, w - 2 * d, d, s, texSize - s, mid, s, texSize, texSize);
+        part(g, t, x, y + d, d, h - 2 * d, 0, s, s, mid, texSize, texSize);
+        part(g, t, x + w - d, y + d, d, h - 2 * d, texSize - s, s, s, mid, texSize, texSize);
     }
 
     private ReivaxUi() {}
