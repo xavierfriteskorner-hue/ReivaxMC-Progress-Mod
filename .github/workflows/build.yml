@@ -1,9 +1,12 @@
 name: Build ReivaxMC Progress
 
-# Se lance à chaque envoi de code, et peut aussi être lancé à la main.
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -25,26 +28,29 @@ jobs:
 
       - name: Compiler le mod
         run: |
-          set +e
+          set -o pipefail
           gradle build --no-daemon --stacktrace 2>&1 | tee build_output.txt
-          code=${PIPESTATUS[0]}
-          if [ $code -ne 0 ]; then
-            {
-              echo "## ❌ Échec de compilation"
-              echo '```'
-              grep -nE "error:|\.java:|Caused by|FAILURE:|What went wrong|> Task|BUILD FAILED" build_output.txt | tail -n 80
-              echo '```'
-              echo "<details><summary>Fin du journal complet</summary>"
-              echo ''
-              echo '```'
-              tail -n 150 build_output.txt
-              echo '```'
-              echo "</details>"
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-          exit $code
 
-      - name: Publier le journal de build (toujours)
+      - name: Publier les erreurs si échec (branche _cierrors)
+        if: failure()
+        run: |
+          {
+            echo "Build échoué — $(date -u)"
+            echo "===================== ERREURS ====================="
+            grep -nE "error:|\.java:[0-9]+:|BUILD FAILED|FAILURE:|What went wrong|Caused by:|> Task .*FAILED" build_output.txt || echo "(aucun motif d'erreur reconnu — voir le journal ci-dessous)"
+            echo ""
+            echo "================= 250 DERNIÈRES LIGNES ============="
+            tail -n 250 build_output.txt
+          } > _build_errors.txt
+          git config user.name "reivax-ci-bot"
+          git config user.email "ci@reivax.local"
+          git checkout --orphan _cierrors
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          git add -f _build_errors.txt
+          git commit -m "CI errors [skip ci]"
+          git push -f origin _cierrors
+
+      - name: Publier le journal complet (toujours)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -52,7 +58,8 @@ jobs:
           path: build_output.txt
           if-no-files-found: warn
 
-      - name: Publier le fichier du mod (.jar)
+      - name: Publier le fichier du mod (.jar) si succès
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: ReivaxMC-Progress-mod
