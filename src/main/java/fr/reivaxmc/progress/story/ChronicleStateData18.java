@@ -25,7 +25,7 @@ public final class ChronicleStateData18 extends SavedData {
    public static ChronicleStateData18 get(MinecraftServer var0) {
       return (ChronicleStateData18)var0.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(ChronicleStateData18::create, ChronicleStateData18::load, null), "reivaxmc_chronicle18");
+         .computeIfAbsent(new Factory<ChronicleStateData18>(ChronicleStateData18::create, ChronicleStateData18::load, null), "reivaxmc_chronicle18");
    }
 
    public static ChronicleStateData18 getForServer(Object var0) {

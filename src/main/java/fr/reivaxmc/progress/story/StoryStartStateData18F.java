@@ -33,7 +33,7 @@ public final class StoryStartStateData18F extends SavedData {
    public static StoryStartStateData18F get(MinecraftServer var0) {
       return (StoryStartStateData18F)var0.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(StoryStartStateData18F::create, StoryStartStateData18F::load, null), "reivaxmc_story_start18f");
+         .computeIfAbsent(new Factory<StoryStartStateData18F>(StoryStartStateData18F::create, StoryStartStateData18F::load, null), "reivaxmc_story_start18f");
    }
 
    public static StoryStartStateData18F getForServer(Object var0) {

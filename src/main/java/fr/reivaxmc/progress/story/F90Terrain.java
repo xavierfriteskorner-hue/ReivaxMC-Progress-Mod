@@ -78,7 +78,7 @@ public final class F90Terrain {
       int var5 = (int)Math.round(Math.hypot((double)var3 - (double)var1, (double)var4 - (double)var2));
       if (var5 >= 2000 && var5 <= 4000) {
          int[][] var6 = new int[][]{{0, 0}, {-4, 0}, {4, 0}, {0, 4}, {0, -4}};
-         ArrayList var7 = new ArrayList();
+         ArrayList<Integer> var7 = new ArrayList<>();
 
          for (int[] var11 : var6) {
             int var12 = var3 + var11[0];

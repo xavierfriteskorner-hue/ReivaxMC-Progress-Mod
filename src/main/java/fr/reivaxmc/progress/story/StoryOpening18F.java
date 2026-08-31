@@ -42,7 +42,7 @@ public final class StoryOpening18F {
             return;
          }
 
-         List var4 = participants(var1, var0);
+         List<ServerPlayer> var4 = participants(var1, var0);
          List var5 = var1.getPlayerList().getPlayers();
          if (var5.size() >= 2 && var4.size() < 2) {
             message(var0, "§6REIVAX §7— rapprochez-vous de Laeriss (moins de 32 blocs) avant de commencer l'histoire.", false);

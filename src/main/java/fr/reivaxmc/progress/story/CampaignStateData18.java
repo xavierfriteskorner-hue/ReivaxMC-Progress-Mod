@@ -52,7 +52,7 @@ public final class CampaignStateData18 extends SavedData {
    public static CampaignStateData18 get(MinecraftServer var0) {
       return (CampaignStateData18)var0.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(CampaignStateData18::create, CampaignStateData18::load, null), "reivaxmc_campaign18");
+         .computeIfAbsent(new Factory<CampaignStateData18>(CampaignStateData18::create, CampaignStateData18::load, null), "reivaxmc_campaign18");
    }
 
    public static CampaignStateData18 getForServer(Object var0) {

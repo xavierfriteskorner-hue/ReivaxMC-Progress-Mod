@@ -166,7 +166,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void paragraph(GuiGraphics var1, String var2, int var3, int var4, int var5) {
-      List var6 = this.font.split(Component.literal(var2), var5);
+      List<FormattedCharSequence> var6 = this.font.split(Component.literal(var2), var5);
       int var7 = var4;
 
       for (FormattedCharSequence var9 : var6) {

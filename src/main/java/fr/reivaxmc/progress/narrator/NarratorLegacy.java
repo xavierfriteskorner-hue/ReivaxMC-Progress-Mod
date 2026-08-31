@@ -115,7 +115,7 @@ public final class NarratorLegacy {
          }
 
          NarratorLegacy.PlayerState var2 = ensurePlayer(var0);
-         Map var3 = inventoryCounts(var0);
+         Map<String, Integer> var3 = inventoryCounts(var0);
          if (!var2.inventoryInitialized) {
             var2.inventoryInitialized = true;
             mirrorLegacy(var1, "first_wood", "A1-001");
@@ -124,7 +124,7 @@ public final class NarratorLegacy {
             mirrorLegacy(var1, "first_iron", "A1-009");
          }
 
-         HashSet var4 = new HashSet();
+         HashSet<String> var4 = new HashSet<>();
          var4.addAll(var3.keySet());
          var4.addAll(var2.itemCounts.keySet());
 
@@ -1037,7 +1037,7 @@ public final class NarratorLegacy {
    }
 
    private static void kvSet(Object var0, String var1, long var2) throws Exception {
-      Set var4 = doneSet(var0);
+      Set<String> var4 = doneSet(var0);
       String var5 = "__N17KV__" + var1 + "=";
       var4.removeIf(var1x -> var1x.startsWith(var5));
       var4.add(var5 + var2);
@@ -1186,7 +1186,7 @@ public final class NarratorLegacy {
    }
 
    private static Map<String, Integer> inventoryCounts(Object var0) throws Exception {
-      HashMap var1 = new HashMap();
+      HashMap<String, Integer> var1 = new HashMap<>();
       Object var2 = call(var0, "getInventory");
       int var3 = asInt(call(var2, "getContainerSize"), 0);
 
@@ -1606,7 +1606,7 @@ public final class NarratorLegacy {
          var1.lowHealthText = str(var0, "low_health_text");
          var1.otherContainerText = str(var0, "other_container_text");
          var1.longDistanceText = str(var0, "long_distance_text");
-         if (var0.get("source_variants") instanceof Map var3) {
+         if (var0.get("source_variants") instanceof Map<?, ?> var3) {
             for (Entry var5 : var3.entrySet()) {
                var1.sourceVariants.put(String.valueOf(var5.getKey()), String.valueOf(var5.getValue()));
             }

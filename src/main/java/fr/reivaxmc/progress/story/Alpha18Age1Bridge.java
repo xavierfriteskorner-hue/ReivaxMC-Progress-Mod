@@ -63,7 +63,7 @@ public final class Alpha18Age1Bridge {
          Age1BridgeStateData18 var3 = Age1BridgeStateData18.getForServer(var0);
          String var4 = String.valueOf(Alpha18Probe.invokeNoArg(var2, "stage"));
          int var5 = var3.snapshot().emitted();
-         LinkedHashMap var6 = new LinkedHashMap();
+         LinkedHashMap<String, Boolean> var6 = new LinkedHashMap<>();
          var6.put("AGE1_RESONANCE_MANIFESTED", bool(var2, "stelaPlaced"));
          var6.put("AGE1_STELA_DISCOVERED", bool(var2, "stelaDiscovered"));
          var6.put("AGE1_FRAGMENT_FOUND", bool(var2, "fragmentFound"));

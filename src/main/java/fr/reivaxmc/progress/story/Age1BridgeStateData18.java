@@ -24,7 +24,7 @@ public final class Age1BridgeStateData18 extends SavedData {
    public static Age1BridgeStateData18 get(MinecraftServer var0) {
       return (Age1BridgeStateData18)var0.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(Age1BridgeStateData18::create, Age1BridgeStateData18::load, null), "reivaxmc_age1_bridge18");
+         .computeIfAbsent(new Factory<Age1BridgeStateData18>(Age1BridgeStateData18::create, Age1BridgeStateData18::load, null), "reivaxmc_age1_bridge18");
    }
 
    public static Age1BridgeStateData18 getForServer(Object var0) {

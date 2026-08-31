@@ -72,7 +72,7 @@ public final class CampaignSavedData extends SavedData {
    public static CampaignSavedData get(MinecraftServer s) {
       return (CampaignSavedData)s.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(CampaignSavedData::create, CampaignSavedData::load, null), "reivaxmc_campaign");
+         .computeIfAbsent(new Factory<CampaignSavedData>(CampaignSavedData::create, CampaignSavedData::load, null), "reivaxmc_campaign");
    }
 
    public static CampaignSavedData load(CompoundTag t, Provider p) {

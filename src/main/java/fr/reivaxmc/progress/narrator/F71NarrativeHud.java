@@ -166,7 +166,7 @@ public final class F71NarrativeHud {
       int var9 = Math.max(320, var3 - 48);
       int var10 = var9 - 24 - var8 - 16;
       boolean var11 = fontWidth(var1, var2) <= var10;
-      List var12 = var11 ? List.of(var2) : wrapText(var1, var2, var9 - 24);
+      List<String> var12 = var11 ? List.of(var2) : wrapText(var1, var2, var9 - 24);
       int var13 = var11 ? 30 : 30 + Math.max(1, var12.size()) * 13;
       int var14;
       if (var11) {

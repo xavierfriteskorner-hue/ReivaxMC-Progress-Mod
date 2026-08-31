@@ -25,7 +25,7 @@ public final class ArchiveStateData18 extends SavedData {
    public static ArchiveStateData18 get(MinecraftServer var0) {
       return (ArchiveStateData18)var0.overworld()
          .getDataStorage()
-         .computeIfAbsent(new Factory(ArchiveStateData18::create, ArchiveStateData18::load, null), "reivaxmc_archives18");
+         .computeIfAbsent(new Factory<ArchiveStateData18>(ArchiveStateData18::create, ArchiveStateData18::load, null), "reivaxmc_archives18");
    }
 
    public static ArchiveStateData18 getForServer(Object var0) {
