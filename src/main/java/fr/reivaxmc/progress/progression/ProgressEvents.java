@@ -18,6 +18,7 @@ import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent.Post;
 
 public final class ProgressEvents {
+   private static long debugPlayerTicks = 0L;
    @SubscribeEvent
    public void login(PlayerLoggedInEvent var1) {
       F81DevTools.onLogin(var1);
@@ -42,6 +43,10 @@ public final class ProgressEvents {
 
    @SubscribeEvent
    public void playerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post var1) {
+      debugPlayerTicks++;
+      if (debugPlayerTicks == 1L || debugPlayerTicks % 200L == 0L) {
+         System.out.println("[REIVAX EVENT DEBUG] ProgressEvents PlayerTick reçu #" + debugPlayerTicks);
+      }
       NarratorEngine.onPlayerTick(var1);
    }
 
