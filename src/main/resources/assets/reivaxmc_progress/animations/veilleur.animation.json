@@ -1,6 +1,15 @@
 {
   "format_version": "1.8.0",
   "animations": {
-    "animation.veilleur.idle": { "loop": true, "animation_length": 2.0, "bones": {} }
+    "animation.veilleur.idle": { "loop": true, "animation_length": 2.0, "bones": {} },
+    "animation.veilleur.walk": {
+      "loop": true, "animation_length": 1.0,
+      "bones": {
+        "legL": { "rotation": { "0.0": [0,0,0], "0.25": [-22,0,0], "0.5": [0,0,0], "0.75": [22,0,0], "1.0": [0,0,0] } },
+        "legR": { "rotation": { "0.0": [0,0,0], "0.25": [22,0,0], "0.5": [0,0,0], "0.75": [-22,0,0], "1.0": [0,0,0] } },
+        "armL": { "rotation": { "0.0": [0,0,0], "0.25": [16,0,0], "0.5": [0,0,0], "0.75": [-16,0,0], "1.0": [0,0,0] } },
+        "armR": { "rotation": { "0.0": [0,0,0], "0.25": [-16,0,0], "0.5": [0,0,0], "0.75": [16,0,0], "1.0": [0,0,0] } }
+      }
+    }
   }
 }

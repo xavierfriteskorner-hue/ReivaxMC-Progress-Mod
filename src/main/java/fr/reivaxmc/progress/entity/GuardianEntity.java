@@ -24,10 +24,12 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public abstract class GuardianEntity extends Monster implements GeoEntity {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final RawAnimation idle;
+   private final RawAnimation walk;
 
    protected GuardianEntity(EntityType<? extends GuardianEntity> type, Level level) {
       super(type, level);
       this.idle = RawAnimation.begin().thenLoop("animation." + this.geoName() + ".idle");
+      this.walk = RawAnimation.begin().thenLoop("animation." + this.geoName() + ".walk");
       this.setPersistenceRequired();
    }
 
@@ -46,7 +48,13 @@ public abstract class GuardianEntity extends Monster implements GeoEntity {
 
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add(new AnimationController<>(this, "idle", 5, state -> state.setAndContinue(this.idle)));
+      controllers.add(new AnimationController<>(this, "main", 5, state -> {
+         if (state.isMoving()) {
+            return state.setAndContinue(this.walk);
+         }
+
+         return state.setAndContinue(this.idle);
+      }));
    }
 
    @Override

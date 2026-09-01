@@ -27,8 +27,8 @@
           "name": "legL",
           "parent": "root",
           "pivot": [
-            -2,
-            16,
+            -4.0,
+            20,
             0
           ],
           "cubes": [
@@ -54,8 +54,8 @@
           "name": "legR",
           "parent": "root",
           "pivot": [
-            2,
-            16,
+            4.0,
+            20,
             0
           ],
           "cubes": [
@@ -82,7 +82,7 @@
           "parent": "root",
           "pivot": [
             0,
-            16,
+            20,
             0
           ],
           "cubes": [
@@ -109,7 +109,7 @@
           "parent": "root",
           "pivot": [
             0,
-            20,
+            24,
             0
           ],
           "cubes": [
@@ -199,8 +199,8 @@
           "name": "armL",
           "parent": "root",
           "pivot": [
-            -5,
-            34,
+            -13.0,
+            46,
             0
           ],
           "cubes": [
@@ -242,8 +242,8 @@
           "name": "armR",
           "parent": "root",
           "pivot": [
-            5,
-            34,
+            13.0,
+            46,
             0
           ],
           "cubes": [
@@ -286,7 +286,7 @@
           "parent": "root",
           "pivot": [
             0,
-            40,
+            44,
             0
           ],
           "cubes": [
