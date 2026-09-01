@@ -46,27 +46,57 @@ public final class F90Sanctuary {
       }
    }
 
+   // Stèle = GROS POTEAU de pierre très noire, avec un CREUX au milieu où l'on voit le disque (Sceau)
+   // enchâssé -> on comprend qu'il faut y déposer le Sceau. var5 = true quand le Sceau est en place (lueur).
    private static void buildReceptacle(Object var0, int var1, int var2, int var3, int var4, boolean var5) throws Exception {
-      int var6 = var1 + var4 * 7;
-      int var7 = var3 + 28;
-      Object var8 = F8SanctuaryEngine.sanctuaryStoneBlock();
-      Object var9 = F8SanctuaryEngine.originMatrixBlock();
-      Object var10 = F8SanctuaryEngine.sanctuaryLumenBlock();
-      Object var11 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "POLISHED_DEEPSLATE");
-      Object var12 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "CHISELED_DEEPSLATE");
+      int var6 = var1 + var4 * 7; // x du poteau (de part et d'autre de l'entrée)
+      int var7 = var3 + 28;       // z ; la face avant (vers +z) regarde le joueur
+      Object var8 = F8SanctuaryEngine.originMatrixBlock();   // le Sceau/disque, au fond du creux
+      Object var9 = F8SanctuaryEngine.sanctuaryLumenBlock(); // lueur quand enchâssé
+      Object var10 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "POLISHED_BLACKSTONE");
+      Object var11 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "POLISHED_BLACKSTONE_BRICKS");
+      Object var12 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "CHISELED_POLISHED_BLACKSTONE");
+      Object var13 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "POLISHED_DEEPSLATE");
 
-      for (int var13 = -1; var13 <= 1; var13++) {
-         for (int var14 = -1; var14 <= 1; var14++) {
-            F8SanctuaryEngine.setBlock(var0, var6 + var13, var2, var7 + var14, var11);
+      // Socle 3x3
+      for (int var14 = -1; var14 <= 1; var14++) {
+         for (int var15 = -1; var15 <= 1; var15++) {
+            F8SanctuaryEngine.setBlock(var0, var6 + var14, var2, var7 + var15, var13);
          }
       }
 
-      F8SanctuaryEngine.setBlock(var0, var6, var2 + 1, var7, var9);
-      F8SanctuaryEngine.setBlock(var0, var6 - var4, var2 + 1, var7 - 1, var12);
-      F8SanctuaryEngine.setBlock(var0, var6 + var4, var2 + 1, var7 - 1, var12);
-      F8SanctuaryEngine.setBlock(var0, var6 - var4, var2 + 2, var7 - 1, var5 ? var10 : var8);
-      F8SanctuaryEngine.setBlock(var0, var6 + var4, var2 + 2, var7 - 1, var5 ? var10 : var8);
-      F8SanctuaryEngine.setBlock(var0, var6, var2 + 3, var7 - 1, var5 ? var10 : var12);
+      // Corps du poteau : mur du fond (z-1) massif, 3 large x 5 haut
+      for (int var16 = -1; var16 <= 1; var16++) {
+         for (int var17 = 1; var17 <= 5; var17++) {
+            F8SanctuaryEngine.setBlock(var0, var6 + var16, var2 + var17, var7 - 1, var11);
+         }
+      }
+
+      // Cadre avant (z) : colonnes latérales, base et linteau (le centre reste OUVERT = le creux)
+      for (int var18 = 1; var18 <= 5; var18++) {
+         F8SanctuaryEngine.setBlock(var0, var6 - 1, var2 + var18, var7, var10);
+         F8SanctuaryEngine.setBlock(var0, var6 + 1, var2 + var18, var7, var10);
+      }
+
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 1, var7, var10);
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 4, var7, var12);
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 5, var7, var12);
+
+      // Chapiteau
+      for (int var19 = -1; var19 <= 1; var19++) {
+         F8SanctuaryEngine.setBlock(var0, var6 + var19, var2 + 6, var7 - 1, var12);
+         F8SanctuaryEngine.setBlock(var0, var6 + var19, var2 + 6, var7, var12);
+      }
+
+      // LE CREUX : ouverture (air) à hauteur des yeux sur la face avant, et le DISQUE (Sceau) enchâssé
+      // au fond -> on voit clairement le disque posé dans un trou creusé dans la roche noire.
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 2, var7, "AIR");
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 3, var7, "AIR");
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 2, var7 - 1, var8);
+      F8SanctuaryEngine.setBlock(var0, var6, var2 + 3, var7 - 1, var5 ? var9 : var12);
+      if (var5) {
+         F8SanctuaryEngine.setBlock(var0, var6, var2 + 1, var7 - 1, var9);
+      }
    }
 
    public static int receptacleSide(Object var0, Object var1) {
