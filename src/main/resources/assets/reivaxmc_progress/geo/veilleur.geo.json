@@ -16,6 +16,14 @@
       },
       "bones": [
         {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
           "name": "legL",
           "parent": "root",
           "pivot": [
