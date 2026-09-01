@@ -118,6 +118,12 @@ public final class F71NarrativeHud {
                   hintAt = var4 > 0L ? var4 : utilMillis();
                   break;
                case "NARRATOR_WHISPER":
+               case "NARRATOR_ACHIEVEMENT":
+                  // Pilot achievements use NARRATOR_ACHIEVEMENT, while the validated
+                  // voice renderer historically only listened to NARRATOR_WHISPER.
+                  // Both are interventions from the Voice and must reach the same
+                  // narrator cartouche; the title/score remain available in campaign data.
+                  System.out.println("[REIVAX EVENT DEBUG] HUD VOIX reçoit " + var1 + " kind=" + var2);
                   voice = F81ClientState.qaMask() ? "VOIX · Dialogue narratif déclenché ✓" : cleanHudText(var3);
                   voiceAt = var4 > 0L ? var4 : utilMillis();
                   break;

@@ -136,15 +136,6 @@ public final class NarratorLegacy {
             debugInventorySeen = true;
             System.out.println("[REIVAX EVENT DEBUG] inventoryScan atteint; catalogue=" + CATALOG.size() + "; items=" + var3.size());
          }
-         int dbgWood = 0;
-         for (Map.Entry<String, Integer> dbgEntry : var3.entrySet()) {
-            if (isWood(dbgEntry.getKey())) dbgWood += dbgEntry.getValue();
-         }
-         int dbgStone = var3.getOrDefault("minecraft:stone", 0) + var3.getOrDefault("minecraft:cobblestone", 0);
-         int dbgCoal = var3.getOrDefault("minecraft:coal", 0) + var3.getOrDefault("minecraft:charcoal", 0);
-         if (dbgWood > 0 || dbgStone > 0 || dbgCoal > 0) {
-            System.out.println("[REIVAX EVENT DEBUG] inventaire cible: bois=" + dbgWood + " pierre=" + dbgStone + " charbon=" + dbgCoal);
-         }
          if (!var2.inventoryInitialized) {
             var2.inventoryInitialized = true;
             mirrorLegacy(var1, "first_wood", "A1-001");
@@ -760,6 +751,14 @@ public final class NarratorLegacy {
          Object var7 = campaignData(var6);
          if (var6 == null || var7 == null) {
             System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": serveur ou CampaignSavedData introuvable");
+            return;
+         }
+
+         // Gameplay narrator achievements only exist once the player has actually
+         // entered the story. We still scan inventory before that point so items
+         // collected on the start screen are remembered and do not replay later.
+         if (var1.startsWith("A1-") && !asBool(callQuiet(var7, "introCompleted")) && !"STORY".equals(var2)) {
+            System.out.println("[REIVAX EVENT DEBUG] IGNORE " + var1 + ": histoire non commencée");
             return;
          }
 
