@@ -30,6 +30,10 @@ public final class F90SealGate {
                      if (!F8SanctuaryEngine.completed(var5, "F8_SANCTUARY_DISCOVERED")) {
                         msg(var1, "§6RÉCEPTACLE §8· §fLe dispositif reste inerte.");
                         return true;
+                     } else if (!F8SanctuaryEngine.frontCleared(var5)) {
+                        // Obligatoire : tuer les 2 Veilleurs de l'entrée avant de pouvoir insérer les Sceaux.
+                        msg(var1, "§6RÉCEPTACLE §8· §fLes 2 Veilleurs de l'entrée gardent encore les stèles · neutralisez-les d'abord.");
+                        return true;
                      } else {
                         String var6 = var4 < 0 ? "F90_LEFT_SEAL" : "F90_RIGHT_SEAL";
                         if (F8SanctuaryEngine.completed(var5, var6)) {

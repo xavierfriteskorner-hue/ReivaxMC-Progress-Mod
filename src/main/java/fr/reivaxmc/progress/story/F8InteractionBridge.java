@@ -136,6 +136,11 @@ public final class F8InteractionBridge {
                      return;
                   }
 
+                  if (!F8SanctuaryEngine.frontCleared(var8)) {
+                     message(var17, "§6STÈLE §8• §fLes 2 Veilleurs de l'entrée gardent encore les stèles · neutralisez-les d'abord.");
+                     return;
+                  }
+
                   if (F8SanctuaryEngine.completed(var8, "F84_SEAL_INSERTED")) {
                      message(var17, "§6STÈLE §8• §fLe Sceau est déjà enchâssé dans la Stèle.");
                      return;

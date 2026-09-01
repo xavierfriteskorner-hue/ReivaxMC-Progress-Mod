@@ -32,11 +32,17 @@ public final class F8SanctuaryEngine {
    static final String[] TAG_WATCHERS = {
       "reivax_f83_w1", "reivax_f83_w2", "reivax_f83_w3", "reivax_f83_w4", "reivax_f83_w5", "reivax_f83_w6"
    };
-   // Offsets [dx, dz] autour du centre du Sanctuaire (entrée = +z, chambre = -z).
-   // 2 devant l'entrée + 4 qui patrouillent l'approche/les flancs.
+   // Rôles des 6 Veilleurs (offsets [dx, dz] depuis le centre ; entrée = +z, chambre = -z).
+   // Portes physiques : seuil/Porte 1 = z+22 ; extérieure/Porte 2 = z+7 ; chambre = z-7.
+   //   w1,w2 = DEVANT la Porte 1 (extérieur, z+25) -> à tuer + 2 Sceaux pour ouvrir la Porte 1.
+   //   w3,w4 = dans le HALL (entre Porte 1 et Porte 2, z+14) -> à tuer pour ouvrir la Porte 2.
+   //   w5,w6 = RÔDEURS du périmètre proche (z+26, plus larges) -> OPTIONNELS, ne bloquent rien.
    static final int[][] WATCHER_OFFSETS = {
-      {-5, 14}, {5, 14}, {-11, 22}, {11, 22}, {-15, 3}, {15, 3}
+      {-4, 25}, {4, 25}, {-4, 14}, {4, 14}, {-16, 17}, {16, 17}
    };
+   // Indices des Veilleurs par rôle
+   static final int[] W_FRONT = {0, 1};
+   static final int[] W_HALL = {2, 3};
    static final String K_VOICE_FOUNDATION_1 = "F8_VOICE_FOUNDATION_1";
    static final String K_VOICE_FOUNDATION_2 = "F8_VOICE_FOUNDATION_2";
    static final String K_BEACON_RECOVERED = "F8_FOUNDATION_BEACON_RECOVERED";
@@ -185,88 +191,60 @@ public final class F8SanctuaryEngine {
             }
 
             clearGuidance(var1);
-            // Les Veilleurs détectent les joueurs à l'approche du Sanctuaire et passent en offensif,
-            // même avant l'insertion des Sceaux (postes de garde du périmètre).
-            if (!completed(var5, "F8_GUARDS_AWAKENED") && nearestDistance(var1, var7[0], var7[1] + 1, var7[2] + 14) <= 26.0) {
+            // Réveil de TOUS les Veilleurs à l'approche (~30 blocs de la Porte 1). Les 2 du hall (w3,w4)
+            // restent derrière la Porte 1 tant qu'elle n'est pas ouverte ; les rôdeurs (w5,w6) aggro autour.
+            if (!completed(var5, "F8_GUARDS_AWAKENED") && nearestDistance(var1, var7[0], var7[1] + 1, var7[2] + 22) <= 30.0) {
                activateProtectorGroup(var0, var7, false, var1.size());
                complete(var5, "F8_GUARDS_AWAKENED");
                chronicleOnce(
                   var0,
                   "Les Veilleurs du Sanctuaire",
-                  "Tout autour du Sanctuaire, des silhouettes jusque-là immobiles se sont éveillées d'un coup. Elles semblaient exister pour une seule fonction : empêcher quiconque d'approcher.",
+                  "Autour de l'entrée, des silhouettes jusque-là immobiles se sont éveillées d'un coup. Elles semblaient exister pour empêcher quiconque d'approcher.",
                   "Le Sanctuaire"
                );
-               history(var1, "§6VEILLEURS §8• §fLes Veilleurs du Sanctuaire viennent de s'éveiller · " + WATCHER_COUNT + " sentinelles.");
-               playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 3, var7[2] + 13, 1.8, 0.78);
+               history(var1, "§6VEILLEURS §8• §fLes Veilleurs du Sanctuaire viennent de s'éveiller.");
+               playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 3, var7[2] + 22, 1.8, 0.78);
+            } else if (completed(var5, "F8_GUARDS_AWAKENED")) {
+               activateProtectorGroup(var0, var7, false, var1.size());
+            }
+
+            // ===== PORTE 1 : tuer les 2 Veilleurs devant l'entrée, PUIS insérer les 2 Sceaux =====
+            if (!frontCleared(var5)) {
+               objective(var1, "Neutralisez les 2 Veilleurs qui gardent l'entrée · " + frontDefeated(var5) + "/2.");
+               return;
             }
 
             if (!completed(var5, "F84_SEAL_INSERTED")) {
                int[] var17 = sealStelePos(var7);
-               double var18 = nearestDistance(var1, var17[0], var17[1], var17[2]);
-               if (var18 > 14.0) {
-                  objective(var1, "Deux Réceptacles des Sceaux encadrent l'entrée du Sanctuaire. Approchez-vous de l'une des deux bornes.");
+               if (nearestDistance(var1, var17[0], var17[1], var17[2]) > 14.0) {
+                  objective(var1, "Les gardes de l'entrée sont tombés · approchez-vous des 2 stèles qui encadrent le seuil.");
                } else {
-                  objective(var1, "Insérez un Sceau dans chaque Réceptacle — tenez un Sceau des Origines en main puis faites CLIC DROIT sur la borne.");
+                  objective(var1, "Insérez un Sceau dans chacune des 2 stèles · tenez un Sceau en main puis CLIC DROIT sur la stèle.");
                }
 
                return;
             }
 
             openThresholdGate(var0, var7);
-            if (!completed(var5, "F8_GUARDS_AWAKENED")) {
-               int var10 = countNear(var1, var7[0], var7[1] + 1, var7[2] + 16, 38.0);
-               if (var10 < var1.size()) {
-                  objective(var1, "Regroupez-vous devant le Sanctuaire · " + var10 + "/" + var1.size() + " présents.");
-                  return;
-               }
-
-               if (var8 > 22.0) {
-                  objective(var1, "Franchissez le seuil du Sanctuaire · avancez dans le hall d'entrée.");
-                  return;
-               }
-
-               activateProtectorGroup(var0, var7, false, var1.size());
-               complete(var5, "F8_GUARDS_AWAKENED");
+            if (!completed(var5, "F8_GUARDS_CLEARED")) {
+               complete(var5, "F8_GUARDS_CLEARED");
                chronicleOnce(
                   var0,
-                  "Les Veilleurs du Sanctuaire",
-                  "Tout autour du Sanctuaire, des silhouettes jusque-là immobiles se sont éveillées d'un coup. Elles semblaient exister pour une seule fonction : empêcher quiconque d'approcher.",
-                  "Le Sanctuaire"
+                  "La première porte",
+                  "Les gardes de l'entrée neutralisés et les deux Sceaux enchâssés, la première porte du Sanctuaire s'est ouverte sur un hall.",
+                  "Vous"
                );
-               history(var1, "§6VEILLEURS §8• §fLes Veilleurs du Sanctuaire viennent de s'éveiller · " + WATCHER_COUNT + " sentinelles.");
-               playSanctuarySound(var0, "protector_awaken", var7[0], var7[1] + 3, var7[2] + 13, 1.8, 0.78);
-            } else {
-               activateProtectorGroup(var0, var7, false, var1.size());
+               history(var1, "§6SANCTUAIRE §8• §fLa première porte s'est ouverte.");
+               playSanctuarySound(var0, "sanctuary_gate", var7[0], var7[1] + 3, var7[2] + 22, 1.4, 0.92);
             }
 
-            if (completed(var5, "F8_GUARDS_AWAKENED") && !completed(var5, "F8_GUARDS_CLEARED")) {
-               var6.presenceSoundTicks += 5L;
-               if (var6.presenceSoundTicks >= 95L) {
-                  var6.presenceSoundTicks = 0L;
-                  playSanctuarySound(var0, "protector_presence", var7[0], var7[1] + 3, var7[2] + 13, 0.9, 0.86);
-               }
-            }
-
-            int var16 = watchersDefeated(var5);
-            if (var16 < WATCHER_COUNT) {
-               objective(var1, "Neutralisez les Veilleurs du Sanctuaire · " + var16 + "/" + WATCHER_COUNT + ".");
+            // ===== PORTE 2 : tuer les 2 Veilleurs du hall d'entrée =====
+            if (!hallCleared(var5)) {
+               objective(var1, "Franchissez la porte et neutralisez les 2 Veilleurs du hall · " + hallDefeated(var5) + "/2.");
                return;
             }
 
-            if (!completed(var5, "F8_GUARDS_CLEARED")) {
-               complete(var5, "F8_GUARDS_CLEARED");
-               openOuterGate(var0, var7);
-               chronicleOnce(
-                  var0,
-                  "Le passage intérieur",
-                  "Les Veilleurs neutralisés, la grille du hall s'est libérée. Un passage plus sombre mène vers une seconde porte, entièrement fermée.",
-                  "Vous"
-               );
-               history(var1, "§6SANCTUAIRE §8• §fLa grille du hall s'est ouverte.");
-               playSanctuarySound(var0, "sanctuary_gate", var7[0], var7[1] + 3, var7[2] + 6, 1.4, 0.92);
-            } else {
-               openOuterGate(var0, var7);
-            }
+            openOuterGate(var0, var7);
 
             double var11 = nearestDistance(var1, var7[0], var7[1] + 2, var7[2] - 7);
             if (!completed(var5, "F82_FOUNDATION_GUARDS_AWAKENED")) {
@@ -479,14 +457,8 @@ public final class F8SanctuaryEngine {
             } catch (Throwable var10) {
             }
          } else {
-            int var12 = watchersDefeated(var3);
-            history(var6, "§6VEILLEURS §8• §fVeilleur du Sanctuaire neutralisé · " + var12 + "/" + WATCHER_COUNT + ".");
-            objective(
-               var6,
-               var12 < WATCHER_COUNT
-                  ? "Neutralisez les Veilleurs du Sanctuaire · " + var12 + "/" + WATCHER_COUNT + "."
-                  : "Avancez vers la chambre intérieure · le passage vient de s'ouvrir."
-            );
+            // Le tick() pilote les objectifs (Porte 1 / Porte 2 / rôdeurs) selon les rôles ; ici juste l'écho.
+            history(var6, "§6VEILLEURS §8• §fUn Veilleur du Sanctuaire est tombé.");
 
             try {
                int[] var13 = target(var0);
@@ -516,6 +488,23 @@ public final class F8SanctuaryEngine {
       }
 
       return var1;
+   }
+
+   // Comptages par rôle (voir WATCHER_OFFSETS / W_FRONT / W_HALL).
+   static int frontDefeated(Object var0) throws Exception {
+      return (completed(var0, K_WATCHERS[W_FRONT[0]]) ? 1 : 0) + (completed(var0, K_WATCHERS[W_FRONT[1]]) ? 1 : 0);
+   }
+
+   static boolean frontCleared(Object var0) throws Exception {
+      return frontDefeated(var0) >= 2;
+   }
+
+   static int hallDefeated(Object var0) throws Exception {
+      return (completed(var0, K_WATCHERS[W_HALL[0]]) ? 1 : 0) + (completed(var0, K_WATCHERS[W_HALL[1]]) ? 1 : 0);
+   }
+
+   static boolean hallCleared(Object var0) throws Exception {
+      return hallDefeated(var0) >= 2;
    }
 
    static void complete(Object var0, String var1) throws Exception {
