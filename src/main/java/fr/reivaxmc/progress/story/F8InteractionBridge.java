@@ -226,6 +226,13 @@ public final class F8InteractionBridge {
 
                if (F8SanctuaryEngine.boolInvoke(var8, "foundationPlaced") && !F8SanctuaryEngine.isSanctuaryBeaconPos(var4, var5)) {
                   cancel(var0);
+                  if (F8SanctuaryEngine.boolInvoke(var17, "isShiftKeyDown")) {
+                     // Shift + clic droit sur la Borne posée = déménager le Foyer.
+                     // Ouvre l'écran de confirmation (maintien 2 s) : abandon -> Borne rendue + Stèle commémorative.
+                     F8SanctuaryEngine.callStatic("fr.reivaxmc.progress.network.ProgressNetworking", "openTransfer", var17, var5);
+                     return;
+                  }
+
                   Object var18 = F8SanctuaryEngine.invokeNoArg(var8, "foundationPos");
                   String var10 = String.valueOf(F8SanctuaryEngine.invokeNoArg(var8, "foundationName"));
                   int var11 = F8SanctuaryEngine.number(F8SanctuaryEngine.invokeNoArg(var8, "territoryRadius")).intValue();

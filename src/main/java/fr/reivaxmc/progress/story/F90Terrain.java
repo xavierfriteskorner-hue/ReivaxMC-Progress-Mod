@@ -100,7 +100,10 @@ public final class F90Terrain {
          int var16 = Collections.min(var7);
          int var17 = Collections.max(var7);
          int var18 = var17 - var16;
-         if (var18 > 16) {
+         // Dénivelé au seuil : on autorise désormais un terrain accidenté (jusqu'à 30) pour permettre
+         // au Sanctuaire de s'ENCASTRER dans une montagne. L'entrée reste taillée accessible par
+         // prepareNaturalEntrance (parvis + tunnel d'accès dégagé). Au-delà = falaise, on rejette.
+         if (var18 > 30) {
             return null;
          } else {
             Collections.sort(var7);
@@ -155,15 +158,37 @@ public final class F90Terrain {
       int var3 = var1.entranceZ;
       int var4 = var1.floorY;
 
+      // Parvis du seuil : dalle stable, comblée sur 4 blocs en dessous (évite le parvis flottant en
+      // terrain accidenté / montagne) et dégagée sur 6 blocs au-dessus.
       for (int var5 = -5; var5 <= 5; var5++) {
          for (int var6 = -3; var6 <= 7; var6++) {
             int var7 = var2 + var5;
             int var8 = var3 + var6;
             F8SanctuaryEngine.setBlock(var0, var7, var4, var8, (Math.abs(var5) + Math.abs(var6)) % 5 == 0 ? "CHISELED_DEEPSLATE" : "POLISHED_DEEPSLATE");
-            F8SanctuaryEngine.setBlock(var0, var7, var4 - 1, var8, "COBBLED_DEEPSLATE");
 
-            for (int var9 = 1; var9 <= 5; var9++) {
-               F8SanctuaryEngine.setBlock(var0, var7, var4 + var9, var8, "AIR");
+            for (int var9 = 1; var9 <= 4; var9++) {
+               F8SanctuaryEngine.setBlock(var0, var7, var4 - var9, var8, "COBBLED_DEEPSLATE");
+            }
+
+            for (int var10 = 1; var10 <= 6; var10++) {
+               F8SanctuaryEngine.setBlock(var0, var7, var4 + var10, var8, "AIR");
+            }
+         }
+      }
+
+      // Couloir d'accès taillé vers l'extérieur (+z, côté approche des joueurs) : garantit une entrée
+      // PRATICABLE même quand le corps du Sanctuaire est encastré dans une montagne — sol + murs +
+      // plafond dégagé sur 5 blocs, comme un tunnel percé dans le relief.
+      for (int var11 = 8; var11 <= 18; var11++) {
+         int var12 = var3 + var11;
+
+         for (int var13 = -3; var13 <= 3; var13++) {
+            int var14 = var2 + var13;
+            F8SanctuaryEngine.setBlock(var0, var14, var4, var12, Math.abs(var13) == 3 ? "COBBLED_DEEPSLATE" : "POLISHED_DEEPSLATE");
+            F8SanctuaryEngine.setBlock(var0, var14, var4 - 1, var12, "COBBLED_DEEPSLATE");
+
+            for (int var15 = 1; var15 <= 5; var15++) {
+               F8SanctuaryEngine.setBlock(var0, var14, var4 + var15, var12, "AIR");
             }
          }
       }

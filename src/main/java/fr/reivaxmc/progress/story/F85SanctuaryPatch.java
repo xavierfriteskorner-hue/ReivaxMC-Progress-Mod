@@ -72,6 +72,12 @@ public final class F85SanctuaryPatch {
             if (F8SanctuaryEngine.boolInvoke(var5, "foundationPlaced")) {
                Object var6 = safeNoArg(var5, "foundationPos");
                if (var6 != null && samePos(var6, var1)) {
+                  if (F8SanctuaryEngine.boolInvoke(var2, "isShiftKeyDown")) {
+                     // Shift + clic droit = déménager le Foyer (écran de confirmation maintien 2 s).
+                     F8SanctuaryEngine.callStatic("fr.reivaxmc.progress.network.ProgressNetworking", "openTransfer", var2, var1);
+                     return true;
+                  }
+
                   openFoyerPanel(var2, var5, var6);
                   return true;
                }
