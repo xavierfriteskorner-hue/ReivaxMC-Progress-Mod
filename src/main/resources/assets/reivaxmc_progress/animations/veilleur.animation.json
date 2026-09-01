@@ -1,0 +1,6 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.veilleur.idle": { "loop": true, "animation_length": 2.0, "bones": {} }
+  }
+}

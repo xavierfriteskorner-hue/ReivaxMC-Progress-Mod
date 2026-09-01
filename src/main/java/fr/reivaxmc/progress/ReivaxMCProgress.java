@@ -5,9 +5,15 @@ import fr.reivaxmc.progress.block.FragmentAltarBlock;
 import fr.reivaxmc.progress.block.MemorialPlaqueBlock;
 import fr.reivaxmc.progress.block.OriginMatrixBlock;
 import fr.reivaxmc.progress.block.OriginReliquaryBlock;
+import fr.reivaxmc.progress.entity.ProtecteurEntity;
+import fr.reivaxmc.progress.entity.VeilleurEntity;
 import fr.reivaxmc.progress.network.ProgressNetworking;
 import fr.reivaxmc.progress.progression.ProgressEvents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
@@ -36,6 +42,22 @@ public final class ReivaxMCProgress {
    public static final Blocks BLOCKS = DeferredRegister.createBlocks("reivaxmc_progress");
    public static final Items ITEMS = DeferredRegister.createItems("reivaxmc_progress");
    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "reivaxmc_progress");
+   public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, "reivaxmc_progress");
+   // --- Gardiens custom (GeckoLib) : Veilleur (fin, ~2,4 blocs) + Protecteur (massif, ~3,2 blocs) ---
+   public static final DeferredHolder<EntityType<?>, EntityType<VeilleurEntity>> VEILLEUR = ENTITIES.register(
+      "veilleur",
+      () -> EntityType.Builder.<VeilleurEntity>of(VeilleurEntity::new, MobCategory.MONSTER).sized(0.7F, 2.4F).clientTrackingRange(10).build("veilleur")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ProtecteurEntity>> PROTECTEUR = ENTITIES.register(
+      "protecteur",
+      () -> EntityType.Builder.<ProtecteurEntity>of(ProtecteurEntity::new, MobCategory.MONSTER).sized(1.4F, 3.2F).clientTrackingRange(10).build("protecteur")
+   );
+   public static final DeferredItem<Item> VEILLEUR_SPAWN_EGG = ITEMS.register(
+      "veilleur_spawn_egg", () -> new DeferredSpawnEggItem(VEILLEUR, 0x22262A, 0x5AAAEB, new net.minecraft.world.item.Item.Properties())
+   );
+   public static final DeferredItem<Item> PROTECTEUR_SPAWN_EGG = ITEMS.register(
+      "protecteur_spawn_egg", () -> new DeferredSpawnEggItem(PROTECTEUR, 0x22262A, 0xC9A84C, new net.minecraft.world.item.Item.Properties())
+   );
    public static final DeferredBlock<Block> FOUNDATION_BEACON = BLOCKS.register(
       "foundation_beacon", () -> new FoundationBeaconBlock(Properties.of().strength(4.0F, 8.0F).sound(SoundType.COPPER).noOcclusion().lightLevel(s -> 4))
    );
@@ -94,6 +116,8 @@ public final class ReivaxMCProgress {
                o.accept((ItemLike)ORIGIN_RELIQUARY_ITEM.get());
                o.accept((ItemLike)MEMORIAL_PLAQUE_ITEM.get());
                o.accept((ItemLike)FRAGMENT_ALTAR_ITEM.get());
+               o.accept((ItemLike)VEILLEUR_SPAWN_EGG.get());
+               o.accept((ItemLike)PROTECTEUR_SPAWN_EGG.get());
             })
             .build()
    );
@@ -102,7 +126,14 @@ public final class ReivaxMCProgress {
       BLOCKS.register(bus);
       ITEMS.register(bus);
       TABS.register(bus);
+      ENTITIES.register(bus);
       bus.addListener(ProgressNetworking::register);
+      bus.addListener(ReivaxMCProgress::registerEntityAttributes);
       NeoForge.EVENT_BUS.register(new ProgressEvents());
+   }
+
+   private static void registerEntityAttributes(EntityAttributeCreationEvent event) {
+      event.put(VEILLEUR.get(), VeilleurEntity.createAttributes().build());
+      event.put(PROTECTEUR.get(), ProtecteurEntity.createAttributes().build());
    }
 }

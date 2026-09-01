@@ -1,10 +1,13 @@
 package fr.reivaxmc.progress.client;
 
 import com.mojang.blaze3d.platform.InputConstants.Type;
+import fr.reivaxmc.progress.ReivaxMCProgress;
+import fr.reivaxmc.progress.client.renderer.GuardianRenderer;
 import fr.reivaxmc.progress.narrator.CompactHudHook;
 import fr.reivaxmc.progress.narrator.NarratorClientHook;
 import fr.reivaxmc.progress.network.ClientCampaignState;
 import fr.reivaxmc.progress.story.Alpha18FClientState;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -36,6 +39,12 @@ public final class ReivaxMCProgressClient {
    @SubscribeEvent
    public static void layers(RegisterGuiLayersEvent e) {
       e.registerAboveAll(ResourceLocation.fromNamespaceAndPath("reivaxmc_progress", "campaign_hud"), ReivaxMCProgressClient::hud);
+   }
+
+   @SubscribeEvent
+   public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
+      e.registerEntityRenderer(ReivaxMCProgress.VEILLEUR.get(), GuardianRenderer::new);
+      e.registerEntityRenderer(ReivaxMCProgress.PROTECTEUR.get(), GuardianRenderer::new);
    }
 
    public static boolean hasTarget() {

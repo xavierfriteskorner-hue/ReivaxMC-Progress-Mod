@@ -5,7 +5,7 @@ issueTrackerURL="https://github.com/xavierfriteskorner-hue/reivaxmc-progress/iss
 
 [[mods]]
 modId="reivaxmc_progress"
-version="0.6.0"
+version="0.7.0"
 displayName="ReivaxMC Progress"
 logoFile="logo.png"
 authors="Reivax"
@@ -26,4 +26,11 @@ modId="minecraft"
 type="required"
 versionRange="[1.21.1]"
 ordering="NONE"
+side="BOTH"
+
+[[dependencies.reivaxmc_progress]]
+modId="geckolib"
+type="required"
+versionRange="[4.7,)"
+ordering="AFTER"
 side="BOTH"

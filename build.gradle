@@ -3,11 +3,25 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.6.0'
+version = '0.7.0'
 group = 'fr.reivaxmc.progress'
 
 base {
     archivesName = 'reivaxmc_progress'
+}
+
+repositories {
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content { includeGroup 'software.bernie.geckolib' }
+    }
+}
+
+dependencies {
+    // GeckoLib : moteur d'animation pour les modèles 3D custom (Veilleur, Protecteur).
+    // À installer aussi côté joueur (mod requis) pour NeoForge 1.21.1.
+    implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.1:4.7.3'
 }
 
 // Mojang livre Java 21 avec Minecraft 1.21.1 : le mod cible donc Java 21.
