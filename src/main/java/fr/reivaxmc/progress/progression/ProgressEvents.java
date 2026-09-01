@@ -1,6 +1,7 @@
 package fr.reivaxmc.progress.progression;
 
 import fr.reivaxmc.progress.story.F81DevTools;
+import fr.reivaxmc.progress.narrator.NarratorEngine;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -20,62 +21,76 @@ public final class ProgressEvents {
    @SubscribeEvent
    public void login(PlayerLoggedInEvent var1) {
       F81DevTools.onLogin(var1);
+      NarratorEngine.onLogin(var1);
    }
 
    @SubscribeEvent
    public void rightClickBlock(RightClickBlock var1) {
       F8InteractionBridge.onRightClickBlock(var1);
+      NarratorEngine.onRightClickBlock(var1);
    }
 
    @SubscribeEvent
    public void rightClickItem(RightClickItem var1) {
+      NarratorEngine.onRightClickItem(var1);
    }
 
    @SubscribeEvent
    public void serverTick(Post var1) {
+      NarratorEngine.onServerTick(var1);
    }
 
    @SubscribeEvent
    public void playerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post var1) {
+      NarratorEngine.onPlayerTick(var1);
    }
 
    @SubscribeEvent
    public void placed(EntityPlaceEvent var1) {
       F8InteractionBridge.onPlaced(var1);
+      NarratorEngine.onBlockPlaced(var1);
    }
 
    @SubscribeEvent
    public void broken(BreakEvent var1) {
       F8InteractionBridge.onBreak(var1);
+      NarratorEngine.onBlockBroken(var1);
    }
 
    @SubscribeEvent
    public void commands(RegisterCommandsEvent var1) {
       F81DevTools.onRegisterCommands(var1);
+      NarratorEngine.onCommands(var1);
    }
 
    @SubscribeEvent
    public void narratorCrafted(ItemCraftedEvent var1) {
+      NarratorEngine.onItemCrafted(var1);
    }
 
    @SubscribeEvent
    public void narratorSmelted(ItemSmeltedEvent var1) {
+      NarratorEngine.onItemSmelted(var1);
    }
 
    @SubscribeEvent
    public void narratorLivingDeath(LivingDeathEvent var1) {
       F8InteractionBridge.onLivingDeath(var1);
+      NarratorEngine.onLivingDeath(var1);
    }
 
    @SubscribeEvent
    public void narratorAnimalTame(AnimalTameEvent var1) {
+      NarratorEngine.onAnimalTame(var1);
    }
 
    @SubscribeEvent
    public void narratorItemToss(ItemTossEvent var1) {
+      NarratorEngine.onItemToss(var1);
    }
 
    @SubscribeEvent
    public void narratorItemPickup(net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post var1) {
+      NarratorEngine.onItemPickup(var1);
    }
 }
