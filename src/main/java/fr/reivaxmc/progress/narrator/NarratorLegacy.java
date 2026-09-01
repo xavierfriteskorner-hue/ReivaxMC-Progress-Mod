@@ -100,6 +100,16 @@ public final class NarratorLegacy {
          }
 
          var3.lastHealth = var5;
+         // Inventory deltas are the generic sensor used by several pilot events
+         // (wood, stone, coal, iron, diamond). Scan at 2 Hz: responsive enough
+         // for narration while avoiding a full inventory walk every game tick.
+         if (now() - var3.lastInventoryScanAt >= 500L) {
+            var3.lastInventoryScanAt = now();
+            Object campaign = campaignData(var2);
+            if (campaign != null) {
+               inventoryScan(var1, campaign);
+            }
+         }
          observeHomeDistance(var1, var3);
          observeDuoDistance(var1);
          observeRecentGift(var1, var3);
@@ -1804,6 +1814,7 @@ public final class NarratorLegacy {
       double maxAway;
       long lastMatrixInteractionAt;
       long recentGiftAt;
+      long lastInventoryScanAt;
       String recentGiftItem;
       NarratorLegacy.SourceHint containerHint;
       final Map<String, Integer> itemCounts = new HashMap<>();

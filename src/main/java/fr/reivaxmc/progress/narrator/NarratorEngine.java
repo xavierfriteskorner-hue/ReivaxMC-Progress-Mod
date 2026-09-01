@@ -1,27 +1,30 @@
 package fr.reivaxmc.progress.narrator;
 
-import fr.reivaxmc.progress.story.StoryModeGate18F;
 import java.lang.reflect.Method;
 
 public final class NarratorEngine {
    private NarratorEngine() {
    }
 
-   private static void call(String var0, Object... var1) {
-      Object var2 = var1.length == 0 ? null : var1[0];
-      if (StoryModeGate18F.allowLegacy(var2)) {
-         try {
-            Class var3 = Class.forName("fr.reivaxmc.progress.narrator.NarratorLegacy");
-
-            for (Method var7 : var3.getMethods()) {
-               if (var7.getName().equals(var0) && var7.getParameterCount() == var1.length) {
-                  var7.invoke(null, var1);
-                  return;
-               }
+   /**
+    * Narrator V1 bridge.
+    *
+    * The previous 18F gate deliberately returned false for every legacy call,
+    * which left the pilot catalogue present but disconnected from Minecraft.
+    * NarratorLegacy is currently the implementation of the pilot event brain,
+    * so narrator calls must reach it while the data-driven engine is migrated.
+    */
+   private static void call(String method, Object... args) {
+      try {
+         Class<?> legacy = Class.forName("fr.reivaxmc.progress.narrator.NarratorLegacy");
+         for (Method candidate : legacy.getMethods()) {
+            if (candidate.getName().equals(method) && candidate.getParameterCount() == args.length) {
+               candidate.invoke(null, args);
+               return;
             }
-         } catch (Throwable var8) {
-            System.err.println("[REIVAX 18F] legacy narrator " + var0 + " failed: " + var8);
          }
+      } catch (Throwable error) {
+         System.err.println("[REIVAX Origin] narrator " + method + " failed: " + error);
       }
    }
 
