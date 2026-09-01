@@ -190,6 +190,11 @@ public final class F7NarrativeEngine {
          if (!var2.sealSpawned && var2.nearTicks >= 180L) {
             var2.sealSpawned = true;
             boolean var13 = spawnSeal(var0, var4, var5, var6);
+            // DEUX Sceaux jumeaux (un par Stèle d'entrée) : la Trace en libère 2, même en solo.
+            // Le Sceau étant stacksTo(1), on lâche une SECONDE entité, légèrement décalée.
+            if (var13) {
+               spawnSeal(var0, var4 + 1, var5, var6);
+            }
             pulse(var0, (double)var4 + 1.7, (double)var5 + 2.1, (double)var6 + 0.3, 78, 36);
             playTraceSound(var1, 0.95F, 1.12F);
             chronicleOnce(

@@ -73,7 +73,8 @@ public final class ReivaxMCProgress {
       "origin_seal", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC))
    );
    public static final DeferredItem<Item> DESTINY_BOOK = ITEMS.register(
-      "destiny_of_origins", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.RARE))
+      "destiny_of_origins",
+      () -> new fr.reivaxmc.progress.item.DestinyBookItem(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.RARE))
    );
    public static final DeferredItem<Item> UNKNOWN_FRAGMENT = ITEMS.register(
       "unknown_fragment", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC))

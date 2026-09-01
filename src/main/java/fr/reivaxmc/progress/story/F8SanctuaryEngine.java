@@ -1378,17 +1378,19 @@ public final class F8SanctuaryEngine {
          + "\"],CustomName:'{\"text\":\""
          + var5
          + "\"}',CustomNameVisible:0b,PersistenceRequired:1b,Silent:1b,NoAI:1b,IsImmuneToZombification:1b,CanPickUpLoot:0b}";
-      // Dégage une poche d'air à l'emplacement du protecteur pour qu'il n'étouffe pas / ne s'entasse pas
-      // (sinon il meurt seul « trop de pression », ce qui débloquait à tort le reliquaire/la borne).
+      // Poche d'air GÉNÉREUSE (5 blocs) + sol solide dessous : les gardiens sont agrandis (scale 1,25 à
+      // 1,70 = 2,3 à 3,2 blocs). Une poche de 2 blocs seulement les faisait ÉTOUFFER -> perte continue de
+      // PV -> quasi morts (tués en 1 coup) + certains mouraient seuls. On garantit aussi un sol pour les
+      // postes de périmètre posés en terrain naturel.
       try {
-         runCommand(var0, "fill " + var1 + " " + var2 + " " + var3 + " " + var1 + " " + (var2 + 1) + " " + var3 + " minecraft:air");
+         runCommand(var0, "fill " + var1 + " " + (var2 - 1) + " " + var3 + " " + var1 + " " + (var2 - 1) + " " + var3 + " minecraft:deepslate_tiles keep");
+         runCommand(var0, "fill " + var1 + " " + var2 + " " + var3 + " " + var1 + " " + (var2 + 4) + " " + var3 + " minecraft:air");
       } catch (Throwable var19) {
       }
       runCommand(var0, var9);
-      String var10 = "@e[type=minecraft:piglin_brute,x=" + var1 + ",y=" + var2 + ",z=" + var3 + ",distance=..5,sort=nearest,limit=1]";
-      runCommand(var0, "tag " + var10 + " add reivax_f8_guardian");
-      runCommand(var0, "tag " + var10 + " add " + var8);
-      runCommand(var0, "tag " + var10 + " add " + var4);
+      // Sélecteur par TAG : les tags sont posés dans le NBT du summon (donc garantis présents), bien plus
+      // fiable que par position, qui pouvait rater et laisser le gardien avec ses stats par défaut (50 PV).
+      String var10 = "@e[tag=" + var4 + ",limit=1]";
       String var11;
       if (var6) {
          var11 = var7 ? "minecraft:iron_axe" : "minecraft:iron_sword";
@@ -1401,68 +1403,67 @@ public final class F8SanctuaryEngine {
       } catch (Throwable var18) {
       }
 
-      int var12 = 1;
-
-      try {
-         var12 = Math.max(1, players(var0).size());
-      } catch (Throwable var17) {
-      }
-
-      double var13 = var6 ? 100.0 : 40.0;
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.max_health base set " + var13);
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.follow_range base set 48");
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.movement_speed base set " + (var6 ? 0.19 : 0.26));
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.attack_damage base set " + (var6 ? 8.0 : 5.0));
-      runCommand(var0, "attribute " + var10 + " minecraft:generic.armor base set " + (var6 ? 8 : 4));
-
-      try {
-         runCommand(var0, "attribute " + var10 + " minecraft:generic.knockback_resistance base set " + (var6 ? 0.9 : 0.35));
-      } catch (Throwable var16) {
-      }
-
-      runCommand(var0, "data merge entity " + var10 + " {Health:" + var13 + "f,NoAI:1b,Silent:1b,IsImmuneToZombification:1b}");
+      applyGuardianStats(var0, var10, var6);
       F90Sanctuary.tuneProtector(var0, var4, var6, var7);
    }
 
+   // Stats ROBUSTES : essaie les DEUX formats d'ID d'attribut (1.21.1 = "minecraft:generic.X" ; format
+   // court au cas où), chacun dans son propre try, puis remet Health au max. Corrige le bug "PV = 50".
+   private static void applyGuardianStats(Object var0, String var1, boolean var2) {
+      double var3 = var2 ? 100.0 : 40.0;
+      setAttr(var0, var1, "max_health", var3);
+      setAttr(var0, var1, "follow_range", 48.0);
+      setAttr(var0, var1, "movement_speed", var2 ? 0.19 : 0.26);
+      setAttr(var0, var1, "attack_damage", var2 ? 8.0 : 5.0);
+      setAttr(var0, var1, "armor", var2 ? 8.0 : 4.0);
+      setAttr(var0, var1, "knockback_resistance", var2 ? 0.9 : 0.35);
+      setAttr(var0, var1, "scale", var2 ? 1.7 : 1.25);
+
+      try {
+         runCommand(var0, "data merge entity " + var1 + " {Health:" + var3 + "f,NoAI:1b,Silent:1b,PersistenceRequired:1b,IsImmuneToZombification:1b}");
+      } catch (Throwable var6) {
+      }
+   }
+
+   private static void setAttr(Object var0, String var1, String var2, double var3) {
+      try {
+         runCommand(var0, "attribute " + var1 + " minecraft:generic." + var2 + " base set " + var3);
+      } catch (Throwable var7) {
+      }
+
+      try {
+         runCommand(var0, "attribute " + var1 + " minecraft:" + var2 + " base set " + var3);
+      } catch (Throwable var6) {
+      }
+   }
+
+   // Réveille TOUT le groupe de gardiens (Veilleurs ou Protecteur). PLUS de garde one-shot : ré-appliqué à
+   // chaque tick tant qu'ils ne sont pas vaincus, pour qu'un gardien apparu tardivement (spawn étalé) passe
+   // bien en actif -> supprime les silhouettes figées à l'emplacement du spawn. Ré-assure aussi les stats
+   // sur le groupe (2 formats d'ID) au cas où le spawn les aurait ratées.
    private static void activateProtectorGroup(Object var0, int[] var1, boolean var2, int var3) {
       try {
-         F8SanctuaryEngine.Session var4 = SESSIONS.computeIfAbsent(var0, var0x -> new F8SanctuaryEngine.Session());
-         if (var2 ? var4.guardiansActivatedThisSession : var4.watchersActivatedThisSession) {
-            return;
-         }
+         String var4 = var2 ? "reivax_f83_foundation_guardian" : "reivax_f83_watcher";
+         String var5 = "@e[tag=" + var4 + "]";
+         runCommand(var0, "execute as " + var5 + " run data merge entity @s {NoAI:0b,Silent:1b,PersistenceRequired:1b}");
+         groupAttr(var0, var5, "max_health", var2 ? 100.0 : 40.0);
+         groupAttr(var0, var5, "attack_damage", var2 ? 8.0 : 5.0);
+         groupAttr(var0, var5, "armor", var2 ? 8.0 : 4.0);
+         groupAttr(var0, var5, "scale", var2 ? 1.7 : 1.25);
+      } catch (Throwable var6) {
+         System.err.println("[REIVAX Alpha 18F.8.4] Protector activation failed: " + var6.getClass().getSimpleName());
+      }
+   }
 
-         String[] var5 = var2 ? new String[]{"reivax_f83_fg1"} : TAG_WATCHERS;
+   private static void groupAttr(Object var0, String var1, String var2, double var3) {
+      try {
+         runCommand(var0, "execute as " + var1 + " run attribute @s minecraft:generic." + var2 + " base set " + var3);
+      } catch (Throwable var7) {
+      }
 
-         for (int var6 = 0; var6 < var5.length; var6++) {
-            String var7 = "@e[tag=" + var5[var6] + ",sort=nearest,limit=1]";
-            runCommand(var0, "data merge entity " + var7 + " {NoAI:0b,Silent:1b,IsImmuneToZombification:1b}");
-            double var8 = var2 ? 100.0 : 40.0;
-            double var10;
-            var10 = var2 ? 8.0 : 5.0;
-
-            runCommand(var0, "attribute " + var7 + " minecraft:generic.max_health base set " + var8);
-            runCommand(var0, "attribute " + var7 + " minecraft:generic.attack_damage base set " + var10);
-            runCommand(var0, "attribute " + var7 + " minecraft:generic.armor base set " + (var2 ? 8 : 4));
-            if (var2) {
-               try {
-                  runCommand(var0, "attribute " + var7 + " minecraft:generic.scale base set 1.70");
-               } catch (Throwable var14) {
-               }
-
-               try {
-                  runCommand(var0, "effect give " + var7 + " minecraft:resistance 999999 0 true");
-               } catch (Throwable var13) {
-               }
-            }
-         }
-
-         if (var2) {
-            var4.guardiansActivatedThisSession = true;
-         } else {
-            var4.watchersActivatedThisSession = true;
-         }
-      } catch (Throwable var15) {
-         System.err.println("[REIVAX Alpha 18F.8.4] Protector activation failed: " + var15.getClass().getSimpleName());
+      try {
+         runCommand(var0, "execute as " + var1 + " run attribute @s minecraft:" + var2 + " base set " + var3);
+      } catch (Throwable var6) {
       }
    }
 

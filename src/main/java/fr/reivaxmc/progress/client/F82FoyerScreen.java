@@ -60,16 +60,24 @@ public final class F82FoyerScreen extends Screen {
       int var20 = var7 + 30;
       int var21 = var8 + 122;
       int var22 = var5 - 60;
+      // Contenu mis à l'échelle pour tenir entre les onglets et le bouton FERMER, quel que soit le GUI
+      // scale : plus d'encadré qui déborde par le bas ni de chevauchement avec FERMER.
+      float var23 = Math.min(1.0F, (float)(var6 - 172) / 260.0F);
+      int var24 = (int)((float)var22 / var23);
+      var1.pose().pushPose();
+      var1.pose().translate((double)var20, (double)var21, 0.0);
+      var1.pose().scale(var23, var23, 1.0F);
       if (this.tab == 0) {
-         this.overview(var1, var20, var21, var22);
+         this.overview(var1, 0, 0, var24);
       } else if (this.tab == 1) {
-         this.territory(var1, var20, var21, var22);
+         this.territory(var1, 0, 0, var24);
       } else if (this.tab == 2) {
-         this.journal(var1, var20, var21, var22);
+         this.journal(var1, 0, 0, var24);
       } else {
-         this.options(var1, var20, var21, var22);
+         this.options(var1, 0, 0, var24);
       }
 
+      var1.pose().popPose();
       short var17 = 150;
       int var18 = var7 + var5 - var17 - 24;
       int var19 = var8 + var6 - 44;

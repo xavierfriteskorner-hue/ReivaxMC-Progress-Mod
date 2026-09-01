@@ -48,32 +48,54 @@ public final class ProgressScreen extends Screen {
             g.fill(x, this.tabY + this.tabH - 2, x + tw - 3, this.tabY + this.tabH, -4023733);
          }
          ReivaxUi.tex(g, ReivaxUi.TABS[i], x + 8, this.tabY + 5, 18, 18, 64, 64);
-         g.drawString(this.font, TABS[i], x + 30, this.tabY + 10, active ? -2047890 : -5658981, false);
+         // Libellé d'onglet mis à l'échelle pour TOUJOURS tenir dans la largeur de l'onglet
+         // (sinon « PROGRESSION » / « RÉCOMPENSES » / « CHRONOLOGIE » étaient coupés à fort GUI scale).
+         this.tabLabel(g, TABS[i], x + 28, this.tabY + 10, tw - 3 - 28 - 2, active ? -2047890 : -5658981);
       }
 
       int x = this.px + 28;
       int y = this.tabY + 40;
       int w = this.pw - 56;
       int h = this.ph - 102;
+      // La zone de contenu (non cliquable) est mise à l'échelle pour tenir entièrement dans le panneau
+      // quel que soit le GUI scale : plus aucun encadré qui « part trop bas » et sort du menu.
+      float cs = Math.min(1.0F, (float)h / 330.0F);
+      int dw = (int)((float)w / cs);
+      g.pose().pushPose();
+      g.pose().translate((double)x, (double)y, 0.0);
+      g.pose().scale(cs, cs, 1.0F);
+
       switch (this.tab) {
          case 0:
-            this.campaign(g, x, y, w, h);
+            this.campaign(g, 0, 0, dw, 330);
             break;
          case 1:
-            this.quests(g, x, y, w, h);
+            this.quests(g, 0, 0, dw, 330);
             break;
          case 2:
-            this.progress(g, x, y, w, h);
+            this.progress(g, 0, 0, dw, 330);
             break;
          case 3:
-            this.rewards(g, x, y, w, h);
+            this.rewards(g, 0, 0, dw, 330);
             break;
          case 4:
-            this.timeline(g, x, y, w, h);
+            this.timeline(g, 0, 0, dw, 330);
             break;
          default:
-            this.archives(g, x, y, w, h);
+            this.archives(g, 0, 0, dw, 330);
       }
+
+      g.pose().popPose();
+   }
+
+   private void tabLabel(GuiGraphics g, String text, int x, int y, int maxW, int color) {
+      int tw = this.font.width(text);
+      float s = maxW > 0 && tw > maxW ? (float)maxW / (float)tw : 1.0F;
+      g.pose().pushPose();
+      g.pose().translate((double)x, (double)(y + (int)((1.0F - s) * 4.0F)), 0.0);
+      g.pose().scale(s, s, 1.0F);
+      g.drawString(this.font, text, 0, 0, color, false);
+      g.pose().popPose();
    }
 
    private void campaign(GuiGraphics g, int x, int y, int w, int h) {
