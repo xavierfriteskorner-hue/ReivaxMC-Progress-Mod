@@ -4,12 +4,14 @@ import fr.reivaxmc.progress.client.model.GuardianModel;
 import fr.reivaxmc.progress.entity.GuardianEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
-/** Renderer GeckoLib générique + couche emissive (yeux / gravures / noyau qui brillent). */
+/**
+ * Renderer GeckoLib générique. La couche emissive (AutoGlowingGeoLayer) est DÉSACTIVÉE pour l'instant :
+ * on isole la cause du rendu tout noir (hypothèse = l'overlay emissif peignait le modèle en noir).
+ * On la remettra une fois la texture de base confirmée à l'écran.
+ */
 public class GuardianRenderer<T extends GuardianEntity> extends GeoEntityRenderer<T> {
    public GuardianRenderer(EntityRendererProvider.Context context) {
       super(context, new GuardianModel<>());
-      this.addRenderLayer(new AutoGlowingGeoLayer<>(this));
    }
 }
