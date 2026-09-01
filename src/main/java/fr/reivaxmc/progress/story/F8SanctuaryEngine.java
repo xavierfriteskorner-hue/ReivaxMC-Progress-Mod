@@ -1365,7 +1365,12 @@ public final class F8SanctuaryEngine {
 
    private static void summonProtector(Object var0, int var1, int var2, int var3, String var4, String var5, boolean var6, boolean var7) throws Exception {
       String var8 = var6 ? "reivax_f83_foundation_guardian" : "reivax_f83_watcher";
-      String var9 = "summon minecraft:piglin_brute "
+      // Créatures custom GeckoLib : Protecteur (massif) / Veilleur (fin). Elles portent leurs propres
+      // stats (createAttributes) ET leur taille (modèle 3D) -> plus besoin de scale, ni d'arme.
+      String var12 = var6 ? "reivaxmc_progress:protecteur" : "reivaxmc_progress:veilleur";
+      String var9 = "summon "
+         + var12
+         + " "
          + var1
          + " "
          + var2
@@ -1377,34 +1382,17 @@ public final class F8SanctuaryEngine {
          + var4
          + "\"],CustomName:'{\"text\":\""
          + var5
-         + "\"}',CustomNameVisible:0b,PersistenceRequired:1b,Silent:1b,NoAI:1b,IsImmuneToZombification:1b,CanPickUpLoot:0b}";
-      // Poche d'air GÉNÉREUSE (5 blocs) + sol solide dessous : les gardiens sont agrandis (scale 1,25 à
-      // 1,70 = 2,3 à 3,2 blocs). Une poche de 2 blocs seulement les faisait ÉTOUFFER -> perte continue de
-      // PV -> quasi morts (tués en 1 coup) + certains mouraient seuls. On garantit aussi un sol pour les
-      // postes de périmètre posés en terrain naturel.
+         + "\"}',CustomNameVisible:0b,PersistenceRequired:1b,Silent:1b,NoAI:1b}";
+      // Poche d'air GÉNÉREUSE (5 blocs) + sol solide dessous (anti-étouffement + postes en terrain naturel).
       try {
          runCommand(var0, "fill " + var1 + " " + (var2 - 1) + " " + var3 + " " + var1 + " " + (var2 - 1) + " " + var3 + " minecraft:deepslate_tiles keep");
          runCommand(var0, "fill " + var1 + " " + var2 + " " + var3 + " " + var1 + " " + (var2 + 4) + " " + var3 + " minecraft:air");
       } catch (Throwable var19) {
       }
       runCommand(var0, var9);
-      // Sélecteur par TAG : les tags sont posés dans le NBT du summon (donc garantis présents), bien plus
-      // fiable que par position, qui pouvait rater et laisser le gardien avec ses stats par défaut (50 PV).
+      // Sélecteur par TAG (posé dans le NBT du summon, donc garanti présent).
       String var10 = "@e[tag=" + var4 + ",limit=1]";
-      String var11;
-      if (var6) {
-         var11 = var7 ? "minecraft:iron_axe" : "minecraft:iron_sword";
-      } else {
-         var11 = var7 ? "minecraft:golden_axe" : "minecraft:iron_sword";
-      }
-
-      try {
-         runCommand(var0, "item replace entity " + var10 + " weapon.mainhand with " + var11);
-      } catch (Throwable var18) {
-      }
-
       applyGuardianStats(var0, var10, var6);
-      F90Sanctuary.tuneProtector(var0, var4, var6, var7);
    }
 
    // Stats ROBUSTES : essaie les DEUX formats d'ID d'attribut (1.21.1 = "minecraft:generic.X" ; format
@@ -1417,10 +1405,10 @@ public final class F8SanctuaryEngine {
       setAttr(var0, var1, "attack_damage", var2 ? 8.0 : 5.0);
       setAttr(var0, var1, "armor", var2 ? 8.0 : 4.0);
       setAttr(var0, var1, "knockback_resistance", var2 ? 0.9 : 0.35);
-      setAttr(var0, var1, "scale", var2 ? 1.7 : 1.25);
+      // PAS de scale : la taille vient du modèle 3D de l'entité custom.
 
       try {
-         runCommand(var0, "data merge entity " + var1 + " {Health:" + var3 + "f,NoAI:1b,Silent:1b,PersistenceRequired:1b,IsImmuneToZombification:1b}");
+         runCommand(var0, "data merge entity " + var1 + " {Health:" + var3 + "f,NoAI:1b,Silent:1b,PersistenceRequired:1b}");
       } catch (Throwable var6) {
       }
    }
@@ -1449,7 +1437,7 @@ public final class F8SanctuaryEngine {
          groupAttr(var0, var5, "max_health", var2 ? 100.0 : 40.0);
          groupAttr(var0, var5, "attack_damage", var2 ? 8.0 : 5.0);
          groupAttr(var0, var5, "armor", var2 ? 8.0 : 4.0);
-         groupAttr(var0, var5, "scale", var2 ? 1.7 : 1.25);
+         // PAS de scale : la taille vient du modèle 3D custom.
       } catch (Throwable var6) {
          System.err.println("[REIVAX Alpha 18F.8.4] Protector activation failed: " + var6.getClass().getSimpleName());
       }
