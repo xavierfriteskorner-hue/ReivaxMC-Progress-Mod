@@ -1332,8 +1332,12 @@ public final class F8SanctuaryEngine {
    private static void ensureProtectors(Object var0, int[] var1, Object var2) {
       try {
          Object var3 = invokeNoArg(var0, "overworld");
+         // SPAWN UNE SEULE FOIS par gardien (flag persistant dans la campagne). Avant, le spawn dépendait
+         // de hasTaggedEntity qui échouait -> re-spawn toutes les 5 s -> DES DIZAINES de Veilleurs empilés.
+         // Le flag persiste au rechargement et les entités sont PersistenceRequired -> aucun doublon.
          for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
-            if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(TAG_WATCHERS[var5])) {
+            String var6 = "F8_SPAWNED_W" + (var5 + 1);
+            if (!completed(var2, K_WATCHERS[var5]) && !completed(var2, var6) && !hasTaggedEntity(var3, TAG_WATCHERS[var5])) {
                summonProtector(
                   var0,
                   var1[0] + WATCHER_OFFSETS[var5][0],
@@ -1344,11 +1348,13 @@ public final class F8SanctuaryEngine {
                   false,
                   var5 % 2 == 1
                );
+               complete(var2, var6);
             }
          }
 
-         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn("reivax_f83_fg1")) {
+         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !completed(var2, "F8_SPAWNED_FG1") && !hasTaggedEntity(var3, "reivax_f83_fg1")) {
             summonProtector(var0, var1[0], var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Protecteur de la Borne", true, true);
+            complete(var2, "F8_SPAWNED_FG1");
          }
 
          if (completed(var2, "F8_GUARDS_AWAKENED")) {
