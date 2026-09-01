@@ -36,6 +36,8 @@ public final class NarratorLegacy {
    private static final Map<String, NarratorLegacy.PlayerState> PLAYERS = new ConcurrentHashMap<>();
    private static final Map<String, NarratorLegacy.EventDef> CATALOG = loadCatalog();
    private static volatile boolean listenersTried = false;
+   private static volatile boolean debugPlayerTickSeen = false;
+   private static volatile boolean debugInventorySeen = false;
 
    private NarratorLegacy() {
    }
@@ -77,6 +79,10 @@ public final class NarratorLegacy {
 
    public static void onPlayerTick(Object var0) {
       try {
+         if (!debugPlayerTickSeen) {
+            debugPlayerTickSeen = true;
+            System.out.println("[REIVAX EVENT DEBUG] NarratorLegacy.onPlayerTick atteint; catalogue=" + CATALOG.size());
+         }
          Object var1 = call(var0, "getEntity");
          if (!isServerPlayer(var1)) {
             return;
@@ -126,6 +132,19 @@ public final class NarratorLegacy {
 
          NarratorLegacy.PlayerState var2 = ensurePlayer(var0);
          Map<String, Integer> var3 = inventoryCounts(var0);
+         if (!debugInventorySeen) {
+            debugInventorySeen = true;
+            System.out.println("[REIVAX EVENT DEBUG] inventoryScan atteint; catalogue=" + CATALOG.size() + "; items=" + var3.size());
+         }
+         int dbgWood = 0;
+         for (Map.Entry<String, Integer> dbgEntry : var3.entrySet()) {
+            if (isWood(dbgEntry.getKey())) dbgWood += dbgEntry.getValue();
+         }
+         int dbgStone = var3.getOrDefault("minecraft:stone", 0) + var3.getOrDefault("minecraft:cobblestone", 0);
+         int dbgCoal = var3.getOrDefault("minecraft:coal", 0) + var3.getOrDefault("minecraft:charcoal", 0);
+         if (dbgWood > 0 || dbgStone > 0 || dbgCoal > 0) {
+            System.out.println("[REIVAX EVENT DEBUG] inventaire cible: bois=" + dbgWood + " pierre=" + dbgStone + " charbon=" + dbgCoal);
+         }
          if (!var2.inventoryInitialized) {
             var2.inventoryInitialized = true;
             mirrorLegacy(var1, "first_wood", "A1-001");
@@ -730,18 +749,22 @@ public final class NarratorLegacy {
 
    private static void trigger(Object var0, String var1, String var2, NarratorLegacy.SourceHint var3, Map<String, Object> var4) {
       try {
+         System.out.println("[REIVAX EVENT DEBUG] tentative trigger " + var1 + " source=" + var2);
          NarratorLegacy.EventDef var5 = CATALOG.get(var1);
          if (var5 == null) {
+            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": absent du catalogue (taille=" + CATALOG.size() + ")");
             return;
          }
 
          Object var6 = serverOf(var0);
          Object var7 = campaignData(var6);
          if (var6 == null || var7 == null) {
+            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": serveur ou CampaignSavedData introuvable");
             return;
          }
 
          if (asBool(callQuiet(var7, "isCompleted", var1))) {
+            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": déjà complété");
             return;
          }
 
@@ -781,6 +804,7 @@ public final class NarratorLegacy {
          NarratorLegacy.ServerState var14 = state(var6);
          var14.lastFactAt = now();
          var14.queue.add(var13);
+         System.out.println("[REIVAX EVENT DEBUG] ACCEPTÉ " + var1 + " -> file narrateur");
       } catch (Throwable var15) {
          soft("trigger " + var1, var15);
       }

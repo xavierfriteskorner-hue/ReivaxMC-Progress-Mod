@@ -3,6 +3,7 @@ package fr.reivaxmc.progress.narrator;
 import java.lang.reflect.Method;
 
 public final class NarratorEngine {
+   private static final java.util.Set<String> DEBUG_SEEN = java.util.concurrent.ConcurrentHashMap.newKeySet();
    private NarratorEngine() {
    }
 
@@ -16,6 +17,9 @@ public final class NarratorEngine {
     */
    private static void call(String method, Object... args) {
       try {
+         if (DEBUG_SEEN.add(method)) {
+            System.out.println("[REIVAX EVENT DEBUG] NarratorEngine reçoit: " + method);
+         }
          Class<?> legacy = Class.forName("fr.reivaxmc.progress.narrator.NarratorLegacy");
          for (Method candidate : legacy.getMethods()) {
             if (candidate.getName().equals(method) && candidate.getParameterCount() == args.length) {
