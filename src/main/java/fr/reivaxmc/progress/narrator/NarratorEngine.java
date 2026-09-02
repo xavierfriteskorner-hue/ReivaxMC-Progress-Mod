@@ -1,94 +1,74 @@
 package fr.reivaxmc.progress.narrator;
 
-import java.lang.reflect.Method;
-
+/**
+ * Point d'entrée unique du Narrateur.
+ *
+ * Depuis 0.7.11 le pont ne passe plus par la réflexion : les événements NeoForge
+ * appellent directement le moteur pilote. C'est plus simple, plus rapide et les
+ * erreurs de compilation deviennent visibles au build au lieu d'être silencieuses
+ * en jeu.
+ */
 public final class NarratorEngine {
-   private static final java.util.Set<String> DEBUG_SEEN = java.util.concurrent.ConcurrentHashMap.newKeySet();
    private NarratorEngine() {
    }
 
-   /**
-    * Narrator V1 bridge.
-    *
-    * The previous 18F gate deliberately returned false for every legacy call,
-    * which left the pilot catalogue present but disconnected from Minecraft.
-    * NarratorLegacy is currently the implementation of the pilot event brain,
-    * so narrator calls must reach it while the data-driven engine is migrated.
-    */
-   private static void call(String method, Object... args) {
-      try {
-         if (DEBUG_SEEN.add(method)) {
-            System.out.println("[REIVAX EVENT DEBUG] NarratorEngine reçoit: " + method);
-         }
-         Class<?> legacy = Class.forName("fr.reivaxmc.progress.narrator.NarratorLegacy");
-         for (Method candidate : legacy.getMethods()) {
-            if (candidate.getName().equals(method) && candidate.getParameterCount() == args.length) {
-               candidate.invoke(null, args);
-               return;
-            }
-         }
-      } catch (Throwable error) {
-         System.err.println("[REIVAX Origin] narrator " + method + " failed: " + error);
-      }
+   public static void onLogin(Object event) {
+      NarratorLegacy.onLogin(event);
    }
 
-   public static void onLogin(Object var0) {
-      call("onLogin", var0);
+   public static void onServerTick(Object event) {
+      NarratorLegacy.onServerTick(event);
    }
 
-   public static void onServerTick(Object var0) {
-      call("onServerTick", var0);
+   public static void onPlayerTick(Object event) {
+      NarratorLegacy.onPlayerTick(event);
    }
 
-   public static void onPlayerTick(Object var0) {
-      call("onPlayerTick", var0);
+   public static void inventoryScan(Object player, Object campaign) {
+      NarratorLegacy.inventoryScan(player, campaign);
    }
 
-   public static void inventoryScan(Object var0, Object var1) {
-      call("inventoryScan", var0, var1);
+   public static void onBlockPlaced(Object event) {
+      NarratorLegacy.onBlockPlaced(event);
    }
 
-   public static void onBlockPlaced(Object var0) {
-      call("onBlockPlaced", var0);
+   public static void onBlockBroken(Object event) {
+      NarratorLegacy.onBlockBroken(event);
    }
 
-   public static void onBlockBroken(Object var0) {
-      call("onBlockBroken", var0);
+   public static void onRightClickBlock(Object event) {
+      NarratorLegacy.onRightClickBlock(event);
    }
 
-   public static void onRightClickBlock(Object var0) {
-      call("onRightClickBlock", var0);
+   public static void onRightClickItem(Object event) {
+      NarratorLegacy.onRightClickItem(event);
    }
 
-   public static void onRightClickItem(Object var0) {
-      call("onRightClickItem", var0);
+   public static void onCommands(Object event) {
+      NarratorLegacy.onCommands(event);
    }
 
-   public static void onCommands(Object var0) {
-      call("onCommands", var0);
+   public static void onItemCrafted(Object event) {
+      NarratorLegacy.onItemCrafted(event);
    }
 
-   public static void onItemCrafted(Object var0) {
-      call("onItemCrafted", var0);
+   public static void onItemSmelted(Object event) {
+      NarratorLegacy.onItemSmelted(event);
    }
 
-   public static void onItemSmelted(Object var0) {
-      call("onItemSmelted", var0);
+   public static void onLivingDeath(Object event) {
+      NarratorLegacy.onLivingDeath(event);
    }
 
-   public static void onLivingDeath(Object var0) {
-      call("onLivingDeath", var0);
+   public static void onAnimalTame(Object event) {
+      NarratorLegacy.onAnimalTame(event);
    }
 
-   public static void onAnimalTame(Object var0) {
-      call("onAnimalTame", var0);
+   public static void onItemToss(Object event) {
+      NarratorLegacy.onItemToss(event);
    }
 
-   public static void onItemToss(Object var0) {
-      call("onItemToss", var0);
-   }
-
-   public static void onItemPickup(Object var0) {
-      call("onItemPickup", var0);
+   public static void onItemPickup(Object event) {
+      NarratorLegacy.onItemPickup(event);
    }
 }

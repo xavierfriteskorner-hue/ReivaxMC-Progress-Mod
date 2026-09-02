@@ -29,15 +29,15 @@ public final class NarratorLegacy {
    private static final String KV = "__N17KV__";
    private static final String FLAG = "__N17FLAG__";
    private static final long SOURCE_HINT_MS = 8000L;
-   private static final long NOTIFICATION_GAP_MS = 6400L;
+   private static final long NOTIFICATION_GAP_MIN_MS = 4300L;
+   private static final long NOTIFICATION_GAP_MAX_MS = 9000L;
+   private static final int MAX_QUEUE_SIZE = 10;
    private static final long QUIET_AFTER_MS = 180000L;
    private static final long QUIET_COOLDOWN_MS = 900000L;
    private static final Map<Object, NarratorLegacy.ServerState> SERVERS = Collections.synchronizedMap(new WeakHashMap<>());
    private static final Map<String, NarratorLegacy.PlayerState> PLAYERS = new ConcurrentHashMap<>();
    private static final Map<String, NarratorLegacy.EventDef> CATALOG = loadCatalog();
    private static volatile boolean listenersTried = false;
-   private static volatile boolean debugPlayerTickSeen = false;
-   private static volatile boolean debugInventorySeen = false;
 
    private NarratorLegacy() {
    }
@@ -79,10 +79,6 @@ public final class NarratorLegacy {
 
    public static void onPlayerTick(Object var0) {
       try {
-         if (!debugPlayerTickSeen) {
-            debugPlayerTickSeen = true;
-            System.out.println("[REIVAX EVENT DEBUG] NarratorLegacy.onPlayerTick atteint; catalogue=" + CATALOG.size());
-         }
          Object var1 = call(var0, "getEntity");
          if (!isServerPlayer(var1)) {
             return;
@@ -132,10 +128,6 @@ public final class NarratorLegacy {
 
          NarratorLegacy.PlayerState var2 = ensurePlayer(var0);
          Map<String, Integer> var3 = inventoryCounts(var0);
-         if (!debugInventorySeen) {
-            debugInventorySeen = true;
-            System.out.println("[REIVAX EVENT DEBUG] inventoryScan atteint; catalogue=" + CATALOG.size() + "; items=" + var3.size());
-         }
          if (!var2.inventoryInitialized) {
             var2.inventoryInitialized = true;
             mirrorLegacy(var1, "first_wood", "A1-001");
@@ -740,17 +732,14 @@ public final class NarratorLegacy {
 
    private static void trigger(Object var0, String var1, String var2, NarratorLegacy.SourceHint var3, Map<String, Object> var4) {
       try {
-         System.out.println("[REIVAX EVENT DEBUG] tentative trigger " + var1 + " source=" + var2);
          NarratorLegacy.EventDef var5 = CATALOG.get(var1);
          if (var5 == null) {
-            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": absent du catalogue (taille=" + CATALOG.size() + ")");
             return;
          }
 
          Object var6 = serverOf(var0);
          Object var7 = campaignData(var6);
          if (var6 == null || var7 == null) {
-            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": serveur ou CampaignSavedData introuvable");
             return;
          }
 
@@ -759,14 +748,11 @@ public final class NarratorLegacy {
          // "Commencer l'histoire" button. Using it here made every A1 event look as if
          // the story had never started, even though StoryOpening18F had started it.
          boolean varStoryStarted = storyStarted(var6);
-         System.out.println("[REIVAX EVENT DEBUG] gate histoire " + var1 + ": started=" + varStoryStarted);
          if (var1.startsWith("A1-") && !varStoryStarted && !"STORY".equals(var2)) {
-            System.out.println("[REIVAX EVENT DEBUG] IGNORE " + var1 + ": histoire non commencée (StoryStartState18F.started=false)");
             return;
          }
 
          if (asBool(callQuiet(var7, "isCompleted", var1))) {
-            System.out.println("[REIVAX EVENT DEBUG] REFUS " + var1 + ": déjà complété");
             return;
          }
 
@@ -805,8 +791,11 @@ public final class NarratorLegacy {
          NarratorLegacy.Pending var13 = new NarratorLegacy.Pending(var1, var0, var5, var16, var18, now(), var2, var4);
          NarratorLegacy.ServerState var14 = state(var6);
          var14.lastFactAt = now();
+         if (var5.priority >= 90) {
+            var14.queue.removeIf(pending -> pending.def.priority <= 55);
+         }
          var14.queue.add(var13);
-         System.out.println("[REIVAX EVENT DEBUG] ACCEPTÉ " + var1 + " -> file narrateur");
+         trimQueue(var14);
       } catch (Throwable var15) {
          soft("trigger " + var1, var15);
       }
@@ -842,14 +831,42 @@ public final class NarratorLegacy {
          if (var5 != null) {
             var2.queue.remove(var5);
             if (var5.def.priority >= 30 || var3 - var5.createdAt <= 120000L) {
-               System.out.println("[REIVAX EVENT DEBUG] DEFILE " + var5.id + " -> deliver");
                deliver(var0, var1, var5);
                var2.lastDeliveredAt = var3;
-               var2.nextDeliveryAt = var3 + 6400L;
+               var2.nextDeliveryAt = var3 + deliveryGapMs(var5);
             } else {
-               System.out.println("[REIVAX EVENT DEBUG] DROP " + var5.id + ": TTL dépassé");
             }
          }
+      }
+   }
+
+   private static long deliveryGapMs(NarratorLegacy.Pending pending) {
+      int chars = Math.max(pending.actorText == null ? 0 : pending.actorText.length(), pending.otherText == null ? 0 : pending.otherText.length());
+      long gap = 2500L + chars * 42L;
+      if (pending.def.priority >= 90) {
+         gap += 900L;
+      } else if (pending.def.priority <= 55) {
+         gap -= 400L;
+      }
+
+      return Math.max(NOTIFICATION_GAP_MIN_MS, Math.min(NOTIFICATION_GAP_MAX_MS, gap));
+   }
+
+   private static void trimQueue(NarratorLegacy.ServerState state) {
+      while (state.queue.size() > MAX_QUEUE_SIZE) {
+         NarratorLegacy.Pending weakest = null;
+         for (NarratorLegacy.Pending candidate : state.queue) {
+            if (weakest == null
+               || candidate.def.priority < weakest.def.priority
+               || candidate.def.priority == weakest.def.priority && candidate.createdAt < weakest.createdAt) {
+               weakest = candidate;
+            }
+         }
+
+         if (weakest == null) {
+            break;
+         }
+         state.queue.remove(weakest);
       }
    }
 
@@ -961,7 +978,6 @@ public final class NarratorLegacy {
 
          var8.setAccessible(true);
          Object var18 = var8.invoke(null, var0, var1, var2, var3, var4 == null ? "" : var4, var5 == null ? "" : var5, var6);
-         System.out.println("[REIVAX EVENT DEBUG] PACKET construit " + var2 + " kind=" + var3 + " joueur=" + name(var0));
          Class var19 = Class.forName("net.neoforged.neoforge.network.PacketDistributor");
          Class var20 = Class.forName("net.minecraft.network.protocol.common.custom.CustomPacketPayload");
          Object var21 = Array.newInstance(var20, 0);
@@ -969,7 +985,6 @@ public final class NarratorLegacy {
          for (Method var16 : var19.getMethods()) {
             if (var16.getName().equals("sendToPlayer") && var16.getParameterCount() == 3) {
                var16.invoke(null, var0, var18, var21);
-               System.out.println("[REIVAX EVENT DEBUG] PACKET envoyé " + var2 + " -> " + name(var0));
                break;
             }
          }

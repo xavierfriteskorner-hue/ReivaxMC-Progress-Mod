@@ -10,7 +10,7 @@ import java.util.Deque;
 import java.util.List;
 
 public final class F71NarrativeHud {
-   private static final long VOICE_LIFETIME_MS = 6500L;
+   private static final long VOICE_LIFETIME_DEFAULT_MS = 6000L;
    private static final long OBJECTIVE_LIFETIME_MS = 10000L;
    private static final long HINT_LIFETIME_MS = 2600L;
    private static final long GUIDANCE_LIFETIME_MS = 2600L;
@@ -19,6 +19,8 @@ public final class F71NarrativeHud {
    private static final int MAX_PENDING_HISTORY = 120;
    private static String objective = "";
    private static String voice = "";
+   private static String voiceKind = "";
+   private static long voiceLifetimeMs = VOICE_LIFETIME_DEFAULT_MS;
    private static String hint = "";
    private static String guidance = "";
    private static String foyerPanel = "";
@@ -86,7 +88,7 @@ public final class F71NarrativeHud {
                drawMilestone(var0, var6, milestone, var7, var8, var9 - milestoneAt);
             }
 
-            if (!voice.isBlank() && voiceAt > 0L && var9 - voiceAt < 6500L) {
+            if (!voice.isBlank() && voiceAt > 0L && var9 - voiceAt < voiceLifetimeMs) {
                drawVoice(var0, var6, voice, var7, var8, var9 - voiceAt);
             }
          } catch (Throwable var11) {
@@ -96,73 +98,76 @@ public final class F71NarrativeHud {
    }
 
    private static void captureLatestClientEvent() throws Exception {
-      Class var0 = Class.forName("fr.reivaxmc.progress.network.ClientCampaignState");
-      String var1 = string(staticField(var0, "event"));
-      String var2 = string(staticField(var0, "kind"));
-      String var3 = string(staticField(var0, "detail"));
-      long var4 = number(staticField(var0, "eventAt")).longValue();
-      if (!var1.isBlank() || !var2.isBlank()) {
-         String var6 = var1 + "|" + var2 + "|" + var4 + "|" + var3;
-         if (!var6.equals(lastEventKey)) {
-            lastEventKey = var6;
-            switch (var2) {
-               case "F71_OBJECTIVE":
-                  String var13 = cleanHudText(var3);
-                  if (!var13.equals(objective) || objectiveAt <= 0L) {
-                     objective = var13;
-                     objectiveAt = var4 > 0L ? var4 : utilMillis();
-                  }
-                  break;
-               case "F71_HINT":
-                  hint = cleanHudText(var3);
-                  hintAt = var4 > 0L ? var4 : utilMillis();
-                  break;
-               case "NARRATOR_WHISPER":
-               case "NARRATOR_ACHIEVEMENT":
-                  // Pilot achievements use NARRATOR_ACHIEVEMENT, while the validated
-                  // voice renderer historically only listened to NARRATOR_WHISPER.
-                  // Both are interventions from the Voice and must reach the same
-                  // narrator cartouche; the title/score remain available in campaign data.
-                  System.out.println("[REIVAX EVENT DEBUG] HUD VOIX reçoit " + var1 + " kind=" + var2);
-                  voice = F81ClientState.qaMask() ? "VOIX · Dialogue narratif déclenché ✓" : cleanHudText(var3);
-                  voiceAt = var4 > 0L ? var4 : utilMillis();
-                  break;
-               case "F71_HISTORY":
-                  if (!var3.isBlank()) {
-                     pendingHistory.addLast(F81ClientState.qaMask() ? "§8[QA] §7Événement narratif enregistré ✓" : var3);
+      Class<?> stateClass = Class.forName("fr.reivaxmc.progress.network.ClientCampaignState");
+      String event = string(staticField(stateClass, "event"));
+      String kind = string(staticField(stateClass, "kind"));
+      String detail = string(staticField(stateClass, "detail"));
+      long eventAt = number(staticField(stateClass, "eventAt")).longValue();
+      if (event.isBlank() && kind.isBlank()) {
+         return;
+      }
 
-                     while (pendingHistory.size() > 120) {
-                        pendingHistory.removeFirst();
-                     }
-                  }
-                  break;
-               case "F8_GUIDANCE":
-                  guidance = cleanHudText(var3);
-                  guidanceAt = var4 > 0L ? var4 : utilMillis();
-                  break;
-               case "F8_FOYER_PANEL":
-                  String var12 = var3 == null ? "" : var3.trim();
+      String key = event + "|" + kind + "|" + eventAt + "|" + detail;
+      if (key.equals(lastEventKey)) {
+         return;
+      }
+      lastEventKey = key;
 
-                  try {
-                     openFoyerScreen(var12);
-                     foyerPanel = "";
-                     foyerAt = -1L;
-                  } catch (Throwable var11) {
-                     foyerPanel = var12;
-                     foyerAt = var4 > 0L ? var4 : utilMillis();
-                  }
-                  break;
-               case "F8_MILESTONE":
-                  milestone = F81ClientState.qaMask() ? "JALON NARRATIF VALIDÉ ✓" : cleanHudText(var3);
-                  milestoneAt = var4 > 0L ? var4 : utilMillis();
-                  break;
-               case "F81_QA":
-                  boolean var9 = "ON".equalsIgnoreCase(cleanHudText(var3));
-                  F81ClientState.setQaMask(var9);
-                  hint = var9 ? "MODE QA ANTI-SPOIL · contenu narratif masqué" : "MODE QA ANTI-SPOIL DÉSACTIVÉ · contenu réel visible";
-                  hintAt = var4 > 0L ? var4 : utilMillis();
+      switch (kind) {
+         case "F71_OBJECTIVE":
+            String cleanObjective = cleanHudText(detail);
+            if (!cleanObjective.equals(objective) || objectiveAt <= 0L) {
+               objective = cleanObjective;
+               objectiveAt = eventAt > 0L ? eventAt : utilMillis();
             }
-         }
+            break;
+         case "F71_HINT":
+            hint = cleanHudText(detail);
+            hintAt = eventAt > 0L ? eventAt : utilMillis();
+            break;
+         case "NARRATOR_WHISPER":
+         case "NARRATOR_ACHIEVEMENT":
+         case "NARRATOR_ANNOUNCEMENT":
+         case "NARRATOR_RESONANCE":
+            voice = F81ClientState.qaMask() ? "VOIX · Dialogue narratif déclenché ✓" : cleanHudText(detail);
+            voiceKind = kind;
+            voiceLifetimeMs = voiceLifetimeFor(voice, kind);
+            voiceAt = eventAt > 0L ? eventAt : utilMillis();
+            playVoiceCue(kind);
+            break;
+         case "F71_HISTORY":
+            if (!detail.isBlank()) {
+               pendingHistory.addLast(F81ClientState.qaMask() ? "§8[QA] §7Événement narratif enregistré ✓" : detail);
+               while (pendingHistory.size() > MAX_PENDING_HISTORY) {
+                  pendingHistory.removeFirst();
+               }
+            }
+            break;
+         case "F8_GUIDANCE":
+            guidance = cleanHudText(detail);
+            guidanceAt = eventAt > 0L ? eventAt : utilMillis();
+            break;
+         case "F8_FOYER_PANEL":
+            String panel = detail == null ? "" : detail.trim();
+            try {
+               openFoyerScreen(panel);
+               foyerPanel = "";
+               foyerAt = -1L;
+            } catch (Throwable ignored) {
+               foyerPanel = panel;
+               foyerAt = eventAt > 0L ? eventAt : utilMillis();
+            }
+            break;
+         case "F8_MILESTONE":
+            milestone = F81ClientState.qaMask() ? "JALON NARRATIF VALIDÉ ✓" : cleanHudText(detail);
+            milestoneAt = eventAt > 0L ? eventAt : utilMillis();
+            break;
+         case "F81_QA":
+            boolean enabled = "ON".equalsIgnoreCase(cleanHudText(detail));
+            F81ClientState.setQaMask(enabled);
+            hint = enabled ? "MODE QA ANTI-SPOIL · contenu narratif masqué" : "MODE QA ANTI-SPOIL DÉSACTIVÉ · contenu réel visible";
+            hintAt = eventAt > 0L ? eventAt : utilMillis();
+            break;
       }
    }
 
@@ -234,35 +239,126 @@ public final class F71NarrativeHud {
       drawCentered(var0, var1, var2, var3 / 2, var13, var9);
    }
 
-   private static void drawVoice(Object var0, Object var1, String var2, int var3, int var4, long var5) throws Exception {
-      float var7;
-      if (var5 < 650L) {
-         var7 = (float)var5 / 650.0F;
-      } else if (var5 > 5000L) {
-         var7 = Math.max(0.0F, (float)(6500L - var5) / 1500.0F);
-      } else {
-         var7 = 1.0F;
+   private static void drawVoice(Object graphics, Object font, String text, int screenWidth, int screenHeight, long elapsed) throws Exception {
+      long lifetime = Math.max(1L, voiceLifetimeMs);
+      long fadeOutStart = Math.max(1200L, lifetime - 700L);
+
+      float appear = Math.min(1.0F, Math.max(0.0F, elapsed / 260.0F));
+      float disappear = elapsed <= fadeOutStart ? 1.0F : Math.max(0.0F, (float)(lifetime - elapsed) / (float)(lifetime - fadeOutStart));
+      float alpha = smoothStep(appear) * smoothStep(disappear);
+      if (alpha <= 0.01F) {
+         return;
       }
 
-      int var8 = var2.length();
-      if (var5 < 1100L) {
-         var8 = Math.max(1, Math.min(var2.length(), (int)Math.ceil((double)var2.length() * ((double)var5 / 1100.0))));
+      int maxTextWidth = Math.max(240, Math.min(760, screenWidth - 220));
+      List<String> lines = wrapText(font, text, maxTextWidth);
+      int widest = 0;
+      for (String line : lines) {
+         widest = Math.max(widest, fontWidth(font, line));
       }
 
-      String var9 = var2.substring(0, var8);
-      int var10 = fontWidth(var1, var2);
-      int var11 = Math.min(var3 - 80, Math.max(320, var10 + 110));
-      int var12 = (var3 - var11) / 2;
-      int var13 = Math.max(54, (int)((double)var4 * 0.29));
-      int var14 = var3 / 2;
-      int var15 = clampAlpha((int)(70.0F * var7));
-      int var16 = clampAlpha((int)(115.0F * var7));
-      int var17 = clampAlpha((int)(255.0F * var7));
-      net.minecraft.client.gui.GuiGraphics gg = (net.minecraft.client.gui.GuiGraphics) var0;
-      fr.reivaxmc.progress.client.ReivaxUi.alpha(gg, var7);
-      fr.reivaxmc.progress.client.ReivaxUi.tex(gg, fr.reivaxmc.progress.client.ReivaxUi.VOICE, var12, var13 - 16, var11, 44, 768, 256);
-      fr.reivaxmc.progress.client.ReivaxUi.resetColor(gg);
-      drawCentered(var0, var1, var9, var14, var13, var17 << 24 | 15986920);
+      int panelWidth = Math.min(screenWidth - 54, Math.max(300, widest + 78));
+      int panelHeight = 31 + Math.max(1, lines.size()) * 13;
+      int x = (screenWidth - panelWidth) / 2;
+      int restingY = Math.max(68, (int)(screenHeight * 0.265));
+      int y = restingY + Math.round((1.0F - smoothStep(appear)) * 8.0F);
+
+      int shadowA = clampAlpha((int)(92.0F * alpha));
+      int bodyA = clampAlpha((int)(214.0F * alpha));
+      int innerA = clampAlpha((int)(98.0F * alpha));
+      int textA = clampAlpha((int)(255.0F * alpha));
+      int labelA = clampAlpha((int)(225.0F * alpha));
+      int accentA = clampAlpha((int)(220.0F * alpha));
+
+      int gold = 0xC9A84C;
+      int paleGold = 0xE7D9AE;
+      int cyan = isRevelation(voiceKind) ? 0x74D7D2 : 0x4FA9AD;
+      int textColor = textA << 24 | 0xF3EFE5;
+      int labelColor = labelA << 24 | paleGold;
+
+      // Ombre puis plaque sombre : aucun étirement de texture, donc le cadre
+      // garde ses proportions quelle que soit la longueur du texte.
+      fill(graphics, x + 3, y + 4, x + panelWidth + 3, y + panelHeight + 4, shadowA << 24);
+      fill(graphics, x, y, x + panelWidth, y + panelHeight, bodyA << 24 | 0x090B0E);
+      fill(graphics, x + 2, y + 2, x + panelWidth - 2, y + panelHeight - 2, innerA << 24 | 0x10161A);
+
+      // Filets or + signature froide de la Voix.
+      int lineInset = 18;
+      fill(graphics, x + lineInset, y, x + panelWidth - lineInset, y + 1, accentA << 24 | gold);
+      fill(graphics, x + lineInset + 34, y + panelHeight - 1, x + panelWidth - lineInset - 34, y + panelHeight, clampAlpha((int)(145.0F * alpha)) << 24 | gold);
+      fill(graphics, x, y + 8, x + 2, y + panelHeight - 8, clampAlpha((int)(165.0F * alpha)) << 24 | cyan);
+      fill(graphics, x + panelWidth - 2, y + 8, x + panelWidth, y + panelHeight - 8, clampAlpha((int)(165.0F * alpha)) << 24 | cyan);
+
+      // Petits coins gravés, discrets mais lisibles.
+      fill(graphics, x + 8, y + 8, x + 13, y + 10, accentA << 24 | gold);
+      fill(graphics, x + panelWidth - 13, y + 8, x + panelWidth - 8, y + 10, accentA << 24 | gold);
+      fill(graphics, x + 8, y + panelHeight - 10, x + 13, y + panelHeight - 8, accentA << 24 | gold);
+      fill(graphics, x + panelWidth - 13, y + panelHeight - 10, x + panelWidth - 8, y + panelHeight - 8, accentA << 24 | gold);
+
+      String label = isRevelation(voiceKind) ? "LA VOIX · RÉSONANCE" : "LA VOIX";
+      drawString(graphics, font, label, x + 18, y + 8, labelColor, false);
+      fill(graphics, x + 18 + fontWidth(font, label) + 8, y + 12, x + panelWidth - 18, y + 13, clampAlpha((int)(70.0F * alpha)) << 24 | cyan);
+
+      long typeStart = 120L;
+      int visibleChars = elapsed <= typeStart ? 0 : Math.min(text.length(), (int)((elapsed - typeStart) * 58L / 1000L));
+      int remaining = visibleChars;
+      int textY = y + 23;
+      for (String fullLine : lines) {
+         String shown;
+         if (remaining <= 0) {
+            shown = "";
+         } else if (remaining >= fullLine.length()) {
+            shown = fullLine;
+         } else {
+            shown = fullLine.substring(0, remaining);
+         }
+
+         if (!shown.isEmpty()) {
+            drawCentered(graphics, font, shown, screenWidth / 2, textY, textColor);
+         }
+         remaining -= fullLine.length();
+         textY += 13;
+      }
+   }
+
+   private static long voiceLifetimeFor(String text, String kind) {
+      int chars = text == null ? 0 : text.length();
+      long lifetime = 2800L + chars * 43L;
+      if (isRevelation(kind)) {
+         lifetime += 1100L;
+      } else if ("NARRATOR_ANNOUNCEMENT".equals(kind)) {
+         lifetime += 550L;
+      }
+      return Math.max(4300L, Math.min(9200L, lifetime));
+   }
+
+   private static boolean isRevelation(String kind) {
+      return "NARRATOR_RESONANCE".equals(kind);
+   }
+
+   private static float smoothStep(float value) {
+      float t = Math.max(0.0F, Math.min(1.0F, value));
+      return t * t * (3.0F - 2.0F * t);
+   }
+
+   private static void playVoiceCue(String kind) {
+      try {
+         Object mc = minecraft();
+         if (mc == null) {
+            return;
+         }
+         Object player = field(mc, "player");
+         if (player == null) {
+            return;
+         }
+         Class<?> sounds = Class.forName("net.minecraft.sounds.SoundEvents");
+         Object chime = staticField(sounds, "AMETHYST_BLOCK_CHIME");
+         float volume = isRevelation(kind) ? 0.24F : 0.15F;
+         float pitch = isRevelation(kind) ? 0.62F : ("NARRATOR_ANNOUNCEMENT".equals(kind) ? 0.78F : 0.92F);
+         call(player, "playSound", chime, volume, pitch);
+      } catch (Throwable ignored) {
+         // Le son est un embellissement : il ne doit jamais pouvoir casser le HUD.
+      }
    }
 
    private static void drawGuidance(Object var0, Object var1, String var2, int var3, int var4, long var5) throws Exception {
