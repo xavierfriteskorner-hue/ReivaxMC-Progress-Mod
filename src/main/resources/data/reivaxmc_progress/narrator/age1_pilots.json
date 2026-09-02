@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "events": [
     {
       "id": "A1-001",
@@ -9,7 +9,23 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "resource",
+        "discovery"
+      ],
+      "context_variants": [
+        {
+          "id": "night_start",
+          "priority": 20,
+          "when": {
+            "day_phase": "NIGHT"
+          },
+          "actor_text": "Du bois. Très bien. Commencer une civilisation de nuit était donc volontaire.",
+          "other_text": "{player} a trouvé du bois en pleine nuit. Le sens du timing est déjà remarquable.",
+          "tone": "DRY"
+        }
+      ]
     },
     {
       "id": "A1-003",
@@ -19,7 +35,11 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "craft",
+        "civilization"
+      ]
     },
     {
       "id": "A1-005",
@@ -29,7 +49,11 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "resource",
+        "discovery"
+      ]
     },
     {
       "id": "A1-007",
@@ -41,7 +65,35 @@
       "priority": 65,
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:torch",
-      "reward_count": 4
+      "reward_count": 4,
+      "reward_label": "TORCHES",
+      "memory_tags": [
+        "resource",
+        "survival",
+        "light"
+      ],
+      "context_variants": [
+        {
+          "id": "night_coal",
+          "priority": 30,
+          "when": {
+            "day_phase": "NIGHT"
+          },
+          "actor_text": "Du charbon. Parfait. La nuit avait commencé à prendre confiance.",
+          "other_text": "{player} a trouvé du charbon. Mauvaise nouvelle pour la nuit : vous avez compris la lumière.",
+          "tone": "DRY"
+        },
+        {
+          "id": "duo_nearby",
+          "priority": 18,
+          "when": {
+            "other_nearby": true
+          },
+          "actor_text": "Du charbon. Au moins l’un de vous a pensé à la lumière.",
+          "other_text": "{player} a trouvé du charbon. Vous pouvez maintenant prétendre que c’était un plan commun.",
+          "tone": "TEASE"
+        }
+      ]
     },
     {
       "id": "A1-009",
@@ -51,7 +103,12 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 65,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "resource",
+        "metal",
+        "civilization"
+      ]
     },
     {
       "id": "A1-010",
@@ -61,7 +118,12 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 65,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "craft",
+        "metal",
+        "civilization"
+      ]
     },
     {
       "id": "A1-018",
@@ -81,7 +143,50 @@
       "other_container_text": "{player} a trouvé le premier diamant… déjà rangé. Le courage avait manifestement pris sa journée.",
       "low_health_text": "Un diamant. Maintenant, ressortir vivant serait une excellente deuxième étape.",
       "reward_item": "minecraft:experience_bottle",
-      "reward_count": 3
+      "reward_count": 3,
+      "reward_label": "FIOLES D’EXPÉRIENCE",
+      "memory_tags": [
+        "resource",
+        "milestone",
+        "discovery"
+      ],
+      "context_variants": [
+        {
+          "id": "diamond_danger",
+          "priority": 60,
+          "when": {
+            "health_lte": 8
+          },
+          "actor_text": "Un diamant. Maintenant, ressortir vivant serait une excellente deuxième étape.",
+          "other_text": "{player} a trouvé un diamant en mauvais état. Félicitez-le après l’avoir gardé en vie.",
+          "tone": "CONCERN"
+        },
+        {
+          "id": "diamond_duo",
+          "priority": 25,
+          "when": {
+            "other_nearby": true,
+            "source": "MINED"
+          },
+          "actor_text": "Un diamant. Regardez {other_player} : il va bientôt dire « nous ».",
+          "other_text": "{player} a trouvé le diamant. Je précise « {player} » avant que vous ne disiez « nous ».",
+          "tone": "TEASE"
+        },
+        {
+          "id": "diamond_familiar",
+          "priority": 12,
+          "when": {
+            "familiarity_gte": 8,
+            "source": [
+              "MINED",
+              "UNKNOWN"
+            ]
+          },
+          "actor_text": "Un diamant. Oui, je vous ai vu sourire. C’était presque discret.",
+          "other_text": "{player} a trouvé le premier diamant. Son calme apparent ne trompe absolument personne.",
+          "tone": "FAMILIAR"
+        }
+      ]
     },
     {
       "id": "A1-024",
@@ -91,7 +196,11 @@
       "age_points": 10,
       "civ_score": 2,
       "priority": 60,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "farming",
+        "civilization"
+      ]
     },
     {
       "id": "A1-031",
@@ -103,7 +212,25 @@
       "priority": 90,
       "kind": "NARRATOR_RESONANCE",
       "reward_item": "minecraft:torch",
-      "reward_count": 4
+      "reward_count": 4,
+      "reward_label": "TORCHES",
+      "memory_tags": [
+        "survival",
+        "night",
+        "resilience"
+      ],
+      "context_variants": [
+        {
+          "id": "rough_first_night",
+          "priority": 20,
+          "when": {
+            "actor_tag_danger_gte": 1
+          },
+          "actor_text": "L’aube. Après votre soirée, je considère déjà cela comme un résultat.",
+          "other_text": "{player} a atteint l’aube. Vu la nuit, c’était moins garanti qu’il ne le prétendra.",
+          "tone": "DRY"
+        }
+      ]
     },
     {
       "id": "A1-040",
@@ -115,7 +242,25 @@
       "priority": 70,
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:emerald",
-      "reward_count": 1
+      "reward_count": 1,
+      "reward_label": "ÉMERAUDE",
+      "memory_tags": [
+        "exploration",
+        "civilization",
+        "discovery"
+      ],
+      "context_variants": [
+        {
+          "id": "village_together",
+          "priority": 20,
+          "when": {
+            "other_nearby": true
+          },
+          "actor_text": "Un village. Vous êtes deux. Essayez donc de ne rien voler à quatre mains.",
+          "other_text": "{player} a trouvé un village. Et vous êtes là aussi. Je surveille les coffres.",
+          "tone": "TEASE"
+        }
+      ]
     },
     {
       "id": "A1-043",
@@ -125,7 +270,11 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 55,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "exploration",
+        "home"
+      ]
     },
     {
       "id": "A1-047",
@@ -138,7 +287,13 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:compass",
       "reward_count": 1,
-      "reward_name": "Pour la prochaine fois"
+      "reward_name": "Pour la prochaine fois",
+      "reward_label": "BOUSSOLE",
+      "memory_tags": [
+        "exploration",
+        "home",
+        "return"
+      ]
     },
     {
       "id": "A1-049",
@@ -149,7 +304,23 @@
       "civ_score": 2,
       "priority": 60,
       "kind": "NARRATOR_ACHIEVEMENT",
-      "long_distance_text": "Vous avez transformé une aventure à deux en deux aventures séparées. Efficace."
+      "long_distance_text": "Vous avez transformé une aventure à deux en deux aventures séparées. Efficace.",
+      "memory_tags": [
+        "duo",
+        "separation"
+      ],
+      "context_variants": [
+        {
+          "id": "very_far",
+          "priority": 40,
+          "when": {
+            "distance_gte": 2500
+          },
+          "actor_text": "Vous avez transformé une aventure à deux en deux aventures séparées. Efficace.",
+          "other_text": "{player} est si loin que le mot « duo » devient surtout administratif.",
+          "tone": "DRY"
+        }
+      ]
     },
     {
       "id": "A1-051",
@@ -162,7 +333,13 @@
       "kind": "NARRATOR_ANNOUNCEMENT",
       "reward_item": "minecraft:brick",
       "reward_count": 1,
-      "reward_name": "Pierre du Premier Foyer"
+      "reward_name": "Pierre du Premier Foyer",
+      "reward_label": "PIERRE DU PREMIER FOYER",
+      "memory_tags": [
+        "home",
+        "building",
+        "milestone"
+      ]
     },
     {
       "id": "A1-060",
@@ -174,7 +351,13 @@
       "priority": 66,
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:lantern",
-      "reward_count": 2
+      "reward_count": 2,
+      "reward_label": "LANTERNES",
+      "memory_tags": [
+        "building",
+        "home",
+        "civilization"
+      ]
     },
     {
       "id": "A1-066",
@@ -187,7 +370,25 @@
       "kind": "NARRATOR_RESONANCE",
       "reward_item": "minecraft:candle",
       "reward_count": 2,
-      "reward_name": "Veilleuses de la Matrice"
+      "reward_name": "Veilleuses de la Matrice",
+      "reward_label": "VEILLEUSES DE LA MATRICE",
+      "memory_tags": [
+        "origins",
+        "matrix",
+        "mystery"
+      ],
+      "context_variants": [
+        {
+          "id": "matrix_familiar",
+          "priority": 25,
+          "when": {
+            "familiarity_gte": 8
+          },
+          "actor_text": "La Matrice a réagi. Après tout ce que j’ai observé… je craignais qu’elle le fasse.",
+          "other_text": "La Matrice vient de répondre à {player}. Je crois que nous avons dépassé le stade de la coïncidence.",
+          "tone": "UNEASY"
+        }
+      ]
     },
     {
       "id": "A1-073",
@@ -200,7 +401,24 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:name_tag",
       "reward_count": 1,
-      "reward_name": "Pour qu’il ait un nom"
+      "reward_name": "Pour qu’il ait un nom",
+      "reward_label": "ÉTIQUETTE",
+      "memory_tags": [
+        "companion",
+        "bond"
+      ],
+      "context_variants": [
+        {
+          "id": "companion_duo",
+          "priority": 25,
+          "when": {
+            "other_nearby": true
+          },
+          "actor_text": "Vous êtes trois maintenant. Enfin… deux, et quelqu’un qui écoute mieux.",
+          "other_text": "{player} a trouvé un compagnon. Félicitations : vous n’êtes plus le membre le plus docile du groupe.",
+          "tone": "TEASE"
+        }
+      ]
     },
     {
       "id": "A1-078",
@@ -210,7 +428,11 @@
       "age_points": 5,
       "civ_score": 1,
       "priority": 56,
-      "kind": "NARRATOR_ACHIEVEMENT"
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "combat",
+        "creeper"
+      ]
     },
     {
       "id": "A1-083",
@@ -223,7 +445,25 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:dirt",
       "reward_count": 4,
-      "reward_name": "Matériaux de réparation"
+      "reward_name": "Matériaux de réparation",
+      "reward_label": "MATÉRIAUX DE RÉPARATION",
+      "memory_tags": [
+        "danger",
+        "creeper",
+        "home_damage"
+      ],
+      "context_variants": [
+        {
+          "id": "creeper_knew_better",
+          "priority": 35,
+          "when": {
+            "actor_tag_creeper_gte": 1
+          },
+          "actor_text": "Vous saviez déjà ce que font les Creepers. Cela rend le trou beaucoup moins excusable.",
+          "other_text": "{player} connaissait déjà les Creepers. Le nouveau trou est donc entièrement pédagogique.",
+          "tone": "TEASE"
+        }
+      ]
     },
     {
       "id": "A1-084",
@@ -236,7 +476,13 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:potato",
       "reward_count": 1,
-      "reward_name": "Pomme de terre de consolation"
+      "reward_name": "Pomme de terre de consolation",
+      "reward_label": "POMME DE TERRE DE CONSOLATION",
+      "memory_tags": [
+        "death",
+        "danger",
+        "failure"
+      ]
     },
     {
       "id": "A1-087",
@@ -249,7 +495,25 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:dandelion",
       "reward_count": 1,
-      "reward_name": "Pissenlit du courage"
+      "reward_name": "Pissenlit du courage",
+      "reward_label": "PISSENLIT DU COURAGE",
+      "memory_tags": [
+        "danger",
+        "survival",
+        "resilience"
+      ],
+      "context_variants": [
+        {
+          "id": "half_after_death",
+          "priority": 40,
+          "when": {
+            "actor_tag_death_gte": 1
+          },
+          "actor_text": "Un demi-cœur. Vous avez déjà testé la mort. Inutile de demander un rappel.",
+          "other_text": "{player} est à un demi-cœur. Il connaît déjà la suite ; évitez-lui la rediffusion.",
+          "tone": "CONCERN"
+        }
+      ]
     },
     {
       "id": "A1-090",
@@ -262,7 +526,25 @@
       "kind": "NARRATOR_ACHIEVEMENT",
       "reward_item": "minecraft:lightning_rod",
       "reward_count": 1,
-      "reward_name": "Conseil tardif"
+      "reward_name": "Conseil tardif",
+      "reward_label": "PARATONNERRE",
+      "memory_tags": [
+        "danger",
+        "lightning",
+        "absurd"
+      ],
+      "context_variants": [
+        {
+          "id": "lightning_after_danger",
+          "priority": 20,
+          "when": {
+            "actor_tag_danger_gte": 1
+          },
+          "actor_text": "La foudre. Bien sûr. Votre relation avec le danger devient franchement créative.",
+          "other_text": "{player} vient d’être frappé par la foudre. Même le ciel semble suivre sa carrière.",
+          "tone": "TEASE"
+        }
+      ]
     },
     {
       "id": "A1-096",
@@ -272,7 +554,24 @@
       "age_points": 20,
       "civ_score": 5,
       "priority": 100,
-      "kind": "NARRATOR_RESONANCE"
+      "kind": "NARRATOR_RESONANCE",
+      "memory_tags": [
+        "origins",
+        "mystery",
+        "resonance"
+      ],
+      "context_variants": [
+        {
+          "id": "echo_familiar",
+          "priority": 30,
+          "when": {
+            "familiarity_gte": 12
+          },
+          "actor_text": "Arrêtez-vous. Vous commencez à reconnaître ce silence, n’est-ce pas ? Quelque chose répond.",
+          "other_text": "Quelque chose vient de répondre autour de {player}. Cette fois, vous saurez que ce n’est pas du hasard.",
+          "tone": "MYSTERY"
+        }
+      ]
     },
     {
       "id": "A1-097",
@@ -282,7 +581,24 @@
       "age_points": 25,
       "civ_score": 5,
       "priority": 100,
-      "kind": "NARRATOR_RESONANCE"
+      "kind": "NARRATOR_RESONANCE",
+      "memory_tags": [
+        "origins",
+        "stela",
+        "mystery"
+      ],
+      "context_variants": [
+        {
+          "id": "stela_after_origins",
+          "priority": 30,
+          "when": {
+            "global_tag_origins_gte": 1
+          },
+          "actor_text": "La stèle… encore cette sensation. Comme un souvenir qui refuse de porter mon nom.",
+          "other_text": "{player} a atteint la stèle. Ce que nous avons déjà entendu n’était donc qu’un début.",
+          "tone": "MYSTERY"
+        }
+      ]
     },
     {
       "id": "A1-099",
@@ -292,7 +608,25 @@
       "age_points": 25,
       "civ_score": 5,
       "priority": 100,
-      "kind": "NARRATOR_RESONANCE"
+      "kind": "NARRATOR_RESONANCE",
+      "memory_tags": [
+        "origins",
+        "matrix",
+        "mystery",
+        "recognition"
+      ],
+      "context_variants": [
+        {
+          "id": "matrix_after_origins",
+          "priority": 35,
+          "when": {
+            "global_tag_origins_gte": 2
+          },
+          "actor_text": "Elle vous reconnaît. Et maintenant je sais que la première réponse n’était pas une erreur.",
+          "other_text": "La Matrice répond encore à {player}. Nous n’avons plus le luxe d’appeler cela une coïncidence.",
+          "tone": "MYSTERY"
+        }
+      ]
     }
   ]
 }

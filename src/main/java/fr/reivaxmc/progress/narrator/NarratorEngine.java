@@ -71,4 +71,17 @@ public final class NarratorEngine {
    public static void onItemPickup(Object event) {
       NarratorLegacy.onItemPickup(event);
    }
+
+   /**
+    * Entrée stable pour les futurs choix scénaristiques. Le scénario peut faire
+    * évoluer la confiance/défiance de La Voix sans dépendre du stockage interne.
+    */
+   public static void rememberDecision(Object player, String decisionTag, int trustDelta, int defianceDelta) {
+      NarratorLegacy.rememberDecision(player, decisionTag, trustDelta, defianceDelta);
+   }
+
+   /** Ajoute un fait mémorisé exploitable par les futures variantes contextuelles. */
+   public static void rememberFact(Object player, String tag, int amount) {
+      NarratorLegacy.rememberFact(player, tag, amount);
+   }
 }

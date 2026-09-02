@@ -290,6 +290,7 @@ public final class NarratorLegacy {
    public static void onCommands(Object var0) {
       try {
          registerSimpleCommand(var0, "reivax17_info", var0x -> debugInfo(var0x));
+         registerSimpleCommand(var0, "reivax_brain", var0x -> debugBrain(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -719,7 +720,9 @@ public final class NarratorLegacy {
 
    private static void maybeQuietWindow(Object var0, Object var1, NarratorLegacy.ServerState var2) {
       long var3 = now();
-      if (asBool(callQuiet(var1, "introCompleted"))) {
+      // Même gate canonique que les événements A1 : l'ancien introCompleted()
+      // n'est plus le démarrage réel de l'histoire depuis Alpha 18F.
+      if (storyStarted(var0)) {
          if (var2.queue.isEmpty() && var3 - var2.lastFactAt >= 180000L && var3 - var2.lastDeliveredAt >= 180000L && var3 - var2.lastQuietAt >= 900000L) {
             Object var5 = firstPlayer(var0);
             if (var5 != null) {
@@ -785,6 +788,25 @@ public final class NarratorLegacy {
          }
 
          Object var20 = var4.get("other");
+         if (var20 == null) {
+            var20 = firstOtherPlayer(var6, var0);
+         }
+
+         // 0.8.0 — le texte n'est plus seulement lié au trigger. Le cerveau reçoit
+         // un instantané du monde, de la relation et de la mémoire persistante puis
+         // choisit la meilleure variante data-driven. Sans variante compatible, le
+         // texte 0.7.x reste strictement inchangé : le nouveau cerveau est additif.
+         NarratorContextBrain.Snapshot brain = buildBrainContext(var0, var6, var7, var8, var5, var2, var4, var20);
+         NarratorContextBrain.Choice choice = NarratorContextBrain.choose(
+            var5.contextVariants,
+            brain,
+            var16,
+            var18,
+            var1 + "|" + uuid(var0) + "|" + brain.intValue("total_narrations")
+         );
+         var16 = choice.actorText();
+         var18 = choice.otherText();
+
          String var12 = name(var0);
          var16 = replaceVars(var16, var12, var20 == null ? "votre compagnon" : name(var20));
          var18 = replaceVars(var18, var12, "{recipient}");
@@ -876,6 +898,11 @@ public final class NarratorLegacy {
             addTimeline(var1, var0, var2.actor, var2.def.title, var2.actorText);
          }
 
+         // La mémoire n'est enregistrée qu'une fois l'événement réellement validé.
+         // Elle survit au redémarrage via CampaignSavedData et nourrira les variantes
+         // des événements suivants.
+         recordNarrationMemory(var1, var2);
+
          List var3 = players(var0);
          String var4 = uuid(var2.actor);
          String var5 = name(var2.actor);
@@ -891,13 +918,44 @@ public final class NarratorLegacy {
                var9 = "Vous avez assisté à cela. Je suppose que vous saurez choisir vos mots.";
             }
 
-            sendIndividual(var7, var1, var2.id, var2.def.kind, var2.def.title, var9, var2.def.agePoints);
+            // Le client reçoit aussi le rôle du destinataire. Le vrai ID serveur reste intact :
+            // cela permet au HUD d'indiquer clairement qui a reçu la récompense en DUO.
+            String clientEvent = var2.id + (var8 ? "|SELF|" : "|OTHER|") + var5;
+            sendIndividual(var7, var1, clientEvent, var2.def.kind, var2.def.title, var9, var2.def.agePoints);
          }
 
          if (var2.def.rewardItem != null && !var2.def.rewardItem.isBlank()) {
             reward(var2.actor, var2.def);
          }
       }
+   }
+
+   public static String rewardSummary(String eventId) {
+      if (eventId == null || eventId.isBlank()) {
+         return "";
+      }
+
+      String baseId = eventId;
+      int sep = baseId.indexOf('|');
+      if (sep >= 0) {
+         baseId = baseId.substring(0, sep);
+      }
+
+      NarratorLegacy.EventDef def = CATALOG.get(baseId);
+      if (def == null || def.rewardItem == null || def.rewardItem.isBlank() || def.rewardCount <= 0) {
+         return "";
+      }
+
+      String label = def.rewardLabel;
+      if (label == null || label.isBlank()) {
+         label = def.rewardName;
+      }
+      if (label == null || label.isBlank()) {
+         int colon = def.rewardItem.indexOf(':');
+         label = (colon >= 0 ? def.rewardItem.substring(colon + 1) : def.rewardItem).replace('_', ' ').toUpperCase(Locale.ROOT);
+      }
+
+      return def.rewardCount + " " + label;
    }
 
    private static void reward(Object var0, NarratorLegacy.EventDef var1) {
@@ -993,6 +1051,234 @@ public final class NarratorLegacy {
       }
    }
 
+   /**
+    * API stable pour les futurs choix narratifs : les autres systèmes du mod peuvent
+    * faire évoluer la relation avec La Voix sans connaître le stockage interne.
+    */
+   public static void rememberDecision(Object player, String decisionTag, int trustDelta, int defianceDelta) {
+      try {
+         if (!isServerPlayer(player)) {
+            return;
+         }
+
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            return;
+         }
+
+         adjustBrainAxis(campaign, actorBrainKey(player, "trust"), trustDelta);
+         adjustBrainAxis(campaign, actorBrainKey(player, "defiance"), defianceDelta);
+         if (decisionTag != null && !decisionTag.isBlank()) {
+            brainInc(campaign, "brain.decision." + normalizeBrainTag(decisionTag), 1L);
+         }
+      } catch (Throwable error) {
+         soft("brainDecision", error);
+      }
+   }
+
+   /** Permet aux futurs âges d'ajouter une mémoire contextuelle sans nouveau schéma Java. */
+   public static void rememberFact(Object player, String tag, int amount) {
+      try {
+         if (!isServerPlayer(player) || tag == null || tag.isBlank() || amount == 0) {
+            return;
+         }
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            return;
+         }
+         String normalized = normalizeBrainTag(tag);
+         brainInc(campaign, "brain.tag." + normalized, amount);
+         brainInc(campaign, actorBrainKey(player, "tag." + normalized), amount);
+      } catch (Throwable error) {
+         soft("brainFact", error);
+      }
+   }
+
+   private static NarratorContextBrain.Snapshot buildBrainContext(
+      Object actor,
+      Object server,
+      Object campaign,
+      NarratorLegacy.ServerState serverState,
+      NarratorLegacy.EventDef def,
+      String source,
+      Map<String, Object> eventContext,
+      Object other
+   ) {
+      HashMap<String, Object> values = new HashMap<>();
+      float health = asFloat(callQuiet(actor, "getHealth"), 20.0F);
+      float maxHealth = asFloat(callQuiet(actor, "getMaxHealth"), 20.0F);
+      if (maxHealth <= 0.0F) {
+         maxHealth = 20.0F;
+      }
+
+      values.put("source", source == null ? "UNKNOWN" : source);
+      values.put("health", health);
+      values.put("max_health", maxHealth);
+      values.put("health_ratio", health / maxHealth);
+      values.put("actor_name", name(actor));
+      values.put("dimension", dimensionId(actor));
+      values.put("day_phase", dayPhase(actor));
+      values.put("queue_pressure", serverState == null ? 0 : serverState.queue.size());
+      values.put("progress", asInt(fieldQuiet(campaign, "progress"), 0));
+      values.put("civ_score", asInt(fieldQuiet(campaign, "score"), 0));
+      values.put("total_narrations", (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, "brain.total")));
+      values.put("familiarity", (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, actorBrainKey(actor, "heard"))));
+      values.put("trust", (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, actorBrainKey(actor, "trust"))));
+      values.put("defiance", (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, actorBrainKey(actor, "defiance"))));
+
+      boolean otherOnline = other != null && isServerPlayer(other);
+      boolean sameDim = otherOnline && sameDimension(actor, other);
+      double otherDistance = sameDim ? distance(callQuiet(actor, "blockPosition"), callQuiet(other, "blockPosition")) : 999999.0;
+      values.put("other_online", otherOnline);
+      values.put("other_same_dimension", sameDim);
+      values.put("other_nearby", sameDim && otherDistance <= 48.0);
+      values.put("distance_to_other", (int)Math.min(Integer.MAX_VALUE, Math.round(otherDistance)));
+      values.put("other_name", otherOnline ? name(other) : "");
+
+      if (eventContext != null) {
+         for (Entry<String, Object> entry : eventContext.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Number || value instanceof Boolean || value instanceof String) {
+               values.putIfAbsent(entry.getKey(), value);
+            }
+         }
+      }
+
+      // Les compteurs de tags sont chargés uniquement si une variante de cet événement
+      // les demande. Même avec des milliers d'événements, on ne lit donc pas toute la mémoire.
+      for (String required : NarratorContextBrain.requiredContextKeys(def.contextVariants)) {
+         if (required.startsWith("actor_tag_")) {
+            String tag = normalizeBrainTag(required.substring("actor_tag_".length()));
+            values.put(required, (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, actorBrainKey(actor, "tag." + tag))));
+         } else if (required.startsWith("global_tag_")) {
+            String tag = normalizeBrainTag(required.substring("global_tag_".length()));
+            values.put(required, (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, "brain.tag." + tag)));
+         }
+      }
+
+      return new NarratorContextBrain.Snapshot(values);
+   }
+
+   private static void recordNarrationMemory(Object campaign, NarratorLegacy.Pending pending) {
+      try {
+         if (campaign == null || pending == null || pending.actor == null) {
+            return;
+         }
+
+         brainInc(campaign, "brain.total", 1L);
+         brainInc(campaign, actorBrainKey(pending.actor, "heard"), 1L);
+         for (String rawTag : pending.def.memoryTags) {
+            String tag = normalizeBrainTag(rawTag);
+            if (tag.isBlank()) {
+               continue;
+            }
+            brainInc(campaign, "brain.tag." + tag, 1L);
+            brainInc(campaign, actorBrainKey(pending.actor, "tag." + tag), 1L);
+         }
+      } catch (Throwable error) {
+         soft("brainMemory", error);
+      }
+   }
+
+   private static Object firstOtherPlayer(Object server, Object actor) {
+      String actorUuid = uuid(actor);
+      for (Object candidate : players(server)) {
+         if (candidate != actor && !Objects.equals(actorUuid, uuid(candidate))) {
+            return candidate;
+         }
+      }
+      return null;
+   }
+
+   private static String dayPhase(Object player) {
+      try {
+         Object level = callQuiet(player, "serverLevel");
+         Object raw = callQuiet(level, "getDayTime");
+         long time = raw instanceof Number number ? Math.floorMod(number.longValue(), 24000L) : 0L;
+         if (time < 1000L || time >= 23000L) {
+            return "DAWN";
+         }
+         if (time < 12000L) {
+            return "DAY";
+         }
+         if (time < 13500L) {
+            return "DUSK";
+         }
+         return "NIGHT";
+      } catch (Throwable ignored) {
+         return "UNKNOWN";
+      }
+   }
+
+   private static long brainGet(Object campaign, String key) {
+      try {
+         return kvGet(campaign, key);
+      } catch (Throwable ignored) {
+         return 0L;
+      }
+   }
+
+   private static long brainInc(Object campaign, String key, long delta) {
+      try {
+         return kvInc(campaign, key, delta);
+      } catch (Throwable ignored) {
+         return 0L;
+      }
+   }
+
+   private static void adjustBrainAxis(Object campaign, String key, int delta) throws Exception {
+      long current = kvGet(campaign, key);
+      long next = Math.max(0L, Math.min(100L, current + delta));
+      kvSet(campaign, key, next);
+   }
+
+   private static String actorBrainKey(Object player, String metric) {
+      return "brain.actor." + uuid(player) + "." + metric;
+   }
+
+   private static String normalizeBrainTag(String tag) {
+      if (tag == null) {
+         return "";
+      }
+      String normalized = tag.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+      StringBuilder out = new StringBuilder(normalized.length());
+      for (int i = 0; i < normalized.length(); i++) {
+         char c = normalized.charAt(i);
+         if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.') {
+            out.append(c);
+         }
+      }
+      return out.toString();
+   }
+
+   private static void debugBrain(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cCerveau Narrateur indisponible.");
+            return;
+         }
+         int heard = (int)Math.min(Integer.MAX_VALUE, brainGet(campaign, actorBrainKey(player, "heard")));
+         long trust = brainGet(campaign, actorBrainKey(player, "trust"));
+         long defiance = brainGet(campaign, actorBrainKey(player, "defiance"));
+         long danger = brainGet(campaign, actorBrainKey(player, "tag.danger"));
+         long origins = brainGet(campaign, actorBrainKey(player, "tag.origins"));
+         long total = brainGet(campaign, "brain.total");
+         message(
+            player,
+            "§6La Voix 0.8 §7— état: §f" + NarratorContextBrain.familiarityStage(heard)
+               + " §7| familiarité: §f" + heard
+               + " §7| confiance: §f" + trust
+               + " §7| défiance: §f" + defiance
+               + " §7| danger: §f" + danger
+               + " §7| Origines: §f" + origins
+               + " §7| mémoires monde: §f" + total
+         );
+      } catch (Throwable error) {
+         message(player, "§cLecture du cerveau impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
    private static void registerSimpleCommand(Object var0, String var1, NarratorLegacy.PlayerAction var2) throws Exception {
       Object var3 = call(var0, "getDispatcher");
       Class var4 = Class.forName("net.minecraft.commands.Commands");
@@ -1055,6 +1341,8 @@ public final class NarratorLegacy {
 
          setIntField(var1, "progress", Math.max(0, asInt(fieldQuiet(var1, "progress"), 0) - var3));
          setIntField(var1, "score", Math.max(0, asInt(fieldQuiet(var1, "score"), 0) - var4));
+         // Le reset pilote doit également rendre les tests du cerveau reproductibles.
+         doneSet(var1).removeIf(value -> value.startsWith(KV + "brain."));
          callQuiet(var1, "setDirty");
          PLAYERS.remove(uuid(var0));
          state(serverOf(var0)).queue.clear();
@@ -1649,6 +1937,7 @@ public final class NarratorLegacy {
       String kind = "NARRATOR_ACHIEVEMENT";
       String rewardItem;
       String rewardName;
+      String rewardLabel;
       String lowHealthText;
       String otherContainerText;
       String longDistanceText;
@@ -1657,6 +1946,8 @@ public final class NarratorLegacy {
       int civScore;
       int rewardCount = 1;
       final Map<String, String> sourceVariants = new HashMap<>();
+      final List<String> memoryTags = new ArrayList<>();
+      final List<NarratorContextBrain.Variant> contextVariants = new ArrayList<>();
 
       static NarratorLegacy.EventDef from(Map<?, ?> var0) {
          NarratorLegacy.EventDef var1 = new NarratorLegacy.EventDef();
@@ -1674,6 +1965,7 @@ public final class NarratorLegacy {
          var1.civScore = num(var0, "civ_score", 0);
          var1.rewardItem = str(var0, "reward_item");
          var1.rewardName = str(var0, "reward_name");
+         var1.rewardLabel = str(var0, "reward_label");
          var1.rewardCount = num(var0, "reward_count", 1);
          var1.lowHealthText = str(var0, "low_health_text");
          var1.otherContainerText = str(var0, "other_container_text");
@@ -1681,6 +1973,26 @@ public final class NarratorLegacy {
          if (var0.get("source_variants") instanceof Map<?, ?> var3) {
             for (Entry var5 : var3.entrySet()) {
                var1.sourceVariants.put(String.valueOf(var5.getKey()), String.valueOf(var5.getValue()));
+            }
+         }
+
+         if (var0.get("memory_tags") instanceof List<?> tags) {
+            for (Object tag : tags) {
+               String value = String.valueOf(tag).trim();
+               if (!value.isBlank()) {
+                  var1.memoryTags.add(value);
+               }
+            }
+         }
+
+         if (var0.get("context_variants") instanceof List<?> variants) {
+            for (Object rawVariant : variants) {
+               if (rawVariant instanceof Map<?, ?> variantMap) {
+                  NarratorContextBrain.Variant variant = NarratorContextBrain.fromMap(variantMap);
+                  if (variant != null) {
+                     var1.contextVariants.add(variant);
+                  }
+               }
             }
          }
 

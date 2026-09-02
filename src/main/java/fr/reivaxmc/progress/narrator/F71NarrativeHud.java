@@ -20,6 +20,11 @@ public final class F71NarrativeHud {
    private static String objective = "";
    private static String voice = "";
    private static String voiceKind = "";
+   private static String voiceEventId = "";
+   private static String voiceActorName = "";
+   private static String voiceReward = "";
+   private static int voiceGained = 0;
+   private static boolean voiceRecipientIsActor = true;
    private static long voiceLifetimeMs = VOICE_LIFETIME_DEFAULT_MS;
    private static String hint = "";
    private static String guidance = "";
@@ -102,6 +107,7 @@ public final class F71NarrativeHud {
       String event = string(staticField(stateClass, "event"));
       String kind = string(staticField(stateClass, "kind"));
       String detail = string(staticField(stateClass, "detail"));
+      int gained = number(staticField(stateClass, "gained")).intValue();
       long eventAt = number(staticField(stateClass, "eventAt")).longValue();
       if (event.isBlank() && kind.isBlank()) {
          return;
@@ -131,6 +137,12 @@ public final class F71NarrativeHud {
          case "NARRATOR_RESONANCE":
             voice = F81ClientState.qaMask() ? "VOIX · Dialogue narratif déclenché ✓" : cleanHudText(detail);
             voiceKind = kind;
+            VoiceEventContext context = VoiceEventContext.parse(event);
+            voiceEventId = context.baseId;
+            voiceActorName = context.actorName;
+            voiceRecipientIsActor = context.recipientIsActor;
+            voiceGained = Math.max(0, gained);
+            voiceReward = F81ClientState.qaMask() ? "" : NarratorLegacy.rewardSummary(voiceEventId);
             voiceLifetimeMs = voiceLifetimeFor(voice, kind);
             voiceAt = eventAt > 0L ? eventAt : utilMillis();
             playVoiceCue(kind);
@@ -241,68 +253,77 @@ public final class F71NarrativeHud {
 
    private static void drawVoice(Object graphics, Object font, String text, int screenWidth, int screenHeight, long elapsed) throws Exception {
       long lifetime = Math.max(1L, voiceLifetimeMs);
-      long fadeOutStart = Math.max(1200L, lifetime - 700L);
+      long fadeOutStart = Math.max(1200L, lifetime - 650L);
 
-      float appear = Math.min(1.0F, Math.max(0.0F, elapsed / 260.0F));
+      float appear = Math.min(1.0F, Math.max(0.0F, elapsed / 230.0F));
       float disappear = elapsed <= fadeOutStart ? 1.0F : Math.max(0.0F, (float)(lifetime - elapsed) / (float)(lifetime - fadeOutStart));
       float alpha = smoothStep(appear) * smoothStep(disappear);
       if (alpha <= 0.01F) {
          return;
       }
 
-      int maxTextWidth = Math.max(240, Math.min(760, screenWidth - 220));
+      boolean revelation = isRevelation(voiceKind);
+      int maxTextWidth = revelation
+         ? Math.max(260, Math.min(600, (int)(screenWidth * 0.60F)))
+         : Math.max(220, Math.min(470, (int)(screenWidth * 0.46F)));
       List<String> lines = wrapText(font, text, maxTextWidth);
       int widest = 0;
       for (String line : lines) {
          widest = Math.max(widest, fontWidth(font, line));
       }
 
-      int panelWidth = Math.min(screenWidth - 54, Math.max(300, widest + 78));
-      int panelHeight = 31 + Math.max(1, lines.size()) * 13;
+      String meta = voiceMetaLine();
+      boolean hasMeta = !meta.isBlank();
+      int metaWidth = hasMeta ? fontWidth(font, meta) : 0;
+      String label = revelation ? "LA VOIX · RÉSONANCE" : "LA VOIX";
+      int contentWidth = Math.max(widest, Math.max(metaWidth, fontWidth(font, label) + 60));
+      int desiredWidth = Math.max(revelation ? 300 : 250, contentWidth + 54);
+      int maxPanelWidth = Math.max(300, (int)(screenWidth * (revelation ? 0.72F : 0.60F)));
+      int panelWidth = Math.min(screenWidth - 54, Math.min(maxPanelWidth, desiredWidth));
+      int panelHeight = 28 + Math.max(1, lines.size()) * 13 + (hasMeta ? 14 : 0);
       int x = (screenWidth - panelWidth) / 2;
-      int restingY = Math.max(68, (int)(screenHeight * 0.265));
-      int y = restingY + Math.round((1.0F - smoothStep(appear)) * 8.0F);
+      int restingY = Math.max(64, (int)(screenHeight * 0.255));
+      int y = restingY + Math.round((1.0F - smoothStep(appear)) * (revelation ? 7.0F : 5.0F));
 
-      int shadowA = clampAlpha((int)(92.0F * alpha));
-      int bodyA = clampAlpha((int)(214.0F * alpha));
-      int innerA = clampAlpha((int)(98.0F * alpha));
+      // 0.7.12 : les interventions normales laissent davantage respirer le monde.
+      int shadowA = clampAlpha((int)((revelation ? 78.0F : 56.0F) * alpha));
+      int bodyA = clampAlpha((int)((revelation ? 205.0F : 181.0F) * alpha));
+      int innerA = clampAlpha((int)((revelation ? 92.0F : 64.0F) * alpha));
       int textA = clampAlpha((int)(255.0F * alpha));
-      int labelA = clampAlpha((int)(225.0F * alpha));
-      int accentA = clampAlpha((int)(220.0F * alpha));
+      int labelA = clampAlpha((int)(218.0F * alpha));
+      int accentA = clampAlpha((int)((revelation ? 230.0F : 196.0F) * alpha));
 
       int gold = 0xC9A84C;
       int paleGold = 0xE7D9AE;
-      int cyan = isRevelation(voiceKind) ? 0x74D7D2 : 0x4FA9AD;
+      int cyan = revelation ? 0x74D7D2 : 0x4FA9AD;
       int textColor = textA << 24 | 0xF3EFE5;
       int labelColor = labelA << 24 | paleGold;
 
-      // Ombre puis plaque sombre : aucun étirement de texture, donc le cadre
-      // garde ses proportions quelle que soit la longueur du texte.
-      fill(graphics, x + 3, y + 4, x + panelWidth + 3, y + panelHeight + 4, shadowA << 24);
+      fill(graphics, x + 3, y + 3, x + panelWidth + 3, y + panelHeight + 3, shadowA << 24);
       fill(graphics, x, y, x + panelWidth, y + panelHeight, bodyA << 24 | 0x090B0E);
       fill(graphics, x + 2, y + 2, x + panelWidth - 2, y + panelHeight - 2, innerA << 24 | 0x10161A);
 
-      // Filets or + signature froide de la Voix.
-      int lineInset = 18;
+      int lineInset = 16;
       fill(graphics, x + lineInset, y, x + panelWidth - lineInset, y + 1, accentA << 24 | gold);
-      fill(graphics, x + lineInset + 34, y + panelHeight - 1, x + panelWidth - lineInset - 34, y + panelHeight, clampAlpha((int)(145.0F * alpha)) << 24 | gold);
-      fill(graphics, x, y + 8, x + 2, y + panelHeight - 8, clampAlpha((int)(165.0F * alpha)) << 24 | cyan);
-      fill(graphics, x + panelWidth - 2, y + 8, x + panelWidth, y + panelHeight - 8, clampAlpha((int)(165.0F * alpha)) << 24 | cyan);
+      fill(graphics, x + lineInset + 28, y + panelHeight - 1, x + panelWidth - lineInset - 28, y + panelHeight, clampAlpha((int)(122.0F * alpha)) << 24 | gold);
+      fill(graphics, x, y + 7, x + 2, y + panelHeight - 7, clampAlpha((int)(145.0F * alpha)) << 24 | cyan);
+      fill(graphics, x + panelWidth - 2, y + 7, x + panelWidth, y + panelHeight - 7, clampAlpha((int)(145.0F * alpha)) << 24 | cyan);
 
-      // Petits coins gravés, discrets mais lisibles.
-      fill(graphics, x + 8, y + 8, x + 13, y + 10, accentA << 24 | gold);
-      fill(graphics, x + panelWidth - 13, y + 8, x + panelWidth - 8, y + 10, accentA << 24 | gold);
-      fill(graphics, x + 8, y + panelHeight - 10, x + 13, y + panelHeight - 8, accentA << 24 | gold);
-      fill(graphics, x + panelWidth - 13, y + panelHeight - 10, x + panelWidth - 8, y + panelHeight - 8, accentA << 24 | gold);
+      fill(graphics, x + 8, y + 7, x + 13, y + 9, accentA << 24 | gold);
+      fill(graphics, x + panelWidth - 13, y + 7, x + panelWidth - 8, y + 9, accentA << 24 | gold);
+      fill(graphics, x + 8, y + panelHeight - 9, x + 13, y + panelHeight - 7, accentA << 24 | gold);
+      fill(graphics, x + panelWidth - 13, y + panelHeight - 9, x + panelWidth - 8, y + panelHeight - 7, accentA << 24 | gold);
 
-      String label = isRevelation(voiceKind) ? "LA VOIX · RÉSONANCE" : "LA VOIX";
-      drawString(graphics, font, label, x + 18, y + 8, labelColor, false);
-      fill(graphics, x + 18 + fontWidth(font, label) + 8, y + 12, x + panelWidth - 18, y + 13, clampAlpha((int)(70.0F * alpha)) << 24 | cyan);
+      drawString(graphics, font, label, x + 16, y + 7, labelColor, false);
+      int headerLineStart = x + 16 + fontWidth(font, label) + 8;
+      if (headerLineStart < x + panelWidth - 16) {
+         fill(graphics, headerLineStart, y + 11, x + panelWidth - 16, y + 12, clampAlpha((int)(58.0F * alpha)) << 24 | cyan);
+      }
 
-      long typeStart = 120L;
-      int visibleChars = elapsed <= typeStart ? 0 : Math.min(text.length(), (int)((elapsed - typeStart) * 58L / 1000L));
+      long typeStart = 100L;
+      int visibleChars = elapsed <= typeStart ? 0 : Math.min(text.length(), (int)((elapsed - typeStart) * 63L / 1000L));
       int remaining = visibleChars;
-      int textY = y + 23;
+      int textY = y + 21;
       for (String fullLine : lines) {
          String shown;
          if (remaining <= 0) {
@@ -319,6 +340,32 @@ public final class F71NarrativeHud {
          remaining -= fullLine.length();
          textY += 13;
       }
+
+      if (hasMeta) {
+         float metaAppear = smoothStep(Math.max(0.0F, Math.min(1.0F, (elapsed - 220L) / 220.0F)));
+         int metaA = clampAlpha((int)(220.0F * alpha * metaAppear));
+         int separatorA = clampAlpha((int)(64.0F * alpha * metaAppear));
+         int metaY = y + panelHeight - 11;
+         fill(graphics, x + 28, metaY - 4, x + panelWidth - 28, metaY - 3, separatorA << 24 | cyan);
+         drawCentered(graphics, font, fit(font, meta, panelWidth - 42), screenWidth / 2, metaY, metaA << 24 | 0xD7C58F);
+      }
+   }
+
+   private static String voiceMetaLine() {
+      String points = voiceGained > 0 ? "+" + voiceGained + " PTS" : "";
+      String reward = voiceReward == null ? "" : voiceReward.trim();
+      if (!reward.isBlank()) {
+         if (voiceRecipientIsActor || voiceActorName == null || voiceActorName.isBlank()) {
+            reward = "RÉCOMPENSE : " + reward;
+         } else {
+            reward = voiceActorName + " reçoit : " + reward;
+         }
+      }
+
+      if (!points.isBlank() && !reward.isBlank()) {
+         return points + "   ·   " + reward;
+      }
+      return !points.isBlank() ? points : reward;
    }
 
    private static long voiceLifetimeFor(String text, String kind) {
@@ -696,4 +743,27 @@ public final class F71NarrativeHud {
    private static String string(Object var0) {
       return var0 == null ? "" : String.valueOf(var0);
    }
+   private static final class VoiceEventContext {
+      final String baseId;
+      final boolean recipientIsActor;
+      final String actorName;
+
+      private VoiceEventContext(String baseId, boolean recipientIsActor, String actorName) {
+         this.baseId = baseId == null ? "" : baseId;
+         this.recipientIsActor = recipientIsActor;
+         this.actorName = actorName == null ? "" : actorName;
+      }
+
+      static VoiceEventContext parse(String raw) {
+         if (raw == null || raw.isBlank()) {
+            return new VoiceEventContext("", true, "");
+         }
+         String[] parts = raw.split("\\|", 3);
+         String base = parts.length > 0 ? parts[0] : raw;
+         boolean self = parts.length < 2 || !"OTHER".equals(parts[1]);
+         String actor = parts.length >= 3 ? parts[2] : "";
+         return new VoiceEventContext(base, self, actor);
+      }
+   }
+
 }
