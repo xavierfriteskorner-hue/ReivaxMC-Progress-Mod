@@ -754,11 +754,14 @@ public final class NarratorLegacy {
             return;
          }
 
-         // Gameplay narrator achievements only exist once the player has actually
-         // entered the story. We still scan inventory before that point so items
-         // collected on the start screen are remembered and do not replay later.
-         if (var1.startsWith("A1-") && !asBool(callQuiet(var7, "introCompleted")) && !"STORY".equals(var2)) {
-            System.out.println("[REIVAX EVENT DEBUG] IGNORE " + var1 + ": histoire non commencée");
+         // Alpha 18F has its own canonical story-start state. CampaignSavedData.introCompleted()
+         // belongs to the older awakening intro and is NOT toggled by the current
+         // "Commencer l'histoire" button. Using it here made every A1 event look as if
+         // the story had never started, even though StoryOpening18F had started it.
+         boolean varStoryStarted = storyStarted(var6);
+         System.out.println("[REIVAX EVENT DEBUG] gate histoire " + var1 + ": started=" + varStoryStarted);
+         if (var1.startsWith("A1-") && !varStoryStarted && !"STORY".equals(var2)) {
+            System.out.println("[REIVAX EVENT DEBUG] IGNORE " + var1 + ": histoire non commencée (StoryStartState18F.started=false)");
             return;
          }
 
@@ -839,9 +842,12 @@ public final class NarratorLegacy {
          if (var5 != null) {
             var2.queue.remove(var5);
             if (var5.def.priority >= 30 || var3 - var5.createdAt <= 120000L) {
+               System.out.println("[REIVAX EVENT DEBUG] DEFILE " + var5.id + " -> deliver");
                deliver(var0, var1, var5);
                var2.lastDeliveredAt = var3;
                var2.nextDeliveryAt = var3 + 6400L;
+            } else {
+               System.out.println("[REIVAX EVENT DEBUG] DROP " + var5.id + ": TTL dépassé");
             }
          }
       }
@@ -955,6 +961,7 @@ public final class NarratorLegacy {
 
          var8.setAccessible(true);
          Object var18 = var8.invoke(null, var0, var1, var2, var3, var4 == null ? "" : var4, var5 == null ? "" : var5, var6);
+         System.out.println("[REIVAX EVENT DEBUG] PACKET construit " + var2 + " kind=" + var3 + " joueur=" + name(var0));
          Class var19 = Class.forName("net.neoforged.neoforge.network.PacketDistributor");
          Class var20 = Class.forName("net.minecraft.network.protocol.common.custom.CustomPacketPayload");
          Object var21 = Array.newInstance(var20, 0);
@@ -962,6 +969,7 @@ public final class NarratorLegacy {
          for (Method var16 : var19.getMethods()) {
             if (var16.getName().equals("sendToPlayer") && var16.getParameterCount() == 3) {
                var16.invoke(null, var0, var18, var21);
+               System.out.println("[REIVAX EVENT DEBUG] PACKET envoyé " + var2 + " -> " + name(var0));
                break;
             }
          }
@@ -1470,6 +1478,22 @@ public final class NarratorLegacy {
             var3.setAccessible(true);
             return var3.invoke(var0, var2);
          }
+      }
+   }
+
+   private static boolean storyStarted(Object var0) {
+      if (var0 == null) {
+         return false;
+      }
+
+      try {
+         Class<?> var1 = Class.forName("fr.reivaxmc.progress.story.StoryModeGate18F");
+         Object var2 = callStatic(var1, "state", var0);
+         Object var3 = callQuiet(var2, "snapshot");
+         return asBool(callQuiet(var3, "started"));
+      } catch (Throwable var4) {
+         soft("storyStarted18F", var4);
+         return false;
       }
    }
 
