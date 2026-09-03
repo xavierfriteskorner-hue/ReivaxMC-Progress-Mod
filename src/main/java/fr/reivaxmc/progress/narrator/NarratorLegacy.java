@@ -31,7 +31,7 @@ public final class NarratorLegacy {
    private static final long SOURCE_HINT_MS = 8000L;
    private static final long NOTIFICATION_GAP_MIN_MS = 4300L;
    private static final long NOTIFICATION_GAP_MAX_MS = 9000L;
-   private static final int MAX_QUEUE_SIZE = 10;
+   private static final int MAX_QUEUE_SIZE = 24;
    private static final long QUIET_AFTER_MS = 180000L;
    private static final long QUIET_COOLDOWN_MS = 900000L;
    private static final Map<Object, NarratorLegacy.ServerState> SERVERS = Collections.synchronizedMap(new WeakHashMap<>());
@@ -176,12 +176,18 @@ public final class NarratorLegacy {
                    if (a2 != null) {
                       trigger(var0, a2.eventId(), a2.source(), var10, Map.of("item", a2.targetId(), "delta", var9));
                    }
+
+                   NarratorA3SignalDetector.Signal a3 = NarratorA3SignalDetector.inventoryIncrease(var6);
+                   if (a3 != null) {
+                      trigger(var0, a3.eventId(), a3.source(), var10, Map.of("item", a3.targetId(), "delta", var9));
+                   }
                 }
             }
          }
 
          var2.itemCounts.clear();
          var2.itemCounts.putAll(var3);
+         observeA3Equipment(var0);
       } catch (Throwable var13) {
          soft("inventoryScan", var13);
       }
@@ -303,6 +309,7 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax_brain", var0x -> debugBrain(var0x));
          registerSimpleCommand(var0, "reivax_a1", var0x -> debugStorySignalsA1(var0x));
          registerSimpleCommand(var0, "reivax_a2", var0x -> debugSignalsA2(var0x));
+         registerSimpleCommand(var0, "reivax_a3", var0x -> debugSignalsA3(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -868,15 +875,53 @@ public final class NarratorLegacy {
          }
 
          if (var5 != null) {
-            var2.queue.remove(var5);
+            if (NarratorBurstPolicy.shouldWait(var5.def.condenseGroup, var5.createdAt, var3)) {
+               return;
+            }
+
+            ArrayList<NarratorLegacy.Pending> batch = new ArrayList<>();
+            batch.add(var5);
+            if (!var5.def.condenseGroup.isBlank() && !hasReward(var5.def)) {
+               String anchorActor = uuid(var5.actor);
+               for (NarratorLegacy.Pending candidate : var2.queue) {
+                  if (candidate == var5 || batch.size() >= NarratorBurstPolicy.MAX_EVENTS_PER_PANEL) {
+                     continue;
+                  }
+                  if (NarratorBurstPolicy.canJoin(
+                     var5.def.condenseGroup,
+                     candidate.def.condenseGroup,
+                     anchorActor,
+                     uuid(candidate.actor),
+                     var5.createdAt,
+                     candidate.createdAt,
+                     hasReward(candidate.def)
+                  )) {
+                     batch.add(candidate);
+                  }
+               }
+            }
+
+            batch.sort((left, right) -> {
+               int byTime = Long.compare(left.createdAt, right.createdAt);
+               return byTime != 0 ? byTime : left.id.compareTo(right.id);
+            });
+            var2.queue.removeAll(batch);
             if (var5.def.priority >= 30 || var3 - var5.createdAt <= 120000L) {
-               deliver(var0, var1, var5);
+               if (batch.size() > 1) {
+                  deliverBatch(var0, var1, batch);
+               } else {
+                  deliver(var0, var1, var5);
+               }
                var2.lastDeliveredAt = var3;
                var2.nextDeliveryAt = var3 + deliveryGapMs(var5);
             } else {
             }
          }
       }
+   }
+
+   private static boolean hasReward(NarratorLegacy.EventDef def) {
+      return def.rewardItem != null && !def.rewardItem.isBlank() && def.rewardCount > 0;
    }
 
    private static long deliveryGapMs(NarratorLegacy.Pending pending) {
@@ -937,13 +982,53 @@ public final class NarratorLegacy {
 
             // Le client reçoit aussi le rôle du destinataire. Le vrai ID serveur reste intact :
             // cela permet au HUD d'indiquer clairement qui a reçu la récompense en DUO.
-            String clientEvent = var2.id + (var8 ? "|SELF|" : "|OTHER|") + var5;
+            String clientEvent = var2.id + (var8 ? "|SELF|" : "|OTHER|") + var5 + "|CIV=" + var2.def.civScore;
             sendIndividual(var7, var1, clientEvent, var2.def.kind, var2.def.title, var9, var2.def.agePoints);
          }
 
          if (var2.def.rewardItem != null && !var2.def.rewardItem.isBlank()) {
             reward(var2.actor, var2.def);
          }
+      }
+   }
+
+   private static void deliverBatch(Object server, Object campaign, List<NarratorLegacy.Pending> requested) {
+      ArrayList<NarratorLegacy.Pending> accepted = new ArrayList<>();
+      int agePoints = 0;
+      int civPoints = 0;
+      for (NarratorLegacy.Pending pending : requested) {
+         if (!pending.id.startsWith("A1-") || asBool(callQuiet(campaign, "complete", pending.id, pending.def.agePoints, pending.def.civScore))) {
+            accepted.add(pending);
+            agePoints += pending.def.agePoints;
+            civPoints += pending.def.civScore;
+            if (pending.id.startsWith("A1-")) {
+               addTimeline(campaign, server, pending.actor, pending.def.title, pending.actorText);
+            }
+            recordNarrationMemory(campaign, pending);
+         }
+      }
+
+      if (accepted.isEmpty()) {
+         return;
+      }
+
+      NarratorLegacy.Pending anchor = accepted.getFirst();
+      String actorUuid = uuid(anchor.actor);
+      String actorName = name(anchor.actor);
+      String kind = accepted.stream().map(pending -> pending.def.kind).anyMatch("NARRATOR_ANNOUNCEMENT"::equals)
+         ? "NARRATOR_ANNOUNCEMENT"
+         : "NARRATOR_ACHIEVEMENT";
+
+      for (Object recipient : players(server)) {
+         boolean actor = Objects.equals(uuid(recipient), actorUuid);
+         ArrayList<String> texts = new ArrayList<>();
+         for (NarratorLegacy.Pending pending : accepted) {
+            String text = actor ? pending.actorText : pending.otherText;
+            texts.add(text.replace("{recipient}", name(recipient)));
+         }
+         String combined = NarratorBurstPolicy.combine(texts);
+         String clientEvent = "BATCH:" + anchor.id + (actor ? "|SELF|" : "|OTHER|") + actorName + "|CIV=" + civPoints;
+         sendIndividual(recipient, campaign, clientEvent, kind, "PROGRESSION RAPIDE", combined, agePoints);
       }
    }
 
@@ -1360,6 +1445,41 @@ public final class NarratorLegacy {
       }
    }
 
+   private static void debugSignalsA3(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux A3 indisponibles.");
+            return;
+         }
+
+         String[] labels = {
+            "Seau", "Eau", "Lave", "Armure", "Armure complète", "Bouclier", "Arc", "Émeraude",
+            "Cuivre", "Lapis", "Or", "Redstone", "Améthyste", "Obsidienne", "Outil fer", "Pioche diamant"
+         };
+         int completed = 0;
+         StringBuilder resources = new StringBuilder();
+         StringBuilder equipment = new StringBuilder();
+         for (int index = 0; index < NarratorA3SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorA3SignalDetector.ALL_IDS.get(index)));
+            if (done) {
+               completed++;
+            }
+            StringBuilder target = index < 3 || index >= 7 && index <= 13 ? resources : equipment;
+            if (!target.isEmpty()) {
+               target.append(" §8| ");
+            }
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+
+         message(player, "§6A3 progression matérielle §7— §f" + completed + "/16 §8| §bSOLO + DUO prêts");
+         message(player, "§6Ressources §8| " + resources);
+         message(player, "§6Équipement §8| " + equipment);
+      } catch (Throwable error) {
+         message(player, "§cLecture A3 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
    }
@@ -1367,6 +1487,11 @@ public final class NarratorLegacy {
    static boolean catalogHasDuoTextForTest(String eventId) {
       NarratorLegacy.EventDef def = CATALOG.get(eventId);
       return def != null && def.otherText != null && !def.otherText.isBlank();
+   }
+
+   static String catalogCondenseGroupForTest(String eventId) {
+      NarratorLegacy.EventDef def = CATALOG.get(eventId);
+      return def == null ? "" : def.condenseGroup;
    }
 
    private static void registerSimpleCommand(Object var0, String var1, NarratorLegacy.PlayerAction var2) throws Exception {
@@ -1589,6 +1714,38 @@ public final class NarratorLegacy {
          return asBool(var2);
       } catch (Throwable var3) {
          return false;
+      }
+   }
+
+   private static void observeA3Equipment(Object player) {
+      try {
+         HashSet<String> armor = new HashSet<>();
+         Object rawArmor = callQuiet(player, "getArmorSlots");
+         if (rawArmor instanceof Iterable<?> slots) {
+            for (Object stack : slots) {
+               if (stack != null && !asBool(callQuiet(stack, "isEmpty"))) {
+                  String id = stackItemId(stack);
+                  if (id != null && !id.isBlank()) {
+                     armor.add(id);
+                  }
+               }
+            }
+         }
+
+         String mainHand = stackItemId(callQuiet(player, "getMainHandItem"));
+         String offHand = stackItemId(callQuiet(player, "getOffhandItem"));
+         NarratorA3SignalDetector.Equipment snapshot = new NarratorA3SignalDetector.Equipment(armor, mainHand, offHand);
+         for (NarratorA3SignalDetector.Signal signal : NarratorA3SignalDetector.equipment(snapshot)) {
+            trigger(
+               player,
+               signal.eventId(),
+               signal.source(),
+               null,
+               Map.of("equipment", signal.targetId(), "armor_slots", armor.size())
+            );
+         }
+      } catch (Throwable error) {
+         soft("a3Equipment", error);
       }
    }
 
@@ -2028,6 +2185,7 @@ public final class NarratorLegacy {
       String rewardItem;
       String rewardName;
       String rewardLabel;
+      String condenseGroup = "";
       String lowHealthText;
       String otherContainerText;
       String longDistanceText;
@@ -2056,6 +2214,7 @@ public final class NarratorLegacy {
          var1.rewardItem = str(var0, "reward_item");
          var1.rewardName = str(var0, "reward_name");
          var1.rewardLabel = str(var0, "reward_label");
+         var1.condenseGroup = str(var0, "condense_group");
          var1.rewardCount = num(var0, "reward_count", 1);
          var1.lowHealthText = str(var0, "low_health_text");
          var1.otherContainerText = str(var0, "other_container_text");

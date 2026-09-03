@@ -225,6 +225,7 @@
       "civ_score": 1,
       "priority": 55,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "home_setup",
       "memory_tags": [
         "storage",
         "civilization",
@@ -240,6 +241,7 @@
       "civ_score": 1,
       "priority": 55,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "home_setup",
       "memory_tags": [
         "sleep",
         "civilization",
@@ -671,6 +673,198 @@
           "tone": "MYSTERY"
         }
       ]
+    },
+    {
+      "id": "A1-101",
+      "title": "UN RÉCIPIENT À PROBLÈMES",
+      "actor_text": "Un seau. Objet banal, capacité de nuisance remarquable.",
+      "other_text": "{player} vient d’obtenir un seau. Gardez un œil sur l’eau, la lave et ses idées.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "bucket_progression",
+      "memory_tags": ["craft", "tool", "survival"]
+    },
+    {
+      "id": "A1-102",
+      "title": "L’EAU VOYAGE",
+      "actor_text": "De l’eau dans un seau. Gardez-la près de vos mauvaises idées.",
+      "other_text": "{player} transporte maintenant de l’eau. Cela devrait améliorer vos chances de survie. Théoriquement.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "bucket_progression",
+      "memory_tags": ["water", "tool", "survival"]
+    },
+    {
+      "id": "A1-103",
+      "title": "LA MAUVAISE IDÉE TRANSPORTABLE",
+      "actor_text": "De la lave dans un seau. Voilà une décision qui mérite de la distance.",
+      "other_text": "{player} vient de mettre de la lave dans un seau. Prenez quelques blocs de distance.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "bucket_progression",
+      "memory_tags": ["lava", "danger", "tool"]
+    },
+    {
+      "id": "A1-104",
+      "title": "L’INSTINCT DE CONSERVATION",
+      "actor_text": "Une armure. Votre instinct de conservation vient de se réveiller.",
+      "other_text": "{player} porte sa première pièce d’armure. L’instinct de conservation progresse.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["armor", "survival"]
+    },
+    {
+      "id": "A1-105",
+      "title": "ENTIÈREMENT ÉQUIPÉ",
+      "actor_text": "Armure complète. Vous ressemblez enfin à quelqu’un qui prévoit les conséquences.",
+      "other_text": "{player} est entièrement équipé. Cela ne garantit malheureusement rien.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["armor", "survival", "progression"]
+    },
+    {
+      "id": "A1-106",
+      "title": "UN PLAN QUI BLOQUE",
+      "actor_text": "Un bouclier. Enfin un plan qui consiste à ne pas tout encaisser.",
+      "other_text": "{player} équipe un bouclier. Pour une fois, quelqu’un prévoit le choc avant qu’il arrive.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["shield", "survival", "combat"]
+    },
+    {
+      "id": "A1-107",
+      "title": "LA DISTANCE DEVIENT UNE OPTION",
+      "actor_text": "Un arc. La distance devient officiellement votre problème.",
+      "other_text": "{player} a trouvé un arc. La sécurité du groupe dépend désormais de sa précision.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["bow", "combat", "tool"]
+    },
+    {
+      "id": "A1-108",
+      "title": "UNE VALEUR TRÈS LOCALE",
+      "actor_text": "Une émeraude. Certains l’appellent richesse. Les villageois, surtout.",
+      "other_text": "{player} a trouvé une émeraude. Les villageois commencent soudain à paraître plus intéressés.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["emerald", "resource", "trade"]
+    },
+    {
+      "id": "A1-109",
+      "title": "LE MÉTAL QUI VIEILLIT",
+      "actor_text": "Du cuivre. Beaucoup de potentiel, énormément d’oxydation.",
+      "other_text": "{player} a trouvé du cuivre. Votre avenir commun sera conducteur et probablement oxydé.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "material_progression",
+      "memory_tags": ["copper", "resource"]
+    },
+    {
+      "id": "A1-110",
+      "title": "LE BLEU QUI SERVIRA PLUS TARD",
+      "actor_text": "Du lapis. Joli, bleu, et bientôt beaucoup moins décoratif.",
+      "other_text": "{player} a trouvé du lapis. L’enchantement se rapproche. Les dépenses aussi.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["lapis", "resource", "enchantment"]
+    },
+    {
+      "id": "A1-111",
+      "title": "LA VALEUR SE COMPLIQUE",
+      "actor_text": "De l’or. Votre sens de la valeur vient de devenir plus compliqué.",
+      "other_text": "{player} a trouvé de l’or. Essayez de vous mettre d’accord sur ce que « partager » signifie.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["gold", "resource"]
+    },
+    {
+      "id": "A1-112",
+      "title": "LES PROBLÈMES AUTOMATIQUES",
+      "actor_text": "De la redstone. À partir d’ici, vos problèmes peuvent devenir automatiques.",
+      "other_text": "{player} a trouvé de la redstone. Vos problèmes communs pourront bientôt fonctionner automatiquement.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["redstone", "resource", "technology"]
+    },
+    {
+      "id": "A1-113",
+      "title": "BEAUTÉ SANS EXPLICATION",
+      "actor_text": "Une améthyste. Le monde sait parfois être beau sans explication.",
+      "other_text": "{player} a trouvé une améthyste. Le monde vous offre parfois quelque chose de beau sans piège apparent.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["amethyst", "resource", "beauty"]
+    },
+    {
+      "id": "A1-114",
+      "title": "LES FRONTIÈRES CHANGENT",
+      "actor_text": "De l’obsidienne. Vous commencez à manipuler des choses qui changent les frontières.",
+      "other_text": "{player} a obtenu de l’obsidienne. Certaines frontières vont bientôt devenir optionnelles.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "material_progression",
+      "memory_tags": ["obsidian", "resource", "dimension"]
+    },
+    {
+      "id": "A1-115",
+      "title": "LE BOIS PREND SA RETRAITE",
+      "actor_text": "Un outil en fer. Le bois peut enfin prendre une retraite partielle.",
+      "other_text": "{player} tient un outil en fer. Le progrès devient difficile à nier.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["iron", "tool", "progression"]
+    },
+    {
+      "id": "A1-116",
+      "title": "LES PROFONDEURS RECULENT",
+      "actor_text": "Une pioche en diamant. Les profondeurs viennent de perdre un argument.",
+      "other_text": "{player} a obtenu une pioche en diamant. Les projets vont devenir plus ambitieux.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "equipment_progression",
+      "memory_tags": ["diamond", "tool", "progression"]
     }
   ]
 }

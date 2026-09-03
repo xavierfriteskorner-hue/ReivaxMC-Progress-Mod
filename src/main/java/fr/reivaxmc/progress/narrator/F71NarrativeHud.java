@@ -24,6 +24,7 @@ public final class F71NarrativeHud {
    private static String voiceActorName = "";
    private static String voiceReward = "";
    private static int voiceGained = 0;
+   private static int voiceCivilizationGained = 0;
    private static boolean voiceRecipientIsActor = true;
    private static long voiceLifetimeMs = VOICE_LIFETIME_DEFAULT_MS;
    private static String hint = "";
@@ -142,6 +143,7 @@ public final class F71NarrativeHud {
             voiceActorName = context.actorName;
             voiceRecipientIsActor = context.recipientIsActor;
             voiceGained = Math.max(0, gained);
+            voiceCivilizationGained = Math.max(0, context.civilizationGained);
             voiceReward = F81ClientState.qaMask() ? "" : NarratorLegacy.rewardSummary(voiceEventId);
             voiceLifetimeMs = voiceLifetimeFor(voice, kind);
             voiceAt = eventAt > 0L ? eventAt : utilMillis();
@@ -352,7 +354,7 @@ public final class F71NarrativeHud {
    }
 
    private static String voiceMetaLine() {
-      String points = voiceGained > 0 ? "+" + voiceGained + " PTS" : "";
+      String points = NarratorHudText.pointsLine(voiceGained, voiceCivilizationGained);
       String reward = voiceReward == null ? "" : voiceReward.trim();
       if (!reward.isBlank()) {
          if (voiceRecipientIsActor || voiceActorName == null || voiceActorName.isBlank()) {
@@ -747,22 +749,31 @@ public final class F71NarrativeHud {
       final String baseId;
       final boolean recipientIsActor;
       final String actorName;
+      final int civilizationGained;
 
-      private VoiceEventContext(String baseId, boolean recipientIsActor, String actorName) {
+      private VoiceEventContext(String baseId, boolean recipientIsActor, String actorName, int civilizationGained) {
          this.baseId = baseId == null ? "" : baseId;
          this.recipientIsActor = recipientIsActor;
          this.actorName = actorName == null ? "" : actorName;
+         this.civilizationGained = Math.max(0, civilizationGained);
       }
 
       static VoiceEventContext parse(String raw) {
          if (raw == null || raw.isBlank()) {
-            return new VoiceEventContext("", true, "");
+            return new VoiceEventContext("", true, "", 0);
          }
-         String[] parts = raw.split("\\|", 3);
+         String[] parts = raw.split("\\|", 4);
          String base = parts.length > 0 ? parts[0] : raw;
          boolean self = parts.length < 2 || !"OTHER".equals(parts[1]);
          String actor = parts.length >= 3 ? parts[2] : "";
-         return new VoiceEventContext(base, self, actor);
+         int civilization = 0;
+         if (parts.length >= 4 && parts[3].startsWith("CIV=")) {
+            try {
+               civilization = Integer.parseInt(parts[3].substring(4));
+            } catch (NumberFormatException ignored) {
+            }
+         }
+         return new VoiceEventContext(base, self, actor, civilization);
       }
    }
 
