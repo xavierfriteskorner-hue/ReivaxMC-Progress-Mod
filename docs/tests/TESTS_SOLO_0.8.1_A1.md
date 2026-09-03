@@ -1,25 +1,25 @@
-# REIVAX MC 0.8.1 — checklist SOLO du sous-lot A1
+# REIVAX MC 0.8.1a — checklist SOLO du sous-lot A1 corrigé
 
 ## Préparation
 
 - [ ] Utiliser de préférence un nouveau monde SOLO de test, ou une sauvegarde de test copiée.
-- [ ] Installer la version 0.8.1 et vérifier qu’elle démarre sans erreur.
+- [ ] Installer la version 0.8.1a et vérifier qu’elle démarre sans erreur.
 - [ ] Ne pas connecter Laeriss : le DUO est volontairement hors périmètre de ce lot.
-- [ ] Exécuter `/reivax_a1` et noter le compteur initial. Sur un monde neuf, l’objectif est `0/5`.
+- [ ] Exécuter `/reivax_a1` et noter le compteur initial. Sur un monde neuf, l’objectif est `0/3`.
 
-> Une sauvegarde déjà avancée peut contenir certains identifiants A1 mémorisés par la 0.8.0. Pour tester les cinq transitions de bout en bout, employer un monde neuf.
+> Une sauvegarde déjà avancée peut avoir dépassé certains jalons. Pour tester les trois transitions de bout en bout, employer un monde neuf.
 
-## Test nominal des cinq signaux
+## Test nominal des trois signaux actuels
 
 Pour chaque étape, vérifier dans cet ordre : transition de l’histoire, phrase de La Voix dans le HUD, progression/points éventuels, puis compteur `/reivax_a1`.
 
 - [ ] Provoquer la première Résonance : `A1-096` doit être livré une seule fois, avec +20 points d’Âge et +5 civilisation.
-- [ ] Découvrir ou activer la Stèle : `A1-097` doit être livré une seule fois, avec +25 points d’Âge et +5 civilisation.
-- [ ] Atteindre la reconnaissance de la Matrice : `A1-099` doit être livré une seule fois, avec +25 points d’Âge et +5 civilisation.
+- [ ] Insérer les Sceaux dans les Stèles du seuil du Sanctuaire : `A1-097` doit être livré une seule fois, avec +25 points d’Âge et +5 civilisation.
 - [ ] Valider le premier foyer : `A1-051` doit être livré une seule fois, avec +25 points d’Âge, +5 civilisation et la Pierre du Premier Foyer.
-- [ ] Installer la Matrice : `A1-066` doit être livré une seule fois, avec +20 points d’Âge, +4 civilisation et deux Veilleuses de la Matrice.
-- [ ] À la fin, `/reivax_a1` doit afficher `5/5`.
-- [ ] Sur un monde neuf ayant uniquement validé ces cinq événements, le gain cumulé attendu est +115 points d’Âge et +24 civilisation.
+- [ ] À la fin, `/reivax_a1` doit afficher `3/3` et préciser que la Matrice est reportée.
+- [ ] Sur un monde neuf ayant uniquement validé ces trois événements, le gain cumulé attendu est +70 points d’Âge et +15 civilisation.
+
+Les événements `A1-066` (Matrice installée) et `A1-099` (Matrice reconnue) ne doivent rien déclencher dans cette version. Ils restent réservés au futur chapitre de la Matrice.
 
 ## Anti-doublon et persistance
 

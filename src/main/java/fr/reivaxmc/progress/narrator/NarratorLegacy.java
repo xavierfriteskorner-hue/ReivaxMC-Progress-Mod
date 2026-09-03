@@ -618,29 +618,25 @@ public final class NarratorLegacy {
    private static void bridgeStoryState(Object var0, Object var1, NarratorLegacy.ServerState var2) {
       try {
          boolean var3 = asBool(callQuiet(var1, "foundationPlaced"));
-         boolean var4 = asBool(callQuiet(var1, "matrixInstalled"));
-         boolean var5 = asBool(callQuiet(var1, "stelaPlaced"));
-         boolean var6 = asBool(callQuiet(var1, "stelaDiscovered"));
-         boolean var7 = asBool(callQuiet(var1, "matrixDiscovered"));
-         boolean var8 = asBool(callQuiet(var1, "nightSeen"));
-         NarratorStorySignalDetector.Snapshot currentStory = new NarratorStorySignalDetector.Snapshot(var3, var4, var5, var6, var7);
+         boolean var4 = currentAge1Resonance(var0);
+         boolean var5 = asBool(callQuiet(var1, "isCompleted", "F84_SEAL_INSERTED"));
+         boolean var6 = asBool(callQuiet(var1, "nightSeen"));
+         NarratorStorySignalDetector.Snapshot currentStory = new NarratorStorySignalDetector.Snapshot(var3, var4, var5);
          if (!var2.storyInitialized) {
             var2.storyInitialized = true;
             rememberStorySnapshot(var2, currentStory);
-            var2.nightSeen = var8;
+            var2.nightSeen = var6;
             return;
          }
 
          NarratorStorySignalDetector.Snapshot previousStory = new NarratorStorySignalDetector.Snapshot(
             var2.foundation,
-            var2.matrix,
             var2.stelaPlaced,
-            var2.stela,
-            var2.matrixDisc
+            var2.stela
          );
-         Object var9 = firstPlayer(var0);
+         Object var7 = firstPlayer(var0);
          for (NarratorStorySignalDetector.Signal signal : NarratorStorySignalDetector.detect(previousStory, currentStory)) {
-            Object actor = storySignalActor(signal.eventId(), var0, var1, var2, var9);
+            Object actor = storySignalActor(signal.eventId(), var0, var1, var7);
             if (actor != null) {
                trigger(actor, signal.eventId(), "story_bus", null, Map.of("story_state", signal.storyState()));
                if (NarratorStorySignalDetector.FIRST_RESONANCE.equals(signal.eventId())) {
@@ -649,15 +645,15 @@ public final class NarratorLegacy {
             }
          }
 
-         if (var8 && !asBool(callQuiet(var1, "isCompleted", "A1-031")) && isDawn(var0) && var9 != null) {
-            trigger(var9, "A1-031", "STORY", null, Map.of());
+         if (var6 && !asBool(callQuiet(var1, "isCompleted", "A1-031")) && isDawn(var0) && var7 != null) {
+            trigger(var7, "A1-031", "STORY", null, Map.of());
             var2.nextDeliveryAt = Math.max(var2.nextDeliveryAt, now() + 6500L);
          }
 
          rememberStorySnapshot(var2, currentStory);
-         var2.nightSeen = var8;
-      } catch (Throwable var11) {
-         soft("storySignalsA1", var11);
+         var2.nightSeen = var6;
+      } catch (Throwable var8) {
+         soft("storySignalsA1", var8);
       }
    }
 
@@ -665,18 +661,23 @@ public final class NarratorLegacy {
       String eventId,
       Object server,
       Object campaign,
-      NarratorLegacy.ServerState serverState,
       Object fallbackActor
    ) {
       if (NarratorStorySignalDetector.FIRST_HOME.equals(eventId)) {
          Object founder = foundationActor(campaign, server);
          return founder == null ? fallbackActor : founder;
       }
-      if (NarratorStorySignalDetector.MATRIX_INSTALLED.equals(eventId)) {
-         Object installer = playerByUuid(server, serverState.lastMatrixActorUuid);
-         return installer == null ? fallbackActor : installer;
-      }
       return fallbackActor;
+   }
+
+   private static boolean currentAge1Resonance(Object server) {
+      try {
+         Object data = callStatic(Class.forName("fr.reivaxmc.progress.story.CampaignStateData18"), "getForServer", server);
+         return asBool(fieldQuiet(data, "age1Resonance"));
+      } catch (Throwable error) {
+         soft("storyResonanceA1", error);
+         return false;
+      }
    }
 
    private static void rememberStorySnapshot(
@@ -684,10 +685,8 @@ public final class NarratorLegacy {
       NarratorStorySignalDetector.Snapshot snapshot
    ) {
       serverState.foundation = snapshot.firstHome();
-      serverState.matrix = snapshot.matrixInstalled();
       serverState.stelaPlaced = snapshot.firstResonance();
-      serverState.stela = snapshot.stelaDiscovered();
-      serverState.matrixDisc = snapshot.matrixRecognized();
+      serverState.stela = snapshot.stelaActivated();
    }
 
    private static boolean isDawn(Object var0) {
@@ -1297,11 +1296,9 @@ public final class NarratorLegacy {
          String[] ids = {
             NarratorStorySignalDetector.FIRST_RESONANCE,
             NarratorStorySignalDetector.STELA_DISCOVERED,
-            NarratorStorySignalDetector.MATRIX_RECOGNIZED,
-            NarratorStorySignalDetector.FIRST_HOME,
-            NarratorStorySignalDetector.MATRIX_INSTALLED
+            NarratorStorySignalDetector.FIRST_HOME
          };
-         String[] labels = {"Résonance", "Stèle", "Matrice reconnue", "Foyer", "Matrice installée"};
+         String[] labels = {"Résonance", "Stèles du seuil", "Foyer/Borne"};
          int completed = 0;
          StringBuilder details = new StringBuilder();
          for (int index = 0; index < ids.length; index++) {
@@ -1314,7 +1311,7 @@ public final class NarratorLegacy {
             }
             details.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
          }
-         message(player, "§6A1 internes §7— §f" + completed + "/5 §8| " + details);
+         message(player, "§6A1 actuel §7— §f" + completed + "/3 §8| " + details + " §8| §7Matrice reportée");
       } catch (Throwable error) {
          message(player, "§cLecture A1 impossible: " + error.getClass().getSimpleName());
       }

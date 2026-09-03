@@ -16,8 +16,8 @@ public final class NarratorA1SelfTest {
    }
 
    private static void detectorEmitsOnlyFalseToTrueTransitions() {
-      NarratorStorySignalDetector.Snapshot before = state(false, false, false, false, false);
-      NarratorStorySignalDetector.Snapshot after = state(false, false, true, false, false);
+      NarratorStorySignalDetector.Snapshot before = state(false, false, false);
+      NarratorStorySignalDetector.Snapshot after = state(false, true, false);
       List<NarratorStorySignalDetector.Signal> first = NarratorStorySignalDetector.detect(before, after);
       require(first.size() == 1, "La première Résonance doit produire exactement un signal.");
       require(NarratorStorySignalDetector.FIRST_RESONANCE.equals(first.getFirst().eventId()), "Mauvais ID pour la Résonance.");
@@ -27,16 +27,16 @@ public final class NarratorA1SelfTest {
 
    private static void detectorKeepsCanonicalOrder() {
       List<NarratorStorySignalDetector.Signal> signals = NarratorStorySignalDetector.detect(
-         state(false, false, false, false, false),
-         state(true, true, true, true, true)
+         state(false, false, false),
+         state(true, true, true)
       );
       List<String> ids = signals.stream().map(NarratorStorySignalDetector.Signal::eventId).toList();
-      require(ids.equals(List.of("A1-096", "A1-097", "A1-099", "A1-051", "A1-066")), "Ordre canonique A1 incorrect: " + ids);
+      require(ids.equals(List.of("A1-096", "A1-097", "A1-051")), "Ordre canonique A1 incorrect: " + ids);
    }
 
    private static void brainStillChoosesContextualVariants() {
       NarratorContextBrain.Variant familiar = new NarratorContextBrain.Variant(
-         "matrix_after_origins",
+         "stela_after_origins",
          35,
          Map.of("global_tag_origins_gte", 2),
          "variante",
@@ -50,18 +50,16 @@ public final class NarratorA1SelfTest {
          "fallback duo",
          "A1-test"
       );
-      require("matrix_after_origins".equals(choice.variantId()), "Le signal doit encore passer par le Brain contextuel.");
+      require("stela_after_origins".equals(choice.variantId()), "Le signal doit encore passer par le Brain contextuel.");
       require("variante".equals(choice.actorText()), "Le Brain n'a pas conservé le texte contextuel attendu.");
    }
 
    private static NarratorStorySignalDetector.Snapshot state(
       boolean home,
-      boolean installed,
       boolean resonance,
-      boolean stela,
-      boolean recognized
+      boolean stela
    ) {
-      return new NarratorStorySignalDetector.Snapshot(home, installed, resonance, stela, recognized);
+      return new NarratorStorySignalDetector.Snapshot(home, resonance, stela);
    }
 
    private static void require(boolean condition, String message) {
