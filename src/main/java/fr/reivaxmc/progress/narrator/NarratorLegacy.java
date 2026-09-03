@@ -291,6 +291,7 @@ public final class NarratorLegacy {
       try {
          registerSimpleCommand(var0, "reivax17_info", var0x -> debugInfo(var0x));
          registerSimpleCommand(var0, "reivax_brain", var0x -> debugBrain(var0x));
+         registerSimpleCommand(var0, "reivax_a1", var0x -> debugStorySignalsA1(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -622,37 +623,29 @@ public final class NarratorLegacy {
          boolean var6 = asBool(callQuiet(var1, "stelaDiscovered"));
          boolean var7 = asBool(callQuiet(var1, "matrixDiscovered"));
          boolean var8 = asBool(callQuiet(var1, "nightSeen"));
+         NarratorStorySignalDetector.Snapshot currentStory = new NarratorStorySignalDetector.Snapshot(var3, var4, var5, var6, var7);
          if (!var2.storyInitialized) {
             var2.storyInitialized = true;
-            var2.foundation = var3;
-            var2.matrix = var4;
-            var2.stelaPlaced = var5;
-            var2.stela = var6;
-            var2.matrixDisc = var7;
+            rememberStorySnapshot(var2, currentStory);
             var2.nightSeen = var8;
             return;
          }
 
+         NarratorStorySignalDetector.Snapshot previousStory = new NarratorStorySignalDetector.Snapshot(
+            var2.foundation,
+            var2.matrix,
+            var2.stelaPlaced,
+            var2.stela,
+            var2.matrixDisc
+         );
          Object var9 = firstPlayer(var0);
-         if (!var2.foundation && var3) {
-            Object var10 = foundationActor(var1, var0);
-            if (var10 != null) {
-               var9 = var10;
-            }
-
-            if (var9 != null) {
-               trigger(var9, "A1-051", "STORY", null, Map.of());
-            }
-         }
-
-         if (!var2.matrix && var4) {
-            Object var12 = playerByUuid(var0, var2.lastMatrixActorUuid);
-            if (var12 != null) {
-               var9 = var12;
-            }
-
-            if (var9 != null) {
-               trigger(var9, "A1-066", "STORY", null, Map.of());
+         for (NarratorStorySignalDetector.Signal signal : NarratorStorySignalDetector.detect(previousStory, currentStory)) {
+            Object actor = storySignalActor(signal.eventId(), var0, var1, var2, var9);
+            if (actor != null) {
+               trigger(actor, signal.eventId(), "story_bus", null, Map.of("story_state", signal.storyState()));
+               if (NarratorStorySignalDetector.FIRST_RESONANCE.equals(signal.eventId())) {
+                  var2.nextDeliveryAt = Math.max(var2.nextDeliveryAt, now() + 6500L);
+               }
             }
          }
 
@@ -661,27 +654,40 @@ public final class NarratorLegacy {
             var2.nextDeliveryAt = Math.max(var2.nextDeliveryAt, now() + 6500L);
          }
 
-         if (!var2.stelaPlaced && var5) {
-            silentComplete(var1, "A1-096", 20, 5);
-            var2.nextDeliveryAt = Math.max(var2.nextDeliveryAt, now() + 6500L);
-         }
-
-         if (!var2.stela && var6) {
-            silentComplete(var1, "A1-097", 25, 5);
-         }
-
-         if (!var2.matrixDisc && var7) {
-            silentComplete(var1, "A1-099", 25, 5);
-         }
-
-         var2.foundation = var3;
-         var2.matrix = var4;
-         var2.stelaPlaced = var5;
-         var2.stela = var6;
-         var2.matrixDisc = var7;
+         rememberStorySnapshot(var2, currentStory);
          var2.nightSeen = var8;
       } catch (Throwable var11) {
+         soft("storySignalsA1", var11);
       }
+   }
+
+   private static Object storySignalActor(
+      String eventId,
+      Object server,
+      Object campaign,
+      NarratorLegacy.ServerState serverState,
+      Object fallbackActor
+   ) {
+      if (NarratorStorySignalDetector.FIRST_HOME.equals(eventId)) {
+         Object founder = foundationActor(campaign, server);
+         return founder == null ? fallbackActor : founder;
+      }
+      if (NarratorStorySignalDetector.MATRIX_INSTALLED.equals(eventId)) {
+         Object installer = playerByUuid(server, serverState.lastMatrixActorUuid);
+         return installer == null ? fallbackActor : installer;
+      }
+      return fallbackActor;
+   }
+
+   private static void rememberStorySnapshot(
+      NarratorLegacy.ServerState serverState,
+      NarratorStorySignalDetector.Snapshot snapshot
+   ) {
+      serverState.foundation = snapshot.firstHome();
+      serverState.matrix = snapshot.matrixInstalled();
+      serverState.stelaPlaced = snapshot.firstResonance();
+      serverState.stela = snapshot.stelaDiscovered();
+      serverState.matrixDisc = snapshot.matrixRecognized();
    }
 
    private static boolean isDawn(Object var0) {
@@ -751,7 +757,8 @@ public final class NarratorLegacy {
          // "Commencer l'histoire" button. Using it here made every A1 event look as if
          // the story had never started, even though StoryOpening18F had started it.
          boolean varStoryStarted = storyStarted(var6);
-         if (var1.startsWith("A1-") && !varStoryStarted && !"STORY".equals(var2)) {
+         boolean varStorySource = "STORY".equals(var2) || "story_bus".equalsIgnoreCase(var2);
+         if (var1.startsWith("A1-") && !varStoryStarted && !varStorySource) {
             return;
          }
 
@@ -1276,6 +1283,40 @@ public final class NarratorLegacy {
          );
       } catch (Throwable error) {
          message(player, "§cLecture du cerveau impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
+   private static void debugStorySignalsA1(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux A1 indisponibles.");
+            return;
+         }
+
+         String[] ids = {
+            NarratorStorySignalDetector.FIRST_RESONANCE,
+            NarratorStorySignalDetector.STELA_DISCOVERED,
+            NarratorStorySignalDetector.MATRIX_RECOGNIZED,
+            NarratorStorySignalDetector.FIRST_HOME,
+            NarratorStorySignalDetector.MATRIX_INSTALLED
+         };
+         String[] labels = {"Résonance", "Stèle", "Matrice reconnue", "Foyer", "Matrice installée"};
+         int completed = 0;
+         StringBuilder details = new StringBuilder();
+         for (int index = 0; index < ids.length; index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", ids[index]));
+            if (done) {
+               completed++;
+            }
+            if (index > 0) {
+               details.append(" §8| ");
+            }
+            details.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+         message(player, "§6A1 internes §7— §f" + completed + "/5 §8| " + details);
+      } catch (Throwable error) {
+         message(player, "§cLecture A1 impossible: " + error.getClass().getSimpleName());
       }
    }
 
