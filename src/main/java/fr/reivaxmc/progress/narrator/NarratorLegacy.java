@@ -102,8 +102,8 @@ public final class NarratorLegacy {
          }
 
          var3.lastHealth = var5;
-         // Inventory deltas are the generic sensor used by several pilot events
-         // (wood, stone, coal, iron, diamond). Scan at 2 Hz: responsive enough
+          // Inventory deltas are the generic sensor used by several robust events
+          // (wood, stone, coal, iron, diamond, stick). Scan at 2 Hz: responsive enough
          // for narration while avoiding a full inventory walk every game tick.
          if (now() - var3.lastInventoryScanAt >= 500L) {
             var3.lastInventoryScanAt = now();
@@ -168,10 +168,15 @@ public final class NarratorLegacy {
                      trigger(var0, "A1-009", var11, var10, var12);
                   }
 
-                  if (var6.equals("minecraft:diamond")) {
-                     trigger(var0, "A1-018", var11, var10, var12);
-                  }
-               }
+                   if (var6.equals("minecraft:diamond")) {
+                      trigger(var0, "A1-018", var11, var10, var12);
+                   }
+
+                   NarratorA2SignalDetector.Signal a2 = NarratorA2SignalDetector.inventoryIncrease(var6);
+                   if (a2 != null) {
+                      trigger(var0, a2.eventId(), a2.source(), var10, Map.of("item", a2.targetId(), "delta", var9));
+                   }
+                }
             }
          }
 
@@ -203,9 +208,14 @@ public final class NarratorLegacy {
             var5.lastMatrixActorUuid = uuid(var1);
          }
 
-         if (isCropBlock(var4)) {
-            trigger(var1, "A1-024", "PLACED", null, Map.of("block", var4));
-         }
+          if (isCropBlock(var4)) {
+             trigger(var1, "A1-024", "PLACED", null, Map.of("block", var4));
+          }
+
+          NarratorA2SignalDetector.Signal a2 = NarratorA2SignalDetector.blockPlaced(var4);
+          if (a2 != null) {
+             trigger(var1, a2.eventId(), a2.source(), null, Map.of("block", a2.targetId()));
+          }
 
          Object var7 = campaignData(serverOf(var1));
          if (var7 != null && insideHome(var7, var1, var3)) {
@@ -292,6 +302,7 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax17_info", var0x -> debugInfo(var0x));
          registerSimpleCommand(var0, "reivax_brain", var0x -> debugBrain(var0x));
          registerSimpleCommand(var0, "reivax_a1", var0x -> debugStorySignalsA1(var0x));
+         registerSimpleCommand(var0, "reivax_a2", var0x -> debugSignalsA2(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -1315,6 +1326,47 @@ public final class NarratorLegacy {
       } catch (Throwable error) {
          message(player, "§cLecture A1 impossible: " + error.getClass().getSimpleName());
       }
+   }
+
+   private static void debugSignalsA2(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux A2 indisponibles.");
+            return;
+         }
+
+         String[] ids = {
+            NarratorA2SignalDetector.FIRST_STICK,
+            NarratorA2SignalDetector.FIRST_CHEST,
+            NarratorA2SignalDetector.FIRST_BED
+         };
+         String[] labels = {"Bâton", "Coffre posé", "Lit posé"};
+         int completed = 0;
+         StringBuilder details = new StringBuilder();
+         for (int index = 0; index < ids.length; index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", ids[index]));
+            if (done) {
+               completed++;
+            }
+            if (index > 0) {
+               details.append(" §8| ");
+            }
+            details.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+         message(player, "§6A2 outils et foyer §7— §f" + completed + "/3 §8| " + details + " §8| §bDUO prêt, test reporté");
+      } catch (Throwable error) {
+         message(player, "§cLecture A2 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
+   static boolean catalogHasEventForTest(String eventId) {
+      return CATALOG.containsKey(eventId);
+   }
+
+   static boolean catalogHasDuoTextForTest(String eventId) {
+      NarratorLegacy.EventDef def = CATALOG.get(eventId);
+      return def != null && def.otherText != null && !def.otherText.isBlank();
    }
 
    private static void registerSimpleCommand(Object var0, String var1, NarratorLegacy.PlayerAction var2) throws Exception {

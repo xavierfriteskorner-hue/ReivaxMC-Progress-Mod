@@ -203,6 +203,50 @@
       ]
     },
     {
+      "id": "A1-026",
+      "title": "LE PREMIER OUTIL POTENTIEL",
+      "actor_text": "Un bâton. Techniquement, c’est déjà de l’ingénierie.",
+      "other_text": "{player} vient d’obtenir un bâton. Votre technologie commune commence avec une ambition remarquable.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "memory_tags": [
+        "craft",
+        "tool"
+      ]
+    },
+    {
+      "id": "A1-027",
+      "title": "LE DÉSORDRE S’ORGANISE",
+      "actor_text": "Un coffre. Le désordre vient d’obtenir une adresse permanente.",
+      "other_text": "{player} a posé un coffre. Votre désordre commun possède désormais une adresse permanente.",
+      "age_points": 5,
+      "civ_score": 1,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "storage",
+        "civilization",
+        "home"
+      ]
+    },
+    {
+      "id": "A1-029",
+      "title": "LE COURAGE A DES HORAIRES",
+      "actor_text": "Un lit. Le courage vient d’obtenir des horaires d’ouverture.",
+      "other_text": "{player} a posé un lit. Vous pourrez désormais éviter héroïquement la nuit.",
+      "age_points": 5,
+      "civ_score": 1,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "memory_tags": [
+        "sleep",
+        "civilization",
+        "home"
+      ]
+    },
+    {
       "id": "A1-031",
       "title": "TENIR JUSQU’À L’AUBE",
       "actor_text": "Vous avez survécu à la première nuit. Le monde, lui, n’a pas encore renoncé.",

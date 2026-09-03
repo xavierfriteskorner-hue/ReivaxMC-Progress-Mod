@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.8.1a'
+version = '0.8.2'
 group = 'fr.reivaxmc.progress'
 
 base {
@@ -55,6 +55,14 @@ tasks.register('checkA1Signals', JavaExec) {
     mainClass = 'fr.reivaxmc.progress.narrator.NarratorA1SelfTest'
 }
 
+tasks.register('checkA2Signals', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les détecteurs A2 et la présence des textes SOLO/DUO sans lancer Minecraft.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'fr.reivaxmc.progress.narrator.NarratorA2SelfTest'
+}
+
 // Le projet utilise un auto-test Java autonome et n'embarque pas encore de tests JUnit.
 // Gradle 9 doit donc accepter que la tâche test ne découvre aucune classe JUnit.
 tasks.named('test') {
@@ -63,4 +71,5 @@ tasks.named('test') {
 
 tasks.named('check') {
     dependsOn tasks.named('checkA1Signals')
+    dependsOn tasks.named('checkA2Signals')
 }
