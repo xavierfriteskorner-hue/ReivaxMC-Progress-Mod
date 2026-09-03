@@ -475,6 +475,7 @@
       "civ_score": 1,
       "priority": 56,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "combat_progression",
       "memory_tags": [
         "combat",
         "creeper"
@@ -865,6 +866,126 @@
       "kind": "NARRATOR_ANNOUNCEMENT",
       "condense_group": "equipment_progression",
       "memory_tags": ["diamond", "tool", "progression"]
+    },
+    {
+      "id": "A1-117",
+      "title": "LE SIFFLEMENT ÉTAIT UN INDICE",
+      "actor_text": "Le Creeper a explosé. Votre proximité avec le problème était remarquablement concrète.",
+      "other_text": "{player} vient de tester la portée utile d’un Creeper. Le résultat n’encourage pas la répétition.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "hazard_damage",
+      "memory_tags": ["danger", "creeper", "damage"]
+    },
+    {
+      "id": "A1-118",
+      "title": "LA GRAVITÉ TRAVAILLE ENCORE",
+      "actor_text": "La gravité vient de vous rappeler qu’elle travaille gratuitement.",
+      "other_text": "{player} vient de vérifier la gravité. Elle fonctionne toujours parfaitement.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "fall_danger",
+      "memory_tags": ["danger", "fall", "damage"]
+    },
+    {
+      "id": "A1-119",
+      "title": "UNE DESCENTE TRÈS DIRECTE",
+      "actor_text": "La prochaine fois, essayez la descente. Elle a été inventée pour ça.",
+      "other_text": "{player} vient de raccourcir brutalement le trajet vers le bas. Il est encore vivant.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "fall_danger",
+      "memory_tags": ["danger", "fall", "near_death"]
+    },
+    {
+      "id": "A1-120",
+      "title": "RESPIRER RESTE UNE EXCELLENTE IDÉE",
+      "actor_text": "Vous respiriez mieux il y a quelques secondes. Retenez la méthode.",
+      "other_text": "{player} vient de retrouver l’air libre. Une victoire modeste, mais très respirable.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "aquatic_danger",
+      "memory_tags": ["danger", "drowning", "survival"]
+    },
+    {
+      "id": "A1-121",
+      "title": "INFORMATION BRÛLANTE",
+      "actor_text": "Vous brûlez. Information tardive, mais manifestement nécessaire.",
+      "other_text": "{player} est en feu. Ce n’était probablement pas l’étape suivante du plan.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "hazard_damage",
+      "memory_tags": ["danger", "fire", "damage"]
+    },
+    {
+      "id": "A1-122",
+      "title": "L’HYPOTHÈSE EST VALIDÉE",
+      "actor_text": "La lave est chaude. Voilà, nous avons validé l’hypothèse.",
+      "other_text": "{player} vient de confirmer que la lave est chaude. La méthode scientifique a ses limites.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "hazard_damage",
+      "memory_tags": ["danger", "lava", "damage"]
+    },
+    {
+      "id": "A1-123",
+      "title": "UNE DEUXIÈME VIE TRÈS COURTE",
+      "actor_text": "Un Zombie en moins. Il ne semblait pas très attaché à sa deuxième vie.",
+      "other_text": "{player} a éliminé son premier Zombie. Sa deuxième vie aura été décevante.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "combat_progression",
+      "memory_tags": ["combat", "zombie"]
+    },
+    {
+      "id": "A1-124",
+      "title": "LA PORTÉE N’A PAS SUFFI",
+      "actor_text": "Un Squelette en moins. Il avait pourtant l’avantage de la portée.",
+      "other_text": "{player} a vaincu son premier Squelette. Les flèches n’ont pas réglé le problème.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "combat_progression",
+      "memory_tags": ["combat", "skeleton"]
+    },
+    {
+      "id": "A1-125",
+      "title": "HUIT PATTES INSUFFISANTES",
+      "actor_text": "Une Araignée en moins. Huit pattes, toujours pas assez.",
+      "other_text": "{player} a éliminé sa première Araignée. L’avantage numérique était trompeur.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "combat_progression",
+      "memory_tags": ["combat", "spider"]
+    },
+    {
+      "id": "A1-126",
+      "title": "QUELQUE CHOSE S’EST RAPPROCHÉ",
+      "actor_text": "Un Enderman est tombé. Quelque chose de lointain vient de se rapprocher.",
+      "other_text": "{player} a tué un Enderman. Ce détail pourrait compter plus tard.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 70,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "combat_progression",
+      "memory_tags": ["combat", "enderman", "dimension"]
     }
   ]
 }

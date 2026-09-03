@@ -101,6 +101,8 @@ public final class NarratorLegacy {
             trigger(var1, "A1-087", "UNKNOWN", null, Map.of("health", var5));
          }
 
+         observeDrowningRecovery(var1, var3);
+
          var3.lastHealth = var5;
           // Inventory deltas are the generic sensor used by several robust events
           // (wood, stone, coal, iron, diamond, stick). Scan at 2 Hz: responsive enough
@@ -310,6 +312,7 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax_a1", var0x -> debugStorySignalsA1(var0x));
          registerSimpleCommand(var0, "reivax_a2", var0x -> debugSignalsA2(var0x));
          registerSimpleCommand(var0, "reivax_a3", var0x -> debugSignalsA3(var0x));
+         registerSimpleCommand(var0, "reivax_a4", var0x -> debugSignalsA4(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -466,16 +469,65 @@ public final class NarratorLegacy {
          Object var4 = var3 == null ? null : callQuiet(var3, "getEntity");
          if (isServerPlayer(var1)) {
             state(serverOf(var1)).lastFactAt = now();
-            trigger(var1, "A1-084", "DEATH", null, Map.of("cause", damageId(var3)));
+            ensurePlayer(var1).drowningDanger = false;
+            NarratorA4SignalDetector.Signal death = NarratorA4SignalDetector.playerDeath();
+            trigger(var1, death.eventId(), death.source(), null, Map.of("cause", damageId(var3)));
             return;
          }
 
-         if (isServerPlayer(var4) && "minecraft:creeper".equals(var2)) {
+         if (isServerPlayer(var4)) {
             state(serverOf(var4)).lastFactAt = now();
-            trigger(var4, "A1-078", "KILL", null, Map.of("entity", var2));
+            NarratorA4SignalDetector.Signal kill = NarratorA4SignalDetector.killedByPlayer(var2);
+            if (kill != null) {
+               trigger(var4, kill.eventId(), kill.source(), null, Map.of("entity", kill.targetId()));
+            }
          }
       } catch (Throwable var6) {
          soft("livingDeath", var6);
+      }
+   }
+
+   public static void onLivingDamage(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+
+         Object source = callQuiet(event, "getSource");
+         Object sourceEntity = source == null ? null : callQuiet(source, "getEntity");
+         if (sourceEntity == null && source != null) {
+            sourceEntity = callQuiet(source, "getDirectEntity");
+         }
+
+         String causeId = damageId(source);
+         String sourceEntityId = entityId(sourceEntity);
+         float healthAfter = asFloat(callQuiet(player, "getHealth"), 20.0F);
+         float healthDamage = asFloat(callQuiet(event, "getHealthDamage"), 0.0F);
+         NarratorLegacy.PlayerState playerState = ensurePlayer(player);
+         state(serverOf(player)).lastFactAt = now();
+
+         if (NarratorA4SignalDetector.isDrowning(causeId) && healthDamage > 0.0F) {
+            playerState.drowningDanger = true;
+         }
+
+         NarratorA4SignalDetector.DamageObservation observation = new NarratorA4SignalDetector.DamageObservation(
+            causeId,
+            sourceEntityId,
+            healthAfter,
+            healthDamage
+         );
+         for (NarratorA4SignalDetector.Signal signal : NarratorA4SignalDetector.damagedPlayer(observation)) {
+            trigger(
+               player,
+               signal.eventId(),
+               signal.source(),
+               null,
+               Map.of("cause", causeId, "entity", sourceEntityId, "health", healthAfter, "damage", healthDamage)
+            );
+         }
+      } catch (Throwable error) {
+         soft("livingDamage", error);
       }
    }
 
@@ -1480,6 +1532,41 @@ public final class NarratorLegacy {
       }
    }
 
+   private static void debugSignalsA4(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux A4 indisponibles.");
+            return;
+         }
+
+         String[] labels = {
+            "Creeper tué", "Dégâts Creeper", "Première mort", "Chute", "Chute critique", "Noyade évitée",
+            "Feu", "Lave", "Zombie", "Squelette", "Araignée", "Enderman"
+         };
+         int completed = 0;
+         StringBuilder dangers = new StringBuilder();
+         StringBuilder combats = new StringBuilder();
+         for (int index = 0; index < NarratorA4SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorA4SignalDetector.ALL_IDS.get(index)));
+            if (done) {
+               completed++;
+            }
+            StringBuilder target = index <= 7 ? dangers : combats;
+            if (!target.isEmpty()) {
+               target.append(" §8| ");
+            }
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+
+         message(player, "§6A4 dangers et combats §7— §f" + completed + "/12 §8| §bSOLO + DUO prêts");
+         message(player, "§6Dangers §8| " + dangers);
+         message(player, "§6Combats §8| " + combats);
+      } catch (Throwable error) {
+         message(player, "§cLecture A4 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
    }
@@ -1746,6 +1833,21 @@ public final class NarratorLegacy {
          }
       } catch (Throwable error) {
          soft("a3Equipment", error);
+      }
+   }
+
+   private static void observeDrowningRecovery(Object player, NarratorLegacy.PlayerState state) {
+      if (!state.drowningDanger) {
+         return;
+      }
+
+      int air = asInt(callQuiet(player, "getAirSupply"), -1);
+      int maxAir = asInt(callQuiet(player, "getMaxAirSupply"), 300);
+      float health = asFloat(callQuiet(player, "getHealth"), 0.0F);
+      NarratorA4SignalDetector.Signal signal = NarratorA4SignalDetector.drowningRecovered(state.drowningDanger, air, maxAir, health);
+      if (signal != null) {
+         state.drowningDanger = false;
+         trigger(player, signal.eventId(), signal.source(), null, Map.of("air", air, "max_air", maxAir, "health", health));
       }
    }
 
@@ -2432,6 +2534,7 @@ public final class NarratorLegacy {
    private static final class PlayerState {
       boolean inventoryInitialized;
       boolean away;
+      boolean drowningDanger;
       boolean giftCallbackDone;
       float lastHealth = Float.NaN;
       double maxAway;

@@ -60,6 +60,10 @@ public final class NarratorEngine {
       NarratorLegacy.onLivingDeath(event);
    }
 
+   public static void onLivingDamage(Object event) {
+      NarratorLegacy.onLivingDamage(event);
+   }
+
    public static void onAnimalTame(Object event) {
       NarratorLegacy.onAnimalTame(event);
    }

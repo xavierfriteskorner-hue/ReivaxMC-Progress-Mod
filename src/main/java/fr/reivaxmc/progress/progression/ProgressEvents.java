@@ -7,6 +7,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.AnimalTameEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemSmeltedEvent;
@@ -77,6 +78,11 @@ public final class ProgressEvents {
    public void narratorLivingDeath(LivingDeathEvent var1) {
       F8InteractionBridge.onLivingDeath(var1);
       NarratorEngine.onLivingDeath(var1);
+   }
+
+   @SubscribeEvent
+   public void narratorLivingDamage(LivingDamageEvent.Post var1) {
+      NarratorEngine.onLivingDamage(var1);
    }
 
    @SubscribeEvent
