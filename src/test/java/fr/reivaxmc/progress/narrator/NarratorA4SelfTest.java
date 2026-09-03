@@ -11,6 +11,7 @@ public final class NarratorA4SelfTest {
    public static void main(String[] args) {
       idsAreStableAndUnique();
       combatMappingsAreExact();
+      damageAdapterSupportsNeoForge211();
       hazardsArePrecise();
       drowningRequiresRecovery();
       catalogContainsSoloDuoAndCondensationData();
@@ -35,6 +36,17 @@ public final class NarratorA4SelfTest {
       expectKill("minecraft:enderman", NarratorA4SignalDetector.FIRST_ENDERMAN_KILL);
       require(NarratorA4SignalDetector.killedByPlayer("minecraft:husk") == null, "Un Husk ne doit pas compter comme Zombie vanilla.");
       require(NarratorA4SignalDetector.killedByPlayer("modded:zombie") == null, "Un homonyme moddé ne doit pas créer de faux positif.");
+   }
+
+   private static void damageAdapterSupportsNeoForge211() {
+      require(
+         NarratorLegacy.a4DamageAmountForTest(new NeoForge211DamagePost(3.5F)) == 3.5F,
+         "NeoForge 21.1.248 fournit la perte de vie via getNewDamage()."
+      );
+      require(
+         NarratorLegacy.a4DamageAmountForTest(new FutureDamagePost(4.5F)) == 4.5F,
+         "Le nom getHealthDamage() doit rester accepté pour les versions NeoForge plus récentes."
+      );
    }
 
    private static void hazardsArePrecise() {
@@ -96,6 +108,18 @@ public final class NarratorA4SelfTest {
    private static void require(boolean condition, String message) {
       if (!condition) {
          throw new AssertionError(message);
+      }
+   }
+
+   private record NeoForge211DamagePost(float amount) {
+      public float getNewDamage() {
+         return amount;
+      }
+   }
+
+   private record FutureDamagePost(float amount) {
+      public float getHealthDamage() {
+         return amount;
       }
    }
 }

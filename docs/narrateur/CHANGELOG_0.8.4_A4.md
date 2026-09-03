@@ -1,5 +1,13 @@
 # REIVAX MC 0.8.4 — dangers et combats A4
 
+## Correctif 0.8.4a — raccordement des dégâts
+
+- Le test SOLO réel a validé les 6 signaux de mort et de combat, mais a révélé que les 6 signaux liés aux dégâts restaient à `0`.
+- Cause identifiée : NeoForge `21.1.248` expose la perte de vie finale avec `getNewDamage()`, alors que l'adaptateur cherchait le nom plus récent `getHealthDamage()`.
+- L'adaptateur accepte désormais les deux noms afin de fonctionner avec la version actuelle du mod et de rester compatible avec les versions NeoForge plus récentes.
+- Un auto-test de régression vérifie explicitement le nom utilisé par NeoForge `21.1.248`.
+- Les 6 validations déjà réussies conservent leur mémoire et leurs points ; seul le test des 6 cases encore grises doit être repris.
+
 ## Contenu ajouté
 
 - 12 événements fiables suivis dans `/reivax_a4`.
@@ -26,7 +34,7 @@
 
 - Auto-tests A1, A2, A3 et A4 prévus dans le build GitHub.
 - Test A4 autonome : 12 IDs, filtres exacts, cas négatifs, récupération après noyade, textes DUO et condensation des chutes.
-- Compilation NeoForge complète à confirmer par GitHub Actions après le push.
+- Compilation NeoForge complète du correctif 0.8.4a à confirmer par GitHub Actions après le push.
 
 ## Tests en jeu demandés
 

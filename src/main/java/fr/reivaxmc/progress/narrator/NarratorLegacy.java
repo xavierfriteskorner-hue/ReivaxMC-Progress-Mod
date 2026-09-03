@@ -503,7 +503,7 @@ public final class NarratorLegacy {
          String causeId = damageId(source);
          String sourceEntityId = entityId(sourceEntity);
          float healthAfter = asFloat(callQuiet(player, "getHealth"), 20.0F);
-         float healthDamage = asFloat(callQuiet(event, "getHealthDamage"), 0.0F);
+         float healthDamage = a4DamageAmount(event);
          NarratorLegacy.PlayerState playerState = ensurePlayer(player);
          state(serverOf(player)).lastFactAt = now();
 
@@ -1569,6 +1569,23 @@ public final class NarratorLegacy {
 
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
+   }
+
+   /**
+    * NeoForge 21.1.248 (Minecraft 1.21.1) exposes the final health loss as
+    * getNewDamage(). Later NeoForge releases renamed it getHealthDamage().
+    * Keep both names here so the detector never silently receives zero again.
+    */
+   private static float a4DamageAmount(Object event) {
+      Object amount = callQuiet(event, "getNewDamage");
+      if (amount == null) {
+         amount = callQuiet(event, "getHealthDamage");
+      }
+      return asFloat(amount, 0.0F);
+   }
+
+   static float a4DamageAmountForTest(Object event) {
+      return a4DamageAmount(event);
    }
 
    static boolean catalogHasDuoTextForTest(String eventId) {

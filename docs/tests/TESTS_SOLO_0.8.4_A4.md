@@ -1,5 +1,27 @@
 # Tests SOLO — REIVAX MC 0.8.4 / lot A4
 
+> Correctif 0.8.4a : si `/reivax_a4` affichait déjà `6/12`, ne refaire que les six cases grises décrites dans la section ci-dessous. Les combats validés ne sont pas à recommencer.
+
+## Retest rapide du correctif 0.8.4a — 6 cases seulement
+
+Exécuter les commandes une par une, en attendant deux secondes entre chacune :
+
+```text
+/summon minecraft:creeper ~ ~ ~3 {NoAI:1b,Silent:1b,PersistenceRequired:1b}
+/damage @s 1 minecraft:explosion by @e[type=minecraft:creeper,limit=1,sort=nearest]
+/damage @s 1 minecraft:drown
+/damage @s 1 minecraft:on_fire
+/damage @s 1 minecraft:lava
+```
+
+Pour les deux chutes, se placer sans armure, avec toute sa vie, au-dessus d'un sol parfaitement plat, puis lancer uniquement :
+
+```text
+/tp @s ~ ~20 ~
+```
+
+Ne taper aucune autre commande pendant la chute et attendre d'avoir touché le sol. Cette seule chute doit valider `Chute` et `Chute critique`. À la fin, `/reivax_a4` doit passer de `6/12` à `12/12`.
+
 ## But du test
 
 Valider rapidement 12 événements de dangers et combats, leurs points, l'anti-doublon et la persistance. Deux événements utilisent les anciens pilotes 0.8.0 : Creeper tué et première mort.
