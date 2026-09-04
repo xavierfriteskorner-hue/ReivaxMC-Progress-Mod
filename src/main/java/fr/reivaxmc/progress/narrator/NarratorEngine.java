@@ -68,6 +68,22 @@ public final class NarratorEngine {
       NarratorLegacy.onAnimalTame(event);
    }
 
+   public static void onEntityInteract(Object event) {
+      NarratorLegacy.onEntityInteract(event);
+   }
+
+   public static void onAnimalBred(Object event) {
+      NarratorLegacy.onAnimalBred(event);
+   }
+
+   public static void onEntityMounted(Object event) {
+      NarratorLegacy.onEntityMounted(event);
+   }
+
+   public static void onVillagerTrade(Object event) {
+      NarratorLegacy.onVillagerTrade(event);
+   }
+
    public static void onItemToss(Object event) {
       NarratorLegacy.onItemToss(event);
    }

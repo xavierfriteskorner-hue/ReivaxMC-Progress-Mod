@@ -3,17 +3,22 @@ package fr.reivaxmc.progress.progression;
 import fr.reivaxmc.progress.story.F81DevTools;
 import fr.reivaxmc.progress.narrator.NarratorEngine;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.AnimalTameEvent;
+import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemSmeltedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
+import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.BreakEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent.Post;
@@ -88,6 +93,26 @@ public final class ProgressEvents {
    @SubscribeEvent
    public void narratorAnimalTame(AnimalTameEvent var1) {
       NarratorEngine.onAnimalTame(var1);
+   }
+
+   @SubscribeEvent
+   public void narratorAnimalInteract(EntityInteract event) {
+      NarratorEngine.onEntityInteract(event);
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public void narratorAnimalBred(BabyEntitySpawnEvent event) {
+      NarratorEngine.onAnimalBred(event);
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public void narratorEntityMounted(EntityMountEvent event) {
+      NarratorEngine.onEntityMounted(event);
+   }
+
+   @SubscribeEvent
+   public void narratorVillagerTrade(TradeWithVillagerEvent event) {
+      NarratorEngine.onVillagerTrade(event);
    }
 
    @SubscribeEvent

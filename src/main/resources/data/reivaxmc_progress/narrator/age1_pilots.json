@@ -10,6 +10,7 @@
       "civ_score": 1,
       "priority": 60,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "foundation_progression",
       "memory_tags": [
         "resource",
         "discovery"
@@ -36,6 +37,7 @@
       "civ_score": 1,
       "priority": 60,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "foundation_progression",
       "memory_tags": [
         "craft",
         "civilization"
@@ -50,6 +52,7 @@
       "civ_score": 1,
       "priority": 60,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "foundation_progression",
       "memory_tags": [
         "resource",
         "discovery"
@@ -104,6 +107,7 @@
       "civ_score": 2,
       "priority": 65,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "foundation_progression",
       "memory_tags": [
         "resource",
         "metal",
@@ -119,6 +123,7 @@
       "civ_score": 2,
       "priority": 65,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "foundation_progression",
       "memory_tags": [
         "craft",
         "metal",
@@ -445,6 +450,7 @@
       "civ_score": 3,
       "priority": 67,
       "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "animal_progression",
       "reward_item": "minecraft:name_tag",
       "reward_count": 1,
       "reward_name": "Pour qu’il ait un nom",
@@ -986,6 +992,102 @@
       "kind": "NARRATOR_ANNOUNCEMENT",
       "condense_group": "combat_progression",
       "memory_tags": ["combat", "enderman", "dimension"]
+    },
+    {
+      "id": "A1-127",
+      "title": "UN PROGRÈS SOCIAL",
+      "actor_text": "Vous nourrissez quelqu'un d'autre. Je note ce progrès social.",
+      "other_text": "{player} a nourri un animal. Je note ce progrès social.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "animal_progression",
+      "memory_tags": ["animal", "care", "social"]
+    },
+    {
+      "id": "A1-128",
+      "title": "LA FERME DEVIENT SYSTÈME",
+      "actor_text": "Votre ferme vient de découvrir la croissance exponentielle.",
+      "other_text": "{player} a lancé un élevage. Préparez de la place. Beaucoup.",
+      "age_points": 5,
+      "civ_score": 1,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "animal_progression",
+      "memory_tags": ["animal", "breeding", "civilization"]
+    },
+    {
+      "id": "A1-129",
+      "title": "LE MONDE SE RAPPROCHE",
+      "actor_text": "Un cheval. Votre rayon de mauvaises décisions vient de s'agrandir.",
+      "other_text": "{player} a monté un cheval. Votre rayon d'exploration vient de s'agrandir.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "travel_progression",
+      "memory_tags": ["travel", "horse", "mobility"]
+    },
+    {
+      "id": "A1-130",
+      "title": "L'HORIZON S'OUVRE",
+      "actor_text": "Un bateau. L'horizon vient de devenir beaucoup plus accessible.",
+      "other_text": "{player} a pris la mer. Vous pouvez déjà préparer l'excuse du naufrage.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "travel_progression",
+      "memory_tags": ["travel", "boat", "mobility"]
+    },
+    {
+      "id": "A1-131",
+      "title": "LE PRIX DES CHOSES",
+      "actor_text": "Un échange. La civilisation vient officiellement de découvrir le prix des choses.",
+      "other_text": "{player} a fait du commerce. Surveillez votre patrimoine commun.",
+      "age_points": 5,
+      "civ_score": 1,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "village_progression",
+      "memory_tags": ["village", "trade", "civilization"]
+    },
+    {
+      "id": "A1-132",
+      "title": "LA CLOCHE",
+      "actor_text": "Vous avez sonné la cloche. Aucun plan n'était nécessaire, j'imagine.",
+      "other_text": "{player} a sonné la cloche. Aucun plan collectif n'avait été annoncé.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 45,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "village_progression",
+      "memory_tags": ["village", "bell", "echo"]
+    },
+    {
+      "id": "A1-133",
+      "title": "LE MONDE SUR PAPIER",
+      "actor_text": "Une carte. Le monde devient quelque chose que vous avez décidé de retenir.",
+      "other_text": "{player} a obtenu une carte. Votre monde commence à tenir sur du papier.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "travel_progression",
+      "memory_tags": ["travel", "map", "exploration"]
+    },
+    {
+      "id": "A1-134",
+      "title": "ASSISTANCE TECHNIQUE",
+      "actor_text": "Une boussole. Votre sens de l'orientation vient de recevoir une assistance technique.",
+      "other_text": "{player} a trouvé une boussole. Le sens de l'orientation est désormais assisté.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "travel_progression",
+      "memory_tags": ["travel", "compass", "orientation"]
     }
   ]
 }

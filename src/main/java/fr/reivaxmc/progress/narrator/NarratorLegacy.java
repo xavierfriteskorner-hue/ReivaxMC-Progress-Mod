@@ -102,6 +102,7 @@ public final class NarratorLegacy {
          }
 
          observeDrowningRecovery(var1, var3);
+         observePendingA5Interactions(var1, var3);
 
          var3.lastHealth = var5;
           // Inventory deltas are the generic sensor used by several robust events
@@ -151,28 +152,10 @@ public final class NarratorLegacy {
                   NarratorLegacy.SourceHint var10 = var2.hints.get(var6);
                   String var11 = sourceFor(var0, var10);
                   var2.hints.remove(var6);
-                  HashMap var12 = new HashMap();
-                  var12.put("item", var6);
-                  var12.put("delta", var9);
-                  if (isWood(var6)) {
-                     trigger(var0, "A1-001", var11, var10, var12);
+                  NarratorA5SignalDetector.Signal a5 = NarratorA5SignalDetector.inventoryIncrease(var6);
+                  if (a5 != null) {
+                     trigger(var0, a5.eventId(), var11, var10, Map.of("item", a5.targetId(), "delta", var9));
                   }
-
-                  if (var6.equals("minecraft:stone") || var6.equals("minecraft:cobblestone")) {
-                     trigger(var0, "A1-005", var11, var10, var12);
-                  }
-
-                  if (var6.equals("minecraft:coal") || var6.equals("minecraft:charcoal")) {
-                     trigger(var0, "A1-007", var11, var10, var12);
-                  }
-
-                  if (var6.equals("minecraft:raw_iron")) {
-                     trigger(var0, "A1-009", var11, var10, var12);
-                  }
-
-                   if (var6.equals("minecraft:diamond")) {
-                      trigger(var0, "A1-018", var11, var10, var12);
-                   }
 
                    NarratorA2SignalDetector.Signal a2 = NarratorA2SignalDetector.inventoryIncrease(var6);
                    if (a2 != null) {
@@ -290,6 +273,12 @@ public final class NarratorLegacy {
             var6.lastMatrixInteractionAt = now();
             state(serverOf(var1)).lastMatrixActorUuid = uuid(var1);
          }
+
+         if ("minecraft:bell".equals(var5)) {
+            var6.pendingBellLevel = var2;
+            var6.pendingBellPos = var3;
+            var6.pendingBellAt = now();
+         }
       } catch (Throwable var9) {
          soft("rightClickBlock", var9);
       }
@@ -313,6 +302,7 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax_a2", var0x -> debugSignalsA2(var0x));
          registerSimpleCommand(var0, "reivax_a3", var0x -> debugSignalsA3(var0x));
          registerSimpleCommand(var0, "reivax_a4", var0x -> debugSignalsA4(var0x));
+         registerSimpleCommand(var0, "reivax_a5", var0x -> debugSignalsA5(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -427,8 +417,9 @@ public final class NarratorLegacy {
          }
 
          state(serverOf(var1)).lastFactAt = now();
-         if ("minecraft:crafting_table".equals(var3)) {
-            trigger(var1, "A1-003", "CRAFTED", null, Map.of("item", var3));
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.itemCrafted(var3);
+         if (signal != null) {
+            trigger(var1, signal.eventId(), signal.source(), null, Map.of("item", signal.targetId()));
          }
       } catch (Throwable var5) {
          soft("crafted", var5);
@@ -453,8 +444,9 @@ public final class NarratorLegacy {
          }
 
          state(serverOf(var1)).lastFactAt = now();
-         if (var3 != null && var3.endsWith("_ingot")) {
-            trigger(var1, "A1-010", "SMELTED", null, Map.of("item", var3));
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.itemSmelted(var3);
+         if (signal != null) {
+            trigger(var1, signal.eventId(), signal.source(), null, Map.of("item", signal.targetId()));
          }
       } catch (Throwable var4) {
          soft("smelted", var4);
@@ -543,9 +535,103 @@ public final class NarratorLegacy {
          }
 
          state(serverOf(var1)).lastFactAt = now();
-         trigger(var1, "A1-073", "TAME", null, Map.of());
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.animalTamed(true);
+         if (signal != null) {
+            trigger(var1, signal.eventId(), signal.source(), null, Map.of());
+         }
       } catch (Throwable var2) {
          soft("animalTame", var2);
+      }
+   }
+
+   /**
+    * L'interaction est un pré-événement : elle arme seulement une vérification.
+    * Le tick suivant confirme que l'animal a réellement accepté la nourriture.
+    */
+   public static void onEntityInteract(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         Object target = callQuiet(event, "getTarget");
+         Object stack = callQuiet(event, "getItemStack");
+         if (!isServerPlayer(player) || target == null || stack == null) {
+            return;
+         }
+
+         boolean food = asBool(callQuiet(target, "isFood", stack));
+         boolean adult = asInt(callQuiet(target, "getAge"), -1) == 0;
+         boolean canLove = asBool(callQuiet(target, "canFallInLove"));
+         if (food && adult && canLove) {
+            PlayerState state = ensurePlayer(player);
+            state.pendingFedAnimal = target;
+            state.pendingFedAnimalAt = now();
+         }
+      } catch (Throwable error) {
+         soft("entityInteractA5", error);
+      }
+   }
+
+   public static void onAnimalBred(Object event) {
+      try {
+         if (asBool(callQuiet(event, "isCanceled"))) {
+            return;
+         }
+
+         Object player = callQuiet(event, "getCausedByPlayer");
+         Object child = callQuiet(event, "getChild");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.animalBred(true, child != null);
+         if (signal != null) {
+            state(serverOf(player)).lastFactAt = now();
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("entity", entityId(child)));
+         }
+      } catch (Throwable error) {
+         soft("animalBredA5", error);
+      }
+   }
+
+   public static void onEntityMounted(Object event) {
+      try {
+         if (asBool(callQuiet(event, "isCanceled"))) {
+            return;
+         }
+
+         Object player = callQuiet(event, "getEntityMounting");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+
+         Object mounted = callQuiet(event, "getEntityBeingMounted");
+         String mountedId = entityId(mounted);
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.entityMounted(
+            mountedId,
+            asBool(callQuiet(event, "isMounting"))
+         );
+         if (signal != null) {
+            state(serverOf(player)).lastFactAt = now();
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("entity", signal.targetId()));
+         }
+      } catch (Throwable error) {
+         soft("entityMountedA5", error);
+      }
+   }
+
+   public static void onVillagerTrade(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+
+         NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.villagerTrade(true);
+         if (signal != null) {
+            state(serverOf(player)).lastFactAt = now();
+            trigger(player, signal.eventId(), signal.source(), null, Map.of());
+         }
+      } catch (Throwable error) {
+         soft("villagerTradeA5", error);
       }
    }
 
@@ -1567,6 +1653,44 @@ public final class NarratorLegacy {
       }
    }
 
+   private static void debugSignalsA5(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux A5 indisponibles.");
+            return;
+         }
+
+         String[] labels = {
+            "Bois", "Établi", "Pierre", "Charbon", "Fer brut", "Cuisson", "Diamant", "Apprivoisement",
+            "Animal nourri", "Reproduction", "Cheval", "Bateau", "Échange", "Cloche", "Carte", "Boussole"
+         };
+         int completed = 0;
+         StringBuilder foundations = new StringBuilder();
+         StringBuilder lifeAndTravel = new StringBuilder();
+         StringBuilder villageAndOrientation = new StringBuilder();
+         for (int index = 0; index < NarratorA5SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorA5SignalDetector.ALL_IDS.get(index)));
+            if (done) {
+               completed++;
+            }
+            StringBuilder target = index < 8 ? foundations : index < 12 ? lifeAndTravel : villageAndOrientation;
+            if (!target.isEmpty()) {
+               target.append(" §8| ");
+            }
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+
+         message(player, "§6A5 monde vivant §7— §f" + completed + "/16 §8| §bSOLO + DUO prêts");
+         message(player, "§6Fondations §8| " + foundations);
+         message(player, "§6Vie et mobilité §8| " + lifeAndTravel);
+         message(player, "§6Village et orientation §8| " + villageAndOrientation);
+         message(player, "§650/52 événements robustes actifs §8| §7les 2 événements Matrice restent reportés au chapitre prévu");
+      } catch (Throwable error) {
+         message(player, "§cLecture A5 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
    }
@@ -1850,6 +1974,47 @@ public final class NarratorLegacy {
          }
       } catch (Throwable error) {
          soft("a3Equipment", error);
+      }
+   }
+
+   private static void observePendingA5Interactions(Object player, NarratorLegacy.PlayerState playerState) {
+      long current = now();
+
+      if (playerState.pendingFedAnimal != null) {
+         Object animal = playerState.pendingFedAnimal;
+         if (current - playerState.pendingFedAnimalAt > 2000L) {
+            playerState.pendingFedAnimal = null;
+         } else {
+            boolean accepted = asBool(callQuiet(animal, "isInLove"));
+            Object loveCause = callQuiet(animal, "getLoveCause");
+            boolean credited = loveCause != null && Objects.equals(uuid(loveCause), uuid(player));
+            NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.animalFed(accepted, credited);
+            if (signal != null) {
+               playerState.pendingFedAnimal = null;
+               state(serverOf(player)).lastFactAt = current;
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("entity", entityId(animal)));
+            }
+         }
+      }
+
+      if (playerState.pendingBellPos != null) {
+         if (current - playerState.pendingBellAt > 2000L) {
+            playerState.pendingBellLevel = null;
+            playerState.pendingBellPos = null;
+         } else {
+            Object level = playerState.pendingBellLevel;
+            Object pos = playerState.pendingBellPos;
+            Object blockState = level == null ? null : callQuiet(level, "getBlockState", pos);
+            Object blockEntity = level == null ? null : callQuiet(level, "getBlockEntity", pos);
+            boolean ringing = asBool(callQuiet(blockEntity, "isShaking")) || asBool(fieldQuiet(blockEntity, "shaking"));
+            NarratorA5SignalDetector.Signal signal = NarratorA5SignalDetector.villageBell(blockId(blockState), ringing);
+            if (signal != null) {
+               playerState.pendingBellLevel = null;
+               playerState.pendingBellPos = null;
+               state(serverOf(player)).lastFactAt = current;
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("block", signal.targetId()));
+            }
+         }
       }
    }
 
@@ -2558,7 +2723,12 @@ public final class NarratorLegacy {
       long lastMatrixInteractionAt;
       long recentGiftAt;
       long lastInventoryScanAt;
+      long pendingFedAnimalAt;
+      long pendingBellAt;
       String recentGiftItem;
+      Object pendingFedAnimal;
+      Object pendingBellLevel;
+      Object pendingBellPos;
       NarratorLegacy.SourceHint containerHint;
       final Map<String, Integer> itemCounts = new HashMap<>();
       final Map<String, Integer> rewardCredit = new HashMap<>();
