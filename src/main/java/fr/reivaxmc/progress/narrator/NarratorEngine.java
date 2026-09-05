@@ -92,6 +92,18 @@ public final class NarratorEngine {
       NarratorLegacy.onItemPickup(event);
    }
 
+   public static void onItemConsumed(Object event) {
+      NarratorLegacy.onItemConsumed(event);
+   }
+
+   public static void onPlayerWakeUp(Object event) {
+      NarratorLegacy.onPlayerWakeUp(event);
+   }
+
+   public static void onEntityStruckByLightning(Object event) {
+      NarratorLegacy.onEntityStruckByLightning(event);
+   }
+
    /**
     * Entrée stable pour les futurs choix scénaristiques. Le scénario peut faire
     * évoluer la confiance/défiance de La Voix sans dépendre du stockage interne.

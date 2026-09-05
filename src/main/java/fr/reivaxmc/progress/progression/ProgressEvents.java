@@ -7,11 +7,13 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityMountEvent;
+import net.neoforged.neoforge.event.entity.EntityStruckByLightningEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.AnimalTameEvent;
 import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemCraftedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemSmeltedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
@@ -19,6 +21,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInte
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
 import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.BreakEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent.Post;
@@ -115,9 +118,24 @@ public final class ProgressEvents {
       NarratorEngine.onVillagerTrade(event);
    }
 
-   @SubscribeEvent
+   @SubscribeEvent(priority = EventPriority.LOWEST)
    public void narratorItemToss(ItemTossEvent var1) {
       NarratorEngine.onItemToss(var1);
+   }
+
+   @SubscribeEvent
+   public void narratorItemConsumed(LivingEntityUseItemEvent.Finish event) {
+      NarratorEngine.onItemConsumed(event);
+   }
+
+   @SubscribeEvent
+   public void narratorPlayerWakeUp(PlayerWakeUpEvent event) {
+      NarratorEngine.onPlayerWakeUp(event);
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public void narratorLightning(EntityStruckByLightningEvent event) {
+      NarratorEngine.onEntityStruckByLightning(event);
    }
 
    @SubscribeEvent

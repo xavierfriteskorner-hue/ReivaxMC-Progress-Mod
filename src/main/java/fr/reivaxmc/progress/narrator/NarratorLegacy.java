@@ -97,12 +97,17 @@ public final class NarratorLegacy {
             inspectDamageContext(var1, var3, var5);
          }
 
-         if (Math.abs(var5 - 1.0F) < 0.001F && (Float.isNaN(var3.lastHealth) || var3.lastHealth > 1.0F)) {
-            trigger(var1, "A1-087", "UNKNOWN", null, Map.of("health", var5));
+         if (!Float.isNaN(var3.lastHealth)) {
+            NarratorB1SignalDetector.Signal halfHeart = NarratorB1SignalDetector.halfHeart(var3.lastHealth, var5);
+            if (halfHeart != null) {
+               trigger(var1, halfHeart.eventId(), halfHeart.source(), null, Map.of("health", var5));
+            }
          }
 
          observeDrowningRecovery(var1, var3);
          observePendingA5Interactions(var1, var3);
+         observePendingB1Interactions(var1, var3);
+         observePendingB2Interactions(var1, var3);
 
          var3.lastHealth = var5;
           // Inventory deltas are the generic sensor used by several robust events
@@ -115,8 +120,15 @@ public final class NarratorLegacy {
                inventoryScan(var1, campaign);
             }
          }
-         observeHomeDistance(var1, var3);
-         observeDuoDistance(var1);
+         if (now() - var3.lastB1ObservationAt >= 1000L) {
+            var3.lastB1ObservationAt = now();
+            observeB1WorldState(var1, var3);
+         }
+         if (now() - var3.lastB2ObservationAt >= 1000L) {
+            var3.lastB2ObservationAt = now();
+            observeHomeDistance(var1, var3);
+            observeB2DuoState(var1);
+         }
          observeRecentGift(var1, var3);
       } catch (Throwable var6) {
          soft("playerTick", var6);
@@ -199,8 +211,9 @@ public final class NarratorLegacy {
             var5.lastMatrixActorUuid = uuid(var1);
          }
 
-          if (isCropBlock(var4)) {
-             trigger(var1, "A1-024", "PLACED", null, Map.of("block", var4));
+          NarratorB1SignalDetector.Signal crop = NarratorB1SignalDetector.cropPlaced(var4);
+          if (crop != null) {
+             trigger(var1, crop.eventId(), crop.source(), null, Map.of("block", crop.targetId()));
           }
 
           NarratorA2SignalDetector.Signal a2 = NarratorA2SignalDetector.blockPlaced(var4);
@@ -210,6 +223,10 @@ public final class NarratorLegacy {
 
          Object var7 = campaignData(serverOf(var1));
          if (var7 != null && insideHome(var7, var1, var3)) {
+            NarratorB2SignalDetector.Signal door = NarratorB2SignalDetector.homeDoor(var4, true);
+            if (door != null) {
+               trigger(var1, door.eventId(), door.source(), null, Map.of("block", door.targetId()));
+            }
             long var8 = kvInc(var7, "home_blocks", 1L);
             if (var8 >= 500L) {
                trigger(var1, "A1-060", "PLACED", null, Map.of("count", var8));
@@ -267,6 +284,13 @@ public final class NarratorLegacy {
             String var7 = positionKey(var1, var3);
             String var8 = var7 != null && state(serverOf(var1)).playerPlacedContainers.contains(var7) ? "PLAYER_STORAGE" : "UNKNOWN_CONTAINER";
             var6.containerHint = new NarratorLegacy.SourceHint(var8, now(), null);
+            Object campaign = campaignData(serverOf(var1));
+            if (campaign != null && insideHome(campaign, var1, var3)) {
+               var6.pendingHomeContainerLevel = var2;
+               var6.pendingHomeContainerPos = var3;
+               var6.pendingHomeContainerBlock = var5;
+               var6.pendingHomeContainerAt = now();
+            }
          }
 
          if (var5.endsWith(":origin_matrix") || var5.contains("origin_matrix")) {
@@ -303,6 +327,8 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax_a3", var0x -> debugSignalsA3(var0x));
          registerSimpleCommand(var0, "reivax_a4", var0x -> debugSignalsA4(var0x));
          registerSimpleCommand(var0, "reivax_a5", var0x -> debugSignalsA5(var0x));
+         registerSimpleCommand(var0, "reivax_b1", var0x -> debugSignalsB1(var0x));
+         registerSimpleCommand(var0, "reivax_b2", var0x -> debugSignalsB2(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -462,6 +488,7 @@ public final class NarratorLegacy {
          if (isServerPlayer(var1)) {
             state(serverOf(var1)).lastFactAt = now();
             ensurePlayer(var1).drowningDanger = false;
+            observePartnerNearDeath(var1);
             NarratorA4SignalDetector.Signal death = NarratorA4SignalDetector.playerDeath();
             trigger(var1, death.eventId(), death.source(), null, Map.of("cause", damageId(var3)));
             return;
@@ -481,10 +508,16 @@ public final class NarratorLegacy {
 
    public static void onLivingDamage(Object event) {
       try {
-         Object player = callQuiet(event, "getEntity");
-         if (!isServerPlayer(player)) {
+         Object damagedEntity = callQuiet(event, "getEntity");
+         if (damagedEntity == null) {
             return;
          }
+
+         observeCompanionDamage(event, damagedEntity);
+         if (!isServerPlayer(damagedEntity)) {
+            return;
+         }
+         Object player = damagedEntity;
 
          Object source = callQuiet(event, "getSource");
          Object sourceEntity = source == null ? null : callQuiet(source, "getEntity");
@@ -564,6 +597,12 @@ public final class NarratorLegacy {
             PlayerState state = ensurePlayer(player);
             state.pendingFedAnimal = target;
             state.pendingFedAnimalAt = now();
+         }
+
+         if ("minecraft:name_tag".equals(stackItemId(stack)) && isAnimalEntity(target) && callQuiet(target, "getCustomName") == null) {
+            PlayerState state = ensurePlayer(player);
+            state.pendingNamedAnimal = target;
+            state.pendingNamedAnimalAt = now();
          }
       } catch (Throwable error) {
          soft("entityInteractA5", error);
@@ -647,6 +686,19 @@ public final class NarratorLegacy {
          String var4 = stackItemId(var3);
          NarratorLegacy.PlayerState var5 = ensurePlayer(var1);
          state(serverOf(var1)).lastFactAt = now();
+         if (!asBool(callQuiet(var0, "isCanceled")) && var2 != null) {
+            String tossedUuid = uuid(var2);
+            if (tossedUuid != null && !tossedUuid.isBlank()) {
+               state(serverOf(var1)).recentTosses.put(
+                  tossedUuid,
+                  new NarratorLegacy.TossedItem(uuid(var1), var4, now())
+               );
+            }
+         }
+         NarratorB1SignalDetector.Signal precious = NarratorB1SignalDetector.preciousToss(var4, asBool(callQuiet(var0, "isCanceled")));
+         if (precious != null) {
+            trigger(var1, precious.eventId(), precious.source(), null, Map.of("item", precious.targetId()));
+         }
          long var6 = now() - var5.recentGiftAt;
          if (var4 != null && var5.recentGiftItem != null && var4.equals(var5.recentGiftItem) && !var5.giftCallbackDone && var6 > 1500L && var6 < 30000L) {
             var5.giftCallbackDone = true;
@@ -671,6 +723,7 @@ public final class NarratorLegacy {
          }
 
          NarratorLegacy.PlayerState var4 = ensurePlayer(var1);
+         observePartnerGift(var0, var1, var3);
          NarratorLegacy.SourceHint var5 = var4.hints.get(var3);
          if (var5 == null || !"MINED".equals(var5.source) || now() - var5.at >= 2000L) {
             var4.hints.put(var3, new NarratorLegacy.SourceHint("WORLD_PICKUP", now(), null));
@@ -682,6 +735,50 @@ public final class NarratorLegacy {
       }
    }
 
+   public static void onItemConsumed(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+         String item = stackItemId(callQuiet(event, "getItem"));
+         for (NarratorB1SignalDetector.Signal signal : NarratorB1SignalDetector.consumed(item)) {
+            state(serverOf(player)).lastFactAt = now();
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("item", signal.targetId()));
+         }
+      } catch (Throwable error) {
+         soft("itemConsumedB1", error);
+      }
+   }
+
+   public static void onPlayerWakeUp(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         if (!isServerPlayer(player)) {
+            return;
+         }
+         PlayerState playerState = ensurePlayer(player);
+         playerState.pendingWakeAt = now();
+      } catch (Throwable error) {
+         soft("playerWakeB1", error);
+      }
+   }
+
+   public static void onEntityStruckByLightning(Object event) {
+      try {
+         Object player = callQuiet(event, "getEntity");
+         NarratorB1SignalDetector.Signal signal = NarratorB1SignalDetector.lightning(
+            isServerPlayer(player), asBool(callQuiet(event, "isCanceled"))
+         );
+         if (signal != null) {
+            state(serverOf(player)).lastFactAt = now();
+            trigger(player, signal.eventId(), signal.source(), null, Map.of());
+         }
+      } catch (Throwable error) {
+         soft("lightningB1", error);
+      }
+   }
+
    private static void inspectDamageContext(Object var0, NarratorLegacy.PlayerState var1, float var2) {
       try {
          Object var3 = callQuiet(var0, "getLastDamageSource");
@@ -689,14 +786,15 @@ public final class NarratorLegacy {
          Object var5 = var3 == null ? null : callQuiet(var3, "getDirectEntity");
          Object var6 = var3 == null ? null : callQuiet(var3, "getEntity");
          String var7 = entityId(var6 != null ? var6 : var5);
-         if (var4.contains("lightning")) {
-            trigger(var0, "A1-090", "DAMAGE", null, Map.of("cause", var4));
-         }
-
-         if (var4.contains("explosion") || "minecraft:creeper".equals(var7)) {
+         boolean explosion = var4.contains("explosion") || "minecraft:creeper".equals(var7);
+         if (explosion) {
             Object var8 = campaignData(serverOf(var0));
-            if (var8 != null && insideHome(var8, var0, callQuiet(var0, "blockPosition"))) {
-               trigger(var0, "A1-083", "DAMAGE", null, Map.of("cause", var4, "entity", var7));
+            NarratorB2SignalDetector.Signal signal = NarratorB2SignalDetector.homeExplosion(
+               var8 != null && insideHome(var8, var0, callQuiet(var0, "blockPosition")),
+               true
+            );
+            if (signal != null) {
+               trigger(var0, signal.eventId(), signal.source(), null, Map.of("cause", var4, "entity", var7));
             }
          }
       } catch (Throwable var9) {
@@ -718,36 +816,69 @@ public final class NarratorLegacy {
 
          String var5 = String.valueOf(callQuiet(var3, "foundationDimension"));
          String var6 = dimensionId(var0);
-         if (!Objects.equals(var5, var6)) {
-            var1.away = true;
-            var1.maxAway = Math.max(var1.maxAway, 2500.0);
-            return;
+         String key = "b2." + uuid(var0).replace('-', '_') + ".";
+         if (!var1.b2HomeInitialized) {
+            var1.b2HomeInitialized = true;
+            var1.away = kvGet(var3, key + "away") == 1L;
+            var1.awaySince = kvGet(var3, key + "away_since");
+            var1.maxAway = kvGet(var3, key + "max_away_milli") / 1000.0;
          }
 
-         double var7 = distance(callQuiet(var0, "blockPosition"), var4);
-         if (var7 >= 250.0) {
-            trigger(var0, "A1-043", "LOCATION", null, Map.of("distance", (int)var7));
+         boolean sameDimension = Objects.equals(var5, var6);
+         double var7 = sameDimension ? distance(callQuiet(var0, "blockPosition"), var4) : 2500.0;
+         NarratorB2SignalDetector.Signal far = sameDimension ? NarratorB2SignalDetector.farFromHome(var7) : null;
+         if (far != null) {
+            trigger(var0, far.eventId(), far.source(), null, Map.of("distance", (int)var7));
          }
 
          int var9 = asInt(callQuiet(var3, "territoryRadius"), 96);
-         if (var7 > (double)var9) {
-            var1.away = true;
-            var1.maxAway = Math.max(var1.maxAway, var7);
+         boolean outside = !sameDimension || var7 > (double)var9;
+         if (outside) {
+            if (!var1.away) {
+               var1.away = true;
+               var1.awaySince = now();
+               kvSet(var3, key + "away", 1L);
+               kvSet(var3, key + "away_since", var1.awaySince);
+            }
+            if (var7 >= var1.maxAway + 25.0 || var1.maxAway == 0.0) {
+               var1.maxAway = Math.max(var1.maxAway, var7);
+               kvSet(var3, key + "max_away_milli", Math.round(var1.maxAway * 1000.0));
+            }
          } else if (var1.away) {
-            if (var1.maxAway >= 1000.0) {
-               trigger(var0, "A1-047", "RETURN", null, Map.of("max_distance", (int)var1.maxAway));
+            long awayDuration = var1.awaySince <= 0L ? 0L : Math.max(0L, now() - var1.awaySince);
+            for (NarratorB2SignalDetector.Signal signal : NarratorB2SignalDetector.homeReturn(
+               true,
+               var1.maxAway,
+               awayDuration,
+               "NIGHT".equals(dayPhase(var0))
+            )) {
+               trigger(
+                  var0,
+                  signal.eventId(),
+                  signal.source(),
+                  null,
+                  Map.of("max_distance", (int)var1.maxAway, "away_ms", awayDuration)
+               );
             }
 
             var1.away = false;
             var1.maxAway = 0.0;
+            var1.awaySince = 0L;
+            kvSet(var3, key + "away", 0L);
+            kvSet(var3, key + "away_since", 0L);
+            kvSet(var3, key + "max_away_milli", 0L);
          }
       } catch (Throwable var10) {
       }
    }
 
-   private static void observeDuoDistance(Object var0) {
+   private static void observeB2DuoState(Object var0) {
       try {
          Object var1 = serverOf(var0);
+         NarratorLegacy.ServerState shared = state(var1);
+         long cutoff = now() - 30_000L;
+         shared.recentTosses.entrySet().removeIf(entry -> entry.getValue().at < cutoff);
+         shared.recentDiscoveries.entrySet().removeIf(entry -> entry.getValue().at < cutoff);
          List var2 = players(var1);
          if (var2.size() < 2) {
             return;
@@ -756,18 +887,187 @@ public final class NarratorLegacy {
          String var3 = uuid(var0);
 
          for (Object var5 : var2) {
-            if (var5 != var0 && !Objects.equals(uuid(var5), var3) && Objects.equals(dimensionId(var0), dimensionId(var5))) {
-               double var6 = distance(callQuiet(var0, "blockPosition"), callQuiet(var5, "blockPosition"));
-               if (var6 >= 1000.0) {
-                  HashMap var8 = new HashMap();
-                  var8.put("other", var5);
-                  var8.put("distance", (int)var6);
-                  trigger(var0, "A1-049", "DISTANCE", null, var8);
-                  return;
-               }
+            String otherUuid = uuid(var5);
+            if (var5 == var0 || Objects.equals(otherUuid, var3) || var3.compareTo(otherUuid) >= 0) {
+               continue;
+            }
+
+            boolean sameDimension = Objects.equals(dimensionId(var0), dimensionId(var5));
+            double var6 = sameDimension ? distance(callQuiet(var0, "blockPosition"), callQuiet(var5, "blockPosition")) : 999999.0;
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("other", var5);
+            context.put("distance", (int)Math.min(Integer.MAX_VALUE, var6));
+            for (NarratorB2SignalDetector.Signal signal : NarratorB2SignalDetector.duoDistance(sameDimension, var6)) {
+               trigger(var0, signal.eventId(), signal.source(), null, context);
+            }
+
+            String pairKey = var3 + "|" + otherUuid;
+            NarratorLegacy.DuoState pair = state(var1).duoPairs.computeIfAbsent(pairKey, ignored -> new NarratorLegacy.DuoState());
+            NarratorB2SignalDetector.Signal reunion = NarratorB2SignalDetector.reunion(pair.separated, sameDimension, var6);
+            if (reunion != null) {
+               trigger(var0, reunion.eventId(), reunion.source(), null, context);
+               pair.separated = false;
+            } else if (!sameDimension || var6 >= NarratorB2SignalDetector.PARTNER_FAR_BLOCKS) {
+               pair.separated = true;
+            }
+
+            NarratorB2SignalDetector.Signal bothLow = NarratorB2SignalDetector.bothLowHealth(
+               asFloat(callQuiet(var0, "getHealth"), 20.0F),
+               asFloat(callQuiet(var0, "getMaxHealth"), 20.0F),
+               asFloat(callQuiet(var5, "getHealth"), 20.0F),
+               asFloat(callQuiet(var5, "getMaxHealth"), 20.0F)
+            );
+            if (bothLow != null) {
+               trigger(var0, bothLow.eventId(), bothLow.source(), null, context);
             }
          }
       } catch (Throwable var9) {
+      }
+   }
+
+   private static void observePartnerNearDeath(Object player) {
+      try {
+         Object server = serverOf(player);
+         for (Object other : players(server)) {
+            if (other == player || Objects.equals(uuid(other), uuid(player))) {
+               continue;
+            }
+            boolean sameDimension = sameDimension(player, other);
+            double distance = sameDimension
+               ? distance(callQuiet(player, "blockPosition"), callQuiet(other, "blockPosition"))
+               : 999999.0;
+            NarratorB2SignalDetector.Signal signal = NarratorB2SignalDetector.partnerNearDeath(sameDimension, distance);
+            if (signal != null) {
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("other", other, "distance", (int)distance));
+               return;
+            }
+         }
+      } catch (Throwable error) {
+         soft("b2PartnerDeath", error);
+      }
+   }
+
+   private static void observePartnerGift(Object event, Object receiver, String itemId) {
+      try {
+         Object itemEntity = callQuiet(event, "getItemEntity");
+         if (itemEntity == null) {
+            return;
+         }
+         NarratorLegacy.ServerState serverState = state(serverOf(receiver));
+         NarratorLegacy.TossedItem tossed = serverState.recentTosses.remove(uuid(itemEntity));
+         if (tossed == null) {
+            return;
+         }
+         long elapsed = now() - tossed.at;
+         NarratorB2SignalDetector.Signal signal = NarratorB2SignalDetector.partnerGift(
+            tossed.giverUuid,
+            uuid(receiver),
+            elapsed,
+            Objects.equals(tossed.itemId, itemId)
+         );
+         if (signal == null) {
+            return;
+         }
+         Object giver = playerByUuid(serverOf(receiver), tossed.giverUuid);
+         if (giver != null) {
+            trigger(giver, signal.eventId(), signal.source(), null, Map.of("other", receiver, "item", itemId));
+         }
+      } catch (Throwable error) {
+         soft("b2PartnerGift", error);
+      }
+   }
+
+   private static void observePendingB2Interactions(Object player, NarratorLegacy.PlayerState playerState) {
+      try {
+         long elapsed = now() - playerState.pendingHomeContainerAt;
+         if (playerState.pendingHomeContainerLevel == null || playerState.pendingHomeContainerPos == null) {
+            return;
+         }
+         if (elapsed > 15_000L) {
+            clearPendingHomeContainer(playerState);
+            return;
+         }
+         if (elapsed < 400L) {
+            return;
+         }
+
+         Object blockEntity = callQuiet(
+            playerState.pendingHomeContainerLevel,
+            "getBlockEntity",
+            playerState.pendingHomeContainerPos
+         );
+         int size = asInt(callQuiet(blockEntity, "getContainerSize"), 0);
+         if (size <= 0) {
+            return;
+         }
+         int occupied = 0;
+         HashSet<String> itemIds = new HashSet<>();
+         for (int slot = 0; slot < size; slot++) {
+            Object stack = callQuiet(blockEntity, "getItem", slot);
+            if (stack != null && !asBool(callQuiet(stack, "isEmpty"))) {
+               occupied++;
+               String itemId = stackItemId(stack);
+               if (itemId != null) {
+                  itemIds.add(itemId);
+               }
+            }
+         }
+         for (NarratorB2SignalDetector.Signal signal : NarratorB2SignalDetector.homeContainer(
+            playerState.pendingHomeContainerBlock,
+            occupied,
+            size,
+            itemIds
+         )) {
+            trigger(
+               player,
+               signal.eventId(),
+               signal.source(),
+               null,
+               Map.of("block", playerState.pendingHomeContainerBlock, "occupied", occupied, "slots", size)
+            );
+         }
+      } catch (Throwable error) {
+         soft("b2HomeContainer", error);
+      }
+   }
+
+   private static void clearPendingHomeContainer(NarratorLegacy.PlayerState state) {
+      state.pendingHomeContainerLevel = null;
+      state.pendingHomeContainerPos = null;
+      state.pendingHomeContainerBlock = null;
+      state.pendingHomeContainerAt = 0L;
+   }
+
+   private static void observeSharedDiscovery(Object actor, String eventId, NarratorLegacy.ServerState serverState) {
+      if (NarratorB2SignalDetector.SHARED_DISCOVERY.equals(eventId) || !eventId.startsWith("A1-")) {
+         return;
+      }
+      try {
+         long time = now();
+         String actorUuid = uuid(actor);
+         NarratorLegacy.Discovery previous = serverState.recentDiscoveries.get(eventId);
+         if (previous == null || time - previous.at > NarratorB2SignalDetector.SHARED_DISCOVERY_MS) {
+            serverState.recentDiscoveries.put(eventId, new NarratorLegacy.Discovery(actorUuid, time));
+            return;
+         }
+         NarratorB2SignalDetector.Signal signal = NarratorB2SignalDetector.sharedDiscovery(
+            previous.actorUuid,
+            actorUuid,
+            time - previous.at,
+            eventId
+         );
+         if (signal != null) {
+            serverState.recentDiscoveries.remove(eventId);
+            Object other = playerByUuid(serverOf(actor), previous.actorUuid);
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("shared_event", eventId);
+            if (other != null) {
+               context.put("other", other);
+            }
+            trigger(actor, signal.eventId(), signal.source(), null, context);
+         }
+      } catch (Throwable error) {
+         soft("b2SharedDiscovery", error);
       }
    }
 
@@ -801,8 +1101,9 @@ public final class NarratorLegacy {
             }
          }
 
-         if (var6 && !asBool(callQuiet(var1, "isCompleted", "A1-031")) && isDawn(var0) && var7 != null) {
-            trigger(var7, "A1-031", "STORY", null, Map.of());
+         NarratorB1SignalDetector.Signal dawn = NarratorB1SignalDetector.dawn(var6, isDawn(var0));
+         if (dawn != null && !asBool(callQuiet(var1, "isCompleted", dawn.eventId())) && var7 != null) {
+            trigger(var7, dawn.eventId(), dawn.source(), null, Map.of());
             var2.nextDeliveryAt = Math.max(var2.nextDeliveryAt, now() + 6500L);
          }
 
@@ -917,11 +1218,11 @@ public final class NarratorLegacy {
             return;
          }
 
+         NarratorLegacy.ServerState var8 = state(var6);
+         observeSharedDiscovery(var0, var1, var8);
          if (asBool(callQuiet(var7, "isCompleted", var1))) {
             return;
          }
-
-         NarratorLegacy.ServerState var8 = state(var6);
 
          for (NarratorLegacy.Pending var10 : var8.queue) {
             if (var10.id.equals(var1)) {
@@ -1691,6 +1992,82 @@ public final class NarratorLegacy {
       }
    }
 
+   private static void debugSignalsB1(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux B1 indisponibles.");
+            return;
+         }
+
+         String[] labels = {
+            "Culture", "Aube survécue", "Village", "500 blocs", "Demi-cœur", "Foudre",
+            "Nuit dormie", "Sommeil refusé", "Pomme", "Repas cuit", "Faim critique", "Océan",
+            "Sommet", "Neige", "Désert", "Jungle", "Grotte profonde", "Sous Y=-40",
+            "Orage", "Lever dehors", "Inventaire plein", "Objet précieux jeté", "Animal nommé", "Compagnon blessé"
+         };
+         StringBuilder[] groups = {new StringBuilder(), new StringBuilder(), new StringBuilder(), new StringBuilder()};
+         int completed = 0;
+         for (int index = 0; index < NarratorB1SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorB1SignalDetector.ALL_IDS.get(index)));
+            if (done) {
+               completed++;
+            }
+            StringBuilder target = groups[index / 6];
+            if (!target.isEmpty()) {
+               target.append(" §8| ");
+            }
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+
+         message(player, "§6B1 monde et survie §7— §f" + completed + "/24 §8| §bSOLO + DUO prêts");
+         message(player, "§6Départ et dangers §8| " + groups[0]);
+         message(player, "§6Repos et exploration §8| " + groups[1]);
+         message(player, "§6Biomes et profondeurs §8| " + groups[2]);
+         message(player, "§6Météo et compagnons §8| " + groups[3]);
+         message(player, "§674/76 événements robustes actifs §8| §7les 2 événements Matrice restent reportés au chapitre prévu");
+      } catch (Throwable error) {
+         message(player, "§cLecture B1 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
+   private static void debugSignalsB2(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux B2 indisponibles.");
+            return;
+         }
+
+         String[] labels = {
+            "250 du Foyer", "Retour 1000", "Duo 1000", "Explosion Foyer", "Porte Foyer",
+            "Retour nuit", "Retour 20 min", "Duo 500", "Retrouvailles", "Mort proche",
+            "Deux faibles", "Découverte partagée", "Cadeau partenaire", "Bloc précieux rangé", "Coffre 90 %"
+         };
+         StringBuilder[] groups = {new StringBuilder(), new StringBuilder(), new StringBuilder()};
+         int completed = 0;
+         for (int index = 0; index < NarratorB2SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorB2SignalDetector.ALL_IDS.get(index)));
+            if (done) {
+               completed++;
+            }
+            StringBuilder target = groups[index / 5];
+            if (!target.isEmpty()) {
+               target.append(" §8| ");
+            }
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+
+         message(player, "§6B2 Foyer et corrélations §7— §f" + completed + "/15 §8| §bSOLO + DUO prêts");
+         message(player, "§6Foyer §8| " + groups[0]);
+         message(player, "§6Retours et duo §8| " + groups[1]);
+         message(player, "§6Coopération et stockage §8| " + groups[2]);
+         message(player, "§685 événements robustes actifs §8| §7Matrice toujours réservée au chapitre prévu");
+      } catch (Throwable error) {
+         message(player, "§cLecture B2 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
    }
@@ -1785,10 +2162,16 @@ public final class NarratorLegacy {
          setIntField(var1, "progress", Math.max(0, asInt(fieldQuiet(var1, "progress"), 0) - var3));
          setIntField(var1, "score", Math.max(0, asInt(fieldQuiet(var1, "score"), 0) - var4));
          // Le reset pilote doit également rendre les tests du cerveau reproductibles.
-         doneSet(var1).removeIf(value -> value.startsWith(KV + "brain."));
+         doneSet(var1).removeIf(
+            value -> value.startsWith(KV + "brain.") || value.startsWith(KV + "b1.") || value.startsWith(KV + "b2.")
+         );
          callQuiet(var1, "setDirty");
          PLAYERS.remove(uuid(var0));
-         state(serverOf(var0)).queue.clear();
+         NarratorLegacy.ServerState serverState = state(serverOf(var0));
+         serverState.queue.clear();
+         serverState.duoPairs.clear();
+         serverState.recentTosses.clear();
+         serverState.recentDiscoveries.clear();
          message(var0, "§aPilotes Alpha 17 réinitialisés.");
       } catch (Throwable var7) {
          message(var0, "§cReset impossible: " + var7.getClass().getSimpleName());
@@ -1975,6 +2358,212 @@ public final class NarratorLegacy {
       } catch (Throwable error) {
          soft("a3Equipment", error);
       }
+   }
+
+   private static void observeB1WorldState(Object player, NarratorLegacy.PlayerState playerState) {
+      try {
+         Object server = serverOf(player);
+         if (!storyStarted(server)) {
+            return;
+         }
+         Object campaign = campaignData(server);
+         Object level = callQuiet(player, "serverLevel");
+         Object pos = callQuiet(player, "blockPosition");
+         if (campaign == null || level == null || pos == null) {
+            return;
+         }
+
+         String playerKey = "b1." + uuid(player) + ".";
+         String dimension = dimensionId(player);
+         int y = asInt(callQuiet(pos, "getY"), 64);
+         boolean overworld = "minecraft:overworld".equals(dimension);
+         boolean outdoors = asBool(callQuiet(level, "canSeeSky", pos));
+
+         if (overworld) {
+            NarratorB1SignalDetector.Signal village = NarratorB1SignalDetector.village(asBool(callQuiet(level, "isVillage", pos)));
+            if (village != null) {
+               trigger(player, village.eventId(), village.source(), null, Map.of("location", village.targetId()));
+            }
+         }
+
+         String biome = biomeId(level, pos);
+         for (NarratorB1SignalDetector.Signal signal : NarratorB1SignalDetector.environment(biome, y, outdoors, overworld)) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("biome", biome, "y", y));
+         }
+
+         NarratorB1SignalDetector.Signal storm = NarratorB1SignalDetector.thunderstorm(
+            asBool(callQuiet(level, "isThundering")), outdoors
+         );
+         if (storm != null) {
+            trigger(player, storm.eventId(), storm.source(), null, Map.of());
+         }
+
+         Object foodData = callQuiet(player, "getFoodData");
+         int food = asInt(callQuiet(foodData, "getFoodLevel"), 20);
+         if (playerState.foodInitialized) {
+            NarratorB1SignalDetector.Signal hunger = NarratorB1SignalDetector.criticalHunger(playerState.lastFood, food);
+            if (hunger != null) {
+               trigger(player, hunger.eventId(), hunger.source(), null, Map.of("food", food));
+            }
+         }
+         playerState.foodInitialized = true;
+         playerState.lastFood = food;
+
+         Object inventory = callQuiet(player, "getInventory");
+         boolean inventoryFull = asInt(callQuiet(inventory, "getFreeSlot"), 0) < 0;
+         NarratorB1SignalDetector.Signal full = NarratorB1SignalDetector.inventoryFull(playerState.inventoryWasFull, inventoryFull);
+         if (full != null) {
+            trigger(player, full.eventId(), full.source(), null, Map.of());
+         }
+         playerState.inventoryWasFull = inventoryFull;
+
+         observeB1Travel(player, playerState, campaign, playerKey, pos, dimension);
+         observeB1Time(player, playerState, campaign, playerKey, level, outdoors);
+      } catch (Throwable error) {
+         soft("worldStateB1", error);
+      }
+   }
+
+   private static void observeB1Travel(
+      Object player,
+      NarratorLegacy.PlayerState playerState,
+      Object campaign,
+      String playerKey,
+      Object pos,
+      String dimension
+   ) {
+      if (playerState.lastTravelPos != null && Objects.equals(playerState.lastTravelDimension, dimension)) {
+         double step = distance(playerState.lastTravelPos, pos);
+         // Une téléportation n'est pas un trajet : seuls les déplacements plausibles
+         // entre deux observations espacées d'une seconde sont cumulés.
+         if (step > 0.0 && step <= 32.0) {
+            long milli = kvInc(campaign, playerKey + "travel_milli", Math.round(step * 1000.0));
+            NarratorB1SignalDetector.Signal travelled = NarratorB1SignalDetector.travelled(milli / 1000.0);
+            if (travelled != null) {
+               trigger(player, travelled.eventId(), travelled.source(), null, Map.of("distance", milli / 1000L));
+            }
+         }
+      }
+      playerState.lastTravelPos = pos;
+      playerState.lastTravelDimension = dimension;
+   }
+
+   private static void observeB1Time(
+      Object player,
+      NarratorLegacy.PlayerState playerState,
+      Object campaign,
+      String playerKey,
+      Object level,
+      boolean outdoors
+   ) throws Exception {
+      String phase = dayPhase(player);
+      boolean awake = !asBool(callQuiet(player, "isSleeping"));
+      NarratorB1SignalDetector.Signal sunrise = NarratorB1SignalDetector.sunrise(
+         playerState.lastDayPhase,
+         phase,
+         outdoors,
+         awake && now() - playerState.lastSleepConfirmedAt > 2000L
+      );
+      if (sunrise != null) {
+         trigger(player, sunrise.eventId(), sunrise.source(), null, Map.of());
+      }
+
+      if (!"NIGHT".equals(playerState.lastDayPhase) && "NIGHT".equals(phase)) {
+         long dayIndex = worldDayIndex(level);
+         long lastCountedNight = kvGet(campaign, playerKey + "last_night_day");
+         if (lastCountedNight != dayIndex + 1L) {
+            kvSet(campaign, playerKey + "last_night_day", dayIndex + 1L);
+            long awakeNights = kvInc(campaign, playerKey + "nights_awake", 1L);
+            NarratorB1SignalDetector.Signal refused = NarratorB1SignalDetector.refusedSleep((int)Math.min(Integer.MAX_VALUE, awakeNights));
+            if (refused != null) {
+               trigger(player, refused.eventId(), refused.source(), null, Map.of("nights", awakeNights));
+            }
+         }
+      }
+      playerState.lastDayPhase = phase;
+   }
+
+   private static void observePendingB1Interactions(Object player, NarratorLegacy.PlayerState playerState) {
+      long current = now();
+      if (playerState.pendingWakeAt > 0L) {
+         if (current - playerState.pendingWakeAt > 3000L) {
+            playerState.pendingWakeAt = 0L;
+         } else {
+            NarratorB1SignalDetector.Signal sleep = NarratorB1SignalDetector.sleepConfirmed(true, isDawn(serverOf(player)));
+            if (sleep != null) {
+               playerState.pendingWakeAt = 0L;
+               playerState.lastSleepConfirmedAt = current;
+               Object campaign = campaignData(serverOf(player));
+               if (campaign != null) {
+                  try {
+                     kvSet(campaign, "b1." + uuid(player) + ".nights_awake", 0L);
+                  } catch (Throwable ignored) {
+                  }
+               }
+               trigger(player, sleep.eventId(), sleep.source(), null, Map.of());
+            }
+         }
+      }
+
+      if (playerState.pendingNamedAnimal != null) {
+         Object animal = playerState.pendingNamedAnimal;
+         if (current - playerState.pendingNamedAnimalAt > 2500L) {
+            playerState.pendingNamedAnimal = null;
+         } else {
+            boolean named = callQuiet(animal, "getCustomName") != null;
+            NarratorB1SignalDetector.Signal signal = NarratorB1SignalDetector.animalNamed(
+               true, true, named, isAnimalEntity(animal)
+            );
+            if (signal != null) {
+               playerState.pendingNamedAnimal = null;
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("entity", entityId(animal)));
+            }
+         }
+      }
+   }
+
+   private static void observeCompanionDamage(Object event, Object damagedEntity) {
+      try {
+         Object ownerUuid = callQuiet(damagedEntity, "getOwnerUUID");
+         if (ownerUuid == null) {
+            return;
+         }
+         Object server = callQuiet(damagedEntity, "getServer");
+         Object owner = playerByUuid(server, String.valueOf(ownerUuid));
+         if (!isServerPlayer(owner)) {
+            return;
+         }
+         float health = asFloat(callQuiet(damagedEntity, "getHealth"), 0.0F);
+         float maxHealth = asFloat(callQuiet(damagedEntity, "getMaxHealth"), 0.0F);
+         float damage = a4DamageAmount(event);
+         NarratorB1SignalDetector.Signal signal = NarratorB1SignalDetector.companionHurt(true, damage, health, maxHealth);
+         if (signal != null) {
+            trigger(owner, signal.eventId(), signal.source(), null, Map.of("entity", entityId(damagedEntity), "health", health));
+         }
+      } catch (Throwable error) {
+         soft("companionDamageB1", error);
+      }
+   }
+
+   private static boolean isAnimalEntity(Object entity) {
+      return entity != null && isAssignableName(entity.getClass(), "net.minecraft.world.entity.animal.Animal");
+   }
+
+   private static String biomeId(Object level, Object pos) {
+      try {
+         Object holder = call(level, "getBiome", pos);
+         Object optional = call(holder, "unwrapKey");
+         if (optional instanceof java.util.Optional<?> value && value.isPresent()) {
+            return String.valueOf(call(value.get(), "location"));
+         }
+      } catch (Throwable ignored) {
+      }
+      return "unknown";
+   }
+
+   private static long worldDayIndex(Object level) {
+      Object raw = callQuiet(level, "getDayTime");
+      return raw instanceof Number number ? Math.floorDiv(number.longValue(), 24000L) : 0L;
    }
 
    private static void observePendingA5Interactions(Object player, NarratorLegacy.PlayerState playerState) {
@@ -2716,19 +3305,37 @@ public final class NarratorLegacy {
    private static final class PlayerState {
       boolean inventoryInitialized;
       boolean away;
+      boolean b2HomeInitialized;
       boolean drowningDanger;
       boolean giftCallbackDone;
+      boolean foodInitialized;
+      boolean inventoryWasFull;
       float lastHealth = Float.NaN;
+      int lastFood = 20;
       double maxAway;
       long lastMatrixInteractionAt;
       long recentGiftAt;
       long lastInventoryScanAt;
+      long lastB1ObservationAt;
+      long lastB2ObservationAt;
+      long awaySince;
+      long pendingHomeContainerAt;
+      long pendingWakeAt;
+      long lastSleepConfirmedAt;
+      long pendingNamedAnimalAt;
       long pendingFedAnimalAt;
       long pendingBellAt;
       String recentGiftItem;
+      String lastTravelDimension;
+      String lastDayPhase;
+      String pendingHomeContainerBlock;
       Object pendingFedAnimal;
+      Object pendingNamedAnimal;
+      Object lastTravelPos;
       Object pendingBellLevel;
       Object pendingBellPos;
+      Object pendingHomeContainerLevel;
+      Object pendingHomeContainerPos;
       NarratorLegacy.SourceHint containerHint;
       final Map<String, Integer> itemCounts = new HashMap<>();
       final Map<String, Integer> rewardCredit = new HashMap<>();
@@ -2738,6 +3345,9 @@ public final class NarratorLegacy {
    private static final class ServerState {
       final Deque<NarratorLegacy.Pending> queue = new ArrayDeque<>();
       final Set<String> playerPlacedContainers = ConcurrentHashMap.newKeySet();
+      final Map<String, NarratorLegacy.DuoState> duoPairs = new ConcurrentHashMap<>();
+      final Map<String, NarratorLegacy.TossedItem> recentTosses = new ConcurrentHashMap<>();
+      final Map<String, NarratorLegacy.Discovery> recentDiscoveries = new ConcurrentHashMap<>();
       long lastFactAt = NarratorLegacy.now();
       long lastDeliveredAt;
       long nextDeliveryAt;
@@ -2750,6 +3360,16 @@ public final class NarratorLegacy {
       boolean stela;
       boolean matrixDisc;
       boolean nightSeen;
+   }
+
+   private static final class DuoState {
+      boolean separated;
+   }
+
+   private static record TossedItem(String giverUuid, String itemId, long at) {
+   }
+
+   private static record Discovery(String actorUuid, long at) {
    }
 
    private static record SourceHint(String source, long at, String actor) {
