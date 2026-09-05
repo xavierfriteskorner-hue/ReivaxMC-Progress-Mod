@@ -104,6 +104,10 @@ public final class NarratorEngine {
       NarratorLegacy.onEntityStruckByLightning(event);
    }
 
+   public static void onProjectileImpact(Object event) {
+      NarratorLegacy.onProjectileImpact(event);
+   }
+
    /**
     * Entrée stable pour les futurs choix scénaristiques. Le scénario peut faire
     * évoluer la confiance/défiance de La Voix sans dépendre du stockage interne.

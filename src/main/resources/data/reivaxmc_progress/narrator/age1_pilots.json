@@ -1457,6 +1457,114 @@
       "kind": "NARRATOR_WHISPER",
       "condense_group": "home_storage",
       "memory_tags": ["home", "storage", "collection"]
+    },
+    {
+      "id": "A1-165",
+      "title": "UNE FLÈCHE POUR LE DÉCOR",
+      "actor_text": "La cible était ailleurs. Le bloc, lui, ne vous avait rien demandé.",
+      "other_text": "{player} vient de confier une flèche au paysage. La précision viendra peut-être ensuite.",
+      "age_points": 2,
+      "civ_score": 0,
+      "priority": 42,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "combat_learning",
+      "memory_tags": ["combat", "arrow", "miss"]
+    },
+    {
+      "id": "A1-166",
+      "title": "NE LE FIXEZ PAS",
+      "actor_text": "Vous avez regardé l'Enderman. Lui aussi vous a remarqué. Voilà un échange parfaitement évitable.",
+      "other_text": "{player} vient de soutenir le regard d'un Enderman. Préparez-vous à une conversation très mobile.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 72,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "combat_learning",
+      "memory_tags": ["danger", "enderman", "gaze"]
+    },
+    {
+      "id": "A1-167",
+      "title": "CHALEUR DOMESTIQUE",
+      "actor_text": "Du feu dans le Foyer. Le mot foyer n'était pas une invitation à tout incendier.",
+      "other_text": "{player} a allumé un feu dans le Foyer. Gardez un seau à une distance raisonnable.",
+      "age_points": 5,
+      "civ_score": -1,
+      "priority": 76,
+      "kind": "NARRATOR_ANNOUNCEMENT",
+      "condense_group": "home_building",
+      "memory_tags": ["home", "fire", "danger"]
+    },
+    {
+      "id": "A1-168",
+      "title": "UN TOIT AU-DESSUS",
+      "actor_text": "Un espace bâti, fermé et couvert. Votre Foyer commence enfin à mériter son nom.",
+      "other_text": "{player} vient d'achever le premier abri couvert du Foyer. La pluie devra rester dehors.",
+      "age_points": 10,
+      "civ_score": 2,
+      "priority": 64,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "home_building",
+      "memory_tags": ["home", "building", "roof"]
+    },
+    {
+      "id": "A1-169",
+      "title": "LES MOTS RESTENT",
+      "actor_text": "Votre premier panneau porte un nom. Même le bois commence à conserver votre histoire.",
+      "other_text": "{player} a laissé quelques mots sur un panneau. Le monde possède désormais une annotation.",
+      "age_points": 2,
+      "civ_score": 1,
+      "priority": 43,
+      "kind": "NARRATOR_WHISPER",
+      "condense_group": "home_building",
+      "memory_tags": ["building", "sign", "memory"]
+    },
+    {
+      "id": "A1-170",
+      "title": "LA TERRE S'OUVRE",
+      "actor_text": "Une fracture profonde. Regardez où vous posez les pieds avant d'étudier la géologie de trop près.",
+      "other_text": "{player} vient de découvrir une profonde fracture du terrain. Suivez prudemment, ou pas du tout.",
+      "age_points": 5,
+      "civ_score": 0,
+      "priority": 55,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "terrain_discovery",
+      "memory_tags": ["exploration", "ravine", "depth"]
+    },
+    {
+      "id": "A1-171",
+      "title": "SAUVÉ À TEMPS",
+      "actor_text": "Vous avez récupéré l'objet précieux juste avant de le perdre. Une excellente panique, finalement.",
+      "other_text": "{player} vient de sauver un objet précieux in extremis. Le trésor peut cesser de retenir son souffle.",
+      "age_points": 10,
+      "civ_score": 1,
+      "priority": 78,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "valuable_items",
+      "memory_tags": ["valuable", "recovery", "danger"]
+    },
+    {
+      "id": "A1-172",
+      "title": "À QUATRE PATTES, LOIN",
+      "actor_text": "Votre compagnon vous suit depuis cinq cents blocs. Sa loyauté dépasse visiblement votre sens de l'itinéraire.",
+      "other_text": "Le compagnon de {player} a parcouru cinq cents blocs avec le groupe. Il mérite probablement une pause.",
+      "age_points": 10,
+      "civ_score": 1,
+      "priority": 62,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "companion_progression",
+      "memory_tags": ["animal", "companion", "travel"]
+    },
+    {
+      "id": "A1-173",
+      "title": "LA BOUSSOLE N'Y PEUT RIEN",
+      "actor_text": "Six cents blocs parcourus avec une boussole, et toujours aussi loin du Foyer. L'outil n'était pas le problème.",
+      "other_text": "{player} s'est perdu avec une boussole. La technologie vient d'être officiellement innocentée.",
+      "age_points": 10,
+      "civ_score": 0,
+      "priority": 66,
+      "kind": "NARRATOR_ACHIEVEMENT",
+      "condense_group": "home_journey",
+      "memory_tags": ["home", "navigation", "lost"]
     }
   ]
 }

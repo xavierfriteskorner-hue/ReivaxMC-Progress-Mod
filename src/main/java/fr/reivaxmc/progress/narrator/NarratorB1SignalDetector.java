@@ -149,7 +149,7 @@ final class NarratorB1SignalDetector {
    }
 
    static Signal sunrise(String previousPhase, String currentPhase, boolean outdoors, boolean awake) {
-      return "NIGHT".equals(previousPhase) && "DAWN".equals(currentPhase) && outdoors && awake
+      return "NIGHT".equals(previousPhase) && ("DAWN".equals(currentPhase) || "DAY".equals(currentPhase)) && outdoors && awake
          ? signal(SUNRISE_OUTDOORS, "TIME", "sunrise") : null;
    }
 

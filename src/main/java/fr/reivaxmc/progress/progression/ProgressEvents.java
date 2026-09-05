@@ -8,6 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.EntityStruckByLightningEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.AnimalTameEvent;
 import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
@@ -136,6 +137,11 @@ public final class ProgressEvents {
    @SubscribeEvent(priority = EventPriority.LOWEST)
    public void narratorLightning(EntityStruckByLightningEvent event) {
       NarratorEngine.onEntityStruckByLightning(event);
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public void narratorProjectileImpact(ProjectileImpactEvent event) {
+      NarratorEngine.onProjectileImpact(event);
    }
 
    @SubscribeEvent

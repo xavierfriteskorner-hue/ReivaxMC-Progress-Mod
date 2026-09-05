@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.8.7'
+version = '0.8.8'
 group = 'fr.reivaxmc.progress'
 
 base {
@@ -103,6 +103,14 @@ tasks.register('checkB2Signals', JavaExec) {
     mainClass = 'fr.reivaxmc.progress.narrator.NarratorB2SelfTest'
 }
 
+tasks.register('checkB3Signals', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les 9 événements spécialisés B3 et leurs garde-fous anti-faux-positifs.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'fr.reivaxmc.progress.narrator.NarratorB3SelfTest'
+}
+
 // Le projet utilise un auto-test Java autonome et n'embarque pas encore de tests JUnit.
 // Gradle 9 doit donc accepter que la tâche test ne découvre aucune classe JUnit.
 tasks.named('test') {
@@ -117,4 +125,5 @@ tasks.named('check') {
     dependsOn tasks.named('checkA5Signals')
     dependsOn tasks.named('checkB1Signals')
     dependsOn tasks.named('checkB2Signals')
+    dependsOn tasks.named('checkB3Signals')
 }

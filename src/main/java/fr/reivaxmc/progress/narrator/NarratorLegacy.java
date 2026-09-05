@@ -108,6 +108,7 @@ public final class NarratorLegacy {
          observePendingA5Interactions(var1, var3);
          observePendingB1Interactions(var1, var3);
          observePendingB2Interactions(var1, var3);
+         observePendingB3Interactions(var1, var3);
 
          var3.lastHealth = var5;
           // Inventory deltas are the generic sensor used by several robust events
@@ -128,6 +129,10 @@ public final class NarratorLegacy {
             var3.lastB2ObservationAt = now();
             observeHomeDistance(var1, var3);
             observeB2DuoState(var1);
+         }
+         if (now() - var3.lastB3ObservationAt >= 1000L) {
+            var3.lastB3ObservationAt = now();
+            observeB3WorldState(var1, var3);
          }
          observeRecentGift(var1, var3);
       } catch (Throwable var6) {
@@ -231,6 +236,19 @@ public final class NarratorLegacy {
             if (var8 >= 500L) {
                trigger(var1, "A1-060", "PLACED", null, Map.of("count", var8));
             }
+
+            NarratorB3SignalDetector.Signal fire = NarratorB3SignalDetector.homeFire(var4, true);
+            if (fire != null) {
+               trigger(var1, fire.eventId(), fire.source(), null, Map.of("block", fire.targetId()));
+            }
+         }
+
+         if (var4.endsWith("_sign") || var4.endsWith("_hanging_sign")) {
+            NarratorLegacy.PlayerState playerState = ensurePlayer(var1);
+            playerState.pendingSignLevel = callQuiet(var0, "getLevel");
+            playerState.pendingSignPos = var3;
+            playerState.pendingSignBlock = var4;
+            playerState.pendingSignAt = now();
          }
       } catch (Throwable var10) {
          soft("blockPlaced", var10);
@@ -329,6 +347,7 @@ public final class NarratorLegacy {
          registerSimpleCommand(var0, "reivax_a5", var0x -> debugSignalsA5(var0x));
          registerSimpleCommand(var0, "reivax_b1", var0x -> debugSignalsB1(var0x));
          registerSimpleCommand(var0, "reivax_b2", var0x -> debugSignalsB2(var0x));
+         registerSimpleCommand(var0, "reivax_b3", var0x -> debugSignalsB3(var0x));
          registerSimpleCommand(var0, "reivax17_reset", var0x -> resetPilots(var0x));
          registerSimpleCommand(var0, "reivax17_half", var0x -> trigger(var0x, "A1-087", "UNKNOWN", null, Map.of("debug", true)));
          registerSimpleCommand(var0, "reivax17_lightning", var0x -> trigger(var0x, "A1-090", "UNKNOWN", null, Map.of("debug", true)));
@@ -693,6 +712,12 @@ public final class NarratorLegacy {
                   tossedUuid,
                   new NarratorLegacy.TossedItem(uuid(var1), var4, now())
                );
+               if (NarratorB3SignalDetector.isPrecious(var4)) {
+                  state(serverOf(var1)).preciousTosses.put(
+                     tossedUuid,
+                     new NarratorLegacy.TossedItem(uuid(var1), var4, now())
+                  );
+               }
             }
          }
          NarratorB1SignalDetector.Signal precious = NarratorB1SignalDetector.preciousToss(var4, asBool(callQuiet(var0, "isCanceled")));
@@ -723,6 +748,7 @@ public final class NarratorLegacy {
          }
 
          NarratorLegacy.PlayerState var4 = ensurePlayer(var1);
+         observePreciousRecovery(var0, var1, var3);
          observePartnerGift(var0, var1, var3);
          NarratorLegacy.SourceHint var5 = var4.hints.get(var3);
          if (var5 == null || !"MINED".equals(var5.source) || now() - var5.at >= 2000L) {
@@ -759,6 +785,7 @@ public final class NarratorLegacy {
          }
          PlayerState playerState = ensurePlayer(player);
          playerState.pendingWakeAt = now();
+         playerState.sleptThisNight = true;
       } catch (Throwable error) {
          soft("playerWakeB1", error);
       }
@@ -776,6 +803,51 @@ public final class NarratorLegacy {
          }
       } catch (Throwable error) {
          soft("lightningB1", error);
+      }
+   }
+
+   public static void onProjectileImpact(Object event) {
+      try {
+         Object projectile = callQuiet(event, "getProjectile");
+         Object owner = callQuiet(projectile, "getOwner");
+         Object hit = callQuiet(event, "getRayTraceResult");
+         Object type = callQuiet(hit, "getType");
+         boolean arrow = projectile != null
+            && isAssignableName(projectile.getClass(), "net.minecraft.world.entity.projectile.AbstractArrow");
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.missedArrow(
+            isServerPlayer(owner), arrow, "BLOCK".equals(String.valueOf(type)), asBool(callQuiet(event, "isCanceled"))
+         );
+         if (signal != null) {
+            state(serverOf(owner)).lastFactAt = now();
+            trigger(owner, signal.eventId(), signal.source(), null, Map.of());
+         }
+      } catch (Throwable error) {
+         soft("projectileImpactB3", error);
+      }
+   }
+
+   private static void observePreciousRecovery(Object event, Object player, String itemId) {
+      try {
+         Object itemEntity = callQuiet(event, "getItemEntity");
+         if (itemEntity == null) {
+            return;
+         }
+         NarratorLegacy.TossedItem tossed = state(serverOf(player)).preciousTosses.remove(uuid(itemEntity));
+         if (tossed == null) {
+            return;
+         }
+         boolean danger = asBool(callQuiet(itemEntity, "isOnFire")) || asBool(callQuiet(itemEntity, "isInLava"));
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.preciousRecovery(
+            itemId,
+            Objects.equals(tossed.giverUuid, uuid(player)),
+            Math.max(0L, now() - tossed.at),
+            danger
+         );
+         if (signal != null) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("item", itemId));
+         }
+      } catch (Throwable error) {
+         soft("preciousRecoveryB3", error);
       }
    }
 
@@ -799,6 +871,243 @@ public final class NarratorLegacy {
          }
       } catch (Throwable var9) {
       }
+   }
+
+   private static void observePendingB3Interactions(Object player, NarratorLegacy.PlayerState playerState) {
+      if (playerState.pendingSignLevel == null || playerState.pendingSignPos == null) {
+         return;
+      }
+      long elapsed = now() - playerState.pendingSignAt;
+      if (elapsed > 30_000L) {
+         clearPendingSign(playerState);
+         return;
+      }
+      if (elapsed < 250L) {
+         return;
+      }
+      try {
+         Object blockEntity = callQuiet(playerState.pendingSignLevel, "getBlockEntity", playerState.pendingSignPos);
+         Object signText = callQuiet(blockEntity, "getFrontText");
+         boolean nonEmpty = false;
+         for (int line = 0; line < 4; line++) {
+            Object component = callQuiet(signText, "getMessage", line, false);
+            String text = String.valueOf(callQuiet(component, "getString"));
+            if (text != null && !text.isBlank() && !"null".equals(text)) {
+               nonEmpty = true;
+               break;
+            }
+         }
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.namedSign(
+            playerState.pendingSignBlock, nonEmpty
+         );
+         if (signal != null) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("block", signal.targetId()));
+            clearPendingSign(playerState);
+         }
+      } catch (Throwable error) {
+         soft("namedSignB3", error);
+      }
+   }
+
+   private static void clearPendingSign(NarratorLegacy.PlayerState state) {
+      state.pendingSignLevel = null;
+      state.pendingSignPos = null;
+      state.pendingSignBlock = null;
+      state.pendingSignAt = 0L;
+   }
+
+   private static void observeB3WorldState(Object player, NarratorLegacy.PlayerState playerState) {
+      try {
+         Object level = callQuiet(player, "serverLevel");
+         Object pos = callQuiet(player, "blockPosition");
+         if (level == null || pos == null) {
+            return;
+         }
+         observeEndermanGaze(player, level);
+         observeRavine(player, level, pos);
+         observeHomeRoof(player, level, pos);
+         observeCompanionTravel(player, playerState, level);
+         observeCompassWandering(player, playerState, pos);
+         state(serverOf(player)).preciousTosses.entrySet().removeIf(entry -> now() - entry.getValue().at > 360_000L);
+      } catch (Throwable error) {
+         soft("worldStateB3", error);
+      }
+   }
+
+   private static void observeEndermanGaze(Object player, Object level) {
+      try {
+         Class<?> endermanClass = Class.forName("net.minecraft.world.entity.monster.EnderMan");
+         Object box = callQuiet(callQuiet(player, "getBoundingBox"), "inflate", 32.0);
+         Object raw = callQuiet(level, "getEntitiesOfClass", endermanClass, box);
+         if (!(raw instanceof List<?> endermen)) {
+            return;
+         }
+         Object eye = callQuiet(player, "getEyePosition");
+         Object look = callQuiet(player, "getLookAngle");
+         double lx = asDouble(callQuiet(look, "x"), 0.0);
+         double ly = asDouble(callQuiet(look, "y"), 0.0);
+         double lz = asDouble(callQuiet(look, "z"), 0.0);
+         for (Object enderman : endermen) {
+            Object target = callQuiet(enderman, "getEyePosition");
+            double dx = asDouble(callQuiet(target, "x"), 0.0) - asDouble(callQuiet(eye, "x"), 0.0);
+            double dy = asDouble(callQuiet(target, "y"), 0.0) - asDouble(callQuiet(eye, "y"), 0.0);
+            double dz = asDouble(callQuiet(target, "z"), 0.0) - asDouble(callQuiet(eye, "z"), 0.0);
+            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            double dot = distance <= 0.0001 ? 0.0 : (dx * lx + dy * ly + dz * lz) / distance;
+            NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.endermanSeen(
+               true, distance, dot, asBool(callQuiet(player, "hasLineOfSight", enderman))
+            );
+            if (signal != null) {
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("distance", (int)distance));
+               return;
+            }
+         }
+      } catch (Throwable ignored) {
+      }
+   }
+
+   private static void observeHomeRoof(Object player, Object level, Object pos) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null || !asBool(callQuiet(campaign, "foundationPlaced")) || !insideHome(campaign, player, pos)) {
+            return;
+         }
+         int covered = 0;
+         for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+               Object cell = callQuiet(pos, "offset", x, 0, z);
+               if (!asBool(callQuiet(level, "canSeeSky", cell))) {
+                  covered++;
+               }
+            }
+         }
+         long homeBlocks = kvGet(campaign, "home_blocks");
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.homeRoof(true, homeBlocks, covered);
+         if (signal != null) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("coverage", covered, "home_blocks", homeBlocks));
+         }
+      } catch (Throwable ignored) {
+      }
+   }
+
+   private static void observeRavine(Object player, Object level, Object pos) {
+      try {
+         boolean overworld = "minecraft:overworld".equals(dimensionId(player));
+         int openDepth = 0;
+         for (int depth = 1; depth <= 40; depth++) {
+            Object below = callQuiet(pos, "below", depth);
+            Object state = callQuiet(level, "getBlockState", below);
+            if (!asBool(callQuiet(state, "isAir"))) {
+               break;
+            }
+            openDepth++;
+         }
+         if (openDepth < 24) {
+            return;
+         }
+         int[][] directions = {{5, 0}, {-5, 0}, {0, 5}, {0, -5}};
+         boolean[] wall = new boolean[4];
+         boolean naturalStone = false;
+         Object middle = callQuiet(pos, "below", Math.min(12, openDepth / 2));
+         for (int index = 0; index < directions.length; index++) {
+            Object side = callQuiet(middle, "offset", directions[index][0], 0, directions[index][1]);
+            Object state = callQuiet(level, "getBlockState", side);
+            wall[index] = !asBool(callQuiet(state, "isAir"));
+            String id = blockId(state);
+            naturalStone |= id.contains("stone") || id.contains("deepslate") || id.contains("tuff") || id.contains("terracotta");
+         }
+         int opposingWalls = (wall[0] && wall[1] ? 1 : 0) + (wall[2] && wall[3] ? 1 : 0);
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.ravine(overworld, openDepth, opposingWalls * 2, naturalStone);
+         if (signal != null) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("depth", openDepth));
+         }
+      } catch (Throwable ignored) {
+      }
+   }
+
+   private static void observeCompanionTravel(Object player, NarratorLegacy.PlayerState playerState, Object level) {
+      try {
+         Class<?> tameClass = Class.forName("net.minecraft.world.entity.TamableAnimal");
+         Object box = callQuiet(callQuiet(player, "getBoundingBox"), "inflate", 48.0);
+         Object raw = callQuiet(level, "getEntitiesOfClass", tameClass, box);
+         if (!(raw instanceof List<?> companions)) {
+            return;
+         }
+         String owner = uuid(player);
+         for (Object companion : companions) {
+            if (!Objects.equals(owner, String.valueOf(callQuiet(companion, "getOwnerUUID")))) {
+               continue;
+            }
+            String id = uuid(companion);
+            String dimension = dimensionId(player);
+            Object current = callQuiet(companion, "blockPosition");
+            NarratorLegacy.CompanionTrack track = playerState.companions.computeIfAbsent(id, ignored -> new NarratorLegacy.CompanionTrack());
+            if (track.lastPos != null && Objects.equals(track.dimension, dimension)) {
+               double step = distance(track.lastPos, current);
+               if (step > 0.0 && step <= 32.0) {
+                  track.travelled += step;
+               }
+            }
+            track.lastPos = current;
+            track.dimension = dimension;
+            NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.companionTravel(true, track.travelled);
+            if (signal != null) {
+               trigger(player, signal.eventId(), signal.source(), null, Map.of("distance", (int)track.travelled, "entity", entityId(companion)));
+            }
+         }
+      } catch (Throwable ignored) {
+      }
+   }
+
+   private static void observeCompassWandering(Object player, NarratorLegacy.PlayerState state, Object pos) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         Object foundation = campaign == null ? null : callQuiet(campaign, "foundationPos");
+         String homeDimension = campaign == null ? "" : String.valueOf(callQuiet(campaign, "foundationDimension"));
+         String dimension = dimensionId(player);
+         boolean sameDimension = foundation != null && Objects.equals(homeDimension, dimension);
+         double homeDistance = sameDimension ? distance(pos, foundation) : 0.0;
+         Map<String, Integer> inventory = inventoryCounts(player);
+         boolean compass = inventory.getOrDefault("minecraft:compass", 0) > 0
+            || inventory.getOrDefault("minecraft:recovery_compass", 0) > 0;
+         if (!compass || !sameDimension || homeDistance < NarratorB3SignalDetector.LOST_HOME_DISTANCE) {
+            resetCompassTrack(state);
+            return;
+         }
+         if (!state.compassTracking) {
+            state.compassTracking = true;
+            state.compassStartHomeDistance = homeDistance;
+            state.compassTravelled = 0.0;
+            state.lastCompassPos = pos;
+            state.lastCompassDimension = dimension;
+            return;
+         }
+         if (state.lastCompassPos != null && Objects.equals(state.lastCompassDimension, dimension)) {
+            double step = distance(state.lastCompassPos, pos);
+            if (step > 0.0 && step <= 32.0) {
+               state.compassTravelled += step;
+            }
+         }
+         state.lastCompassPos = pos;
+         state.lastCompassDimension = dimension;
+         double netApproach = state.compassStartHomeDistance - homeDistance;
+         NarratorB3SignalDetector.Signal signal = NarratorB3SignalDetector.lostWithCompass(
+            true, true, homeDistance, state.compassTravelled, netApproach
+         );
+         if (signal != null) {
+            trigger(player, signal.eventId(), signal.source(), null, Map.of("distance", (int)state.compassTravelled));
+            resetCompassTrack(state);
+         }
+      } catch (Throwable ignored) {
+      }
+   }
+
+   private static void resetCompassTrack(NarratorLegacy.PlayerState state) {
+      state.compassTracking = false;
+      state.compassStartHomeDistance = 0.0;
+      state.compassTravelled = 0.0;
+      state.lastCompassPos = null;
+      state.lastCompassDimension = null;
    }
 
    private static void observeHomeDistance(Object var0, NarratorLegacy.PlayerState var1) {
@@ -2068,6 +2377,69 @@ public final class NarratorLegacy {
       }
    }
 
+   private static void debugSignalsB3(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) {
+            message(player, "§cSignaux B3 indisponibles.");
+            return;
+         }
+         String[] labels = {
+            "Tir raté", "Enderman regardé", "Feu au Foyer", "Toit fermé", "Panneau nommé",
+            "Ravin", "Objet sauvé", "Compagnon 500", "Perdu avec boussole"
+         };
+         StringBuilder[] groups = {new StringBuilder(), new StringBuilder(), new StringBuilder()};
+         int completed = 0;
+         for (int index = 0; index < NarratorB3SignalDetector.ALL_IDS.size(); index++) {
+            boolean done = asBool(callQuiet(campaign, "isCompleted", NarratorB3SignalDetector.ALL_IDS.get(index)));
+            if (done) completed++;
+            StringBuilder target = groups[index / 3];
+            if (!target.isEmpty()) target.append(" §8| ");
+            target.append(done ? "§a" : "§7").append(labels[index]).append(done ? " ✓" : " —");
+         }
+         message(player, "§6B3 événements spécialisés §7— §f" + completed + "/9 §8| §bSOLO + DUO prêts");
+         message(player, "§6Combat et Foyer §8| " + groups[0]);
+         message(player, "§6Construction et terrain §8| " + groups[1]);
+         message(player, "§6Sauvetage et orientation §8| " + groups[2]);
+         message(player, "§697/100 événements robustes actifs §8| §72 Matrice reportés · 1 échange villageois dépendant du modpack");
+      } catch (Throwable error) {
+         message(player, "§cLecture B3 impossible: " + error.getClass().getSimpleName());
+      }
+   }
+
+   public static void devPrimeB1Time(Object player) {
+      try {
+         PlayerState playerState = ensurePlayer(player);
+         Object campaign = campaignData(serverOf(player));
+         if (campaign != null) kvSet(campaign, "b1." + uuid(player) + ".nights_awake", 2L);
+         playerState.lastDayPhase = "NIGHT";
+         playerState.nightArmed = true;
+         playerState.sleptThisNight = false;
+         playerState.lastB1ObservationAt = 0L;
+      } catch (Throwable error) {
+         soft("devPrimeB1Time", error);
+      }
+   }
+
+   public static void devPrimeLongReturn(Object player) {
+      try {
+         Object campaign = campaignData(serverOf(player));
+         if (campaign == null) return;
+         PlayerState playerState = ensurePlayer(player);
+         String key = "b2." + uuid(player).replace('-', '_') + ".";
+         playerState.b2HomeInitialized = true;
+         playerState.away = true;
+         playerState.awaySince = now() - NarratorB2SignalDetector.LONG_RETURN_MS - 5_000L;
+         playerState.maxAway = 300.0;
+         kvSet(campaign, key + "away", 1L);
+         kvSet(campaign, key + "away_since", playerState.awaySince);
+         kvSet(campaign, key + "max_away_milli", 300_000L);
+         playerState.lastB2ObservationAt = 0L;
+      } catch (Throwable error) {
+         soft("devPrimeLongReturn", error);
+      }
+   }
+
    static boolean catalogHasEventForTest(String eventId) {
       return CATALOG.containsKey(eventId);
    }
@@ -2458,6 +2830,8 @@ public final class NarratorLegacy {
    ) throws Exception {
       String phase = dayPhase(player);
       boolean awake = !asBool(callQuiet(player, "isSleeping"));
+      boolean completedNight = "NIGHT".equals(playerState.lastDayPhase)
+         && ("DAWN".equals(phase) || "DAY".equals(phase));
       NarratorB1SignalDetector.Signal sunrise = NarratorB1SignalDetector.sunrise(
          playerState.lastDayPhase,
          phase,
@@ -2468,17 +2842,28 @@ public final class NarratorLegacy {
          trigger(player, sunrise.eventId(), sunrise.source(), null, Map.of());
       }
 
-      if (!"NIGHT".equals(playerState.lastDayPhase) && "NIGHT".equals(phase)) {
-         long dayIndex = worldDayIndex(level);
-         long lastCountedNight = kvGet(campaign, playerKey + "last_night_day");
-         if (lastCountedNight != dayIndex + 1L) {
-            kvSet(campaign, playerKey + "last_night_day", dayIndex + 1L);
+      if (completedNight && playerState.nightArmed && !playerState.sleptThisNight && awake) {
+         NarratorB1SignalDetector.Signal survived = NarratorB1SignalDetector.dawn(true, true);
+         if (survived != null) {
+            trigger(player, survived.eventId(), survived.source(), null, Map.of());
+         }
+         long lastCountedTransition = kvGet(campaign, playerKey + "awake_transition");
+         long transition = kvInc(campaign, playerKey + "awake_transition", 1L);
+         if (transition > lastCountedTransition) {
             long awakeNights = kvInc(campaign, playerKey + "nights_awake", 1L);
             NarratorB1SignalDetector.Signal refused = NarratorB1SignalDetector.refusedSleep((int)Math.min(Integer.MAX_VALUE, awakeNights));
             if (refused != null) {
                trigger(player, refused.eventId(), refused.source(), null, Map.of("nights", awakeNights));
             }
          }
+      }
+
+      if (!"NIGHT".equals(playerState.lastDayPhase) && "NIGHT".equals(phase)) {
+         playerState.nightArmed = true;
+         playerState.sleptThisNight = false;
+      } else if (completedNight) {
+         playerState.nightArmed = false;
+         playerState.sleptThisNight = false;
       }
       playerState.lastDayPhase = phase;
    }
@@ -3028,6 +3413,10 @@ public final class NarratorLegacy {
       return var0 instanceof Number var2 ? var2.floatValue() : var1;
    }
 
+   private static double asDouble(Object value, double fallback) {
+      return value instanceof Number number ? number.doubleValue() : fallback;
+   }
+
    private static void message(Object var0, String var1) {
       try {
          Class var2 = Class.forName("net.minecraft.network.chat.Component");
@@ -3310,14 +3699,20 @@ public final class NarratorLegacy {
       boolean giftCallbackDone;
       boolean foodInitialized;
       boolean inventoryWasFull;
+      boolean nightArmed;
+      boolean sleptThisNight;
+      boolean compassTracking;
       float lastHealth = Float.NaN;
       int lastFood = 20;
       double maxAway;
+      double compassStartHomeDistance;
+      double compassTravelled;
       long lastMatrixInteractionAt;
       long recentGiftAt;
       long lastInventoryScanAt;
       long lastB1ObservationAt;
       long lastB2ObservationAt;
+      long lastB3ObservationAt;
       long awaySince;
       long pendingHomeContainerAt;
       long pendingWakeAt;
@@ -3325,10 +3720,13 @@ public final class NarratorLegacy {
       long pendingNamedAnimalAt;
       long pendingFedAnimalAt;
       long pendingBellAt;
+      long pendingSignAt;
       String recentGiftItem;
       String lastTravelDimension;
       String lastDayPhase;
       String pendingHomeContainerBlock;
+      String pendingSignBlock;
+      String lastCompassDimension;
       Object pendingFedAnimal;
       Object pendingNamedAnimal;
       Object lastTravelPos;
@@ -3336,10 +3734,14 @@ public final class NarratorLegacy {
       Object pendingBellPos;
       Object pendingHomeContainerLevel;
       Object pendingHomeContainerPos;
+      Object pendingSignLevel;
+      Object pendingSignPos;
+      Object lastCompassPos;
       NarratorLegacy.SourceHint containerHint;
       final Map<String, Integer> itemCounts = new HashMap<>();
       final Map<String, Integer> rewardCredit = new HashMap<>();
       final Map<String, NarratorLegacy.SourceHint> hints = new HashMap<>();
+      final Map<String, NarratorLegacy.CompanionTrack> companions = new HashMap<>();
    }
 
    private static final class ServerState {
@@ -3347,6 +3749,7 @@ public final class NarratorLegacy {
       final Set<String> playerPlacedContainers = ConcurrentHashMap.newKeySet();
       final Map<String, NarratorLegacy.DuoState> duoPairs = new ConcurrentHashMap<>();
       final Map<String, NarratorLegacy.TossedItem> recentTosses = new ConcurrentHashMap<>();
+      final Map<String, NarratorLegacy.TossedItem> preciousTosses = new ConcurrentHashMap<>();
       final Map<String, NarratorLegacy.Discovery> recentDiscoveries = new ConcurrentHashMap<>();
       long lastFactAt = NarratorLegacy.now();
       long lastDeliveredAt;
@@ -3370,6 +3773,12 @@ public final class NarratorLegacy {
    }
 
    private static record Discovery(String actorUuid, long at) {
+   }
+
+   private static final class CompanionTrack {
+      Object lastPos;
+      String dimension;
+      double travelled;
    }
 
    private static record SourceHint(String source, long at, String actor) {

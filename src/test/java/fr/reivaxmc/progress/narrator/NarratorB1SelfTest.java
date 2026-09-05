@@ -67,6 +67,7 @@ public final class NarratorB1SelfTest {
       require(event(NarratorB1SignalDetector.thunderstorm(true, true), NarratorB1SignalDetector.FIRST_THUNDERSTORM), "Un orage dehors doit compter.");
       require(NarratorB1SignalDetector.thunderstorm(true, false) == null, "Un orage depuis une grotte ne doit pas compter.");
       require(event(NarratorB1SignalDetector.sunrise("NIGHT", "DAWN", true, true), NarratorB1SignalDetector.SUNRISE_OUTDOORS), "Le lever observé dehors doit compter.");
+      require(event(NarratorB1SignalDetector.sunrise("NIGHT", "DAY", true, true), NarratorB1SignalDetector.SUNRISE_OUTDOORS), "Un saut de tick de la nuit au jour doit compter.");
       require(NarratorB1SignalDetector.sunrise("DAY", "DAWN", true, true) == null, "Une commande temporelle sans transition nocturne ne doit pas compter.");
       require(event(NarratorB1SignalDetector.inventoryFull(false, true), NarratorB1SignalDetector.INVENTORY_FULL), "L'inventaire qui devient plein doit compter.");
       require(NarratorB1SignalDetector.inventoryFull(true, true) == null, "Un inventaire restant plein ne doit pas redéclencher.");

@@ -60,11 +60,18 @@ public final class F81DevTools {
             then(var5, literalExec("sanctuary", var0x -> cmdGoto(var0x, "sanctuary")));
             then(var5, literalExec("foundation", var0x -> cmdGoto(var0x, "foundation")));
             then(var3, var5);
+            Object var6 = literal("tp");
+            then(var6, literalExec("foundation", F81DevTools::cmdTpFoundation));
+            then(var3, var6);
+            Object var7 = literal("test");
+            then(var7, literalExec("b1time", var0x -> cmdTest(var0x, "b1time")));
+            then(var7, literalExec("return20", var0x -> cmdTest(var0x, "return20")));
+            then(var3, var7);
             then(var2, var3);
             invoke(var1, "register", var2);
             System.out.println("[REIVAX Alpha 18F.9.1.0] DEV/QA commands registered.");
-         } catch (Throwable var6) {
-            System.err.println("[REIVAX Alpha 18F.8.4.1] command registration failed: " + var6.getClass().getSimpleName() + ": " + var6.getMessage());
+         } catch (Throwable var8) {
+            System.err.println("[REIVAX Alpha 18F.8.4.1] command registration failed: " + var8.getClass().getSimpleName() + ": " + var8.getMessage());
          }
       }
    }
@@ -102,7 +109,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto trace|night|sanctuary|foundation · reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test b1time|return20 · reset");
          return 1;
       }
    }
@@ -310,6 +317,60 @@ public final class F81DevTools {
             return 0;
          }
       }
+   }
+
+   private static int cmdTpFoundation(Object context) {
+      Object player = player(context);
+      if (!allowed(context)) return denied(player);
+      Object server = serverFromContext(context);
+      F81DevTools.DevState dev = STATES.computeIfAbsent(server, ignored -> new F81DevTools.DevState());
+      if (!dev.enabled) {
+         msg(player, "§cActivez d'abord /reivax dev on.");
+         return 0;
+      }
+      try {
+         Object campaign = F8SanctuaryEngine.campaign(server);
+         if (!boolInvoke(campaign, "foundationPlaced")) {
+            msg(player, "§cAucune Borne de Fondation n'est enregistrée dans ce monde.");
+            return 0;
+         }
+         Object pos = invokeNoArg(campaign, "foundationPos");
+         String dimension = String.valueOf(invokeNoArg(campaign, "foundationDimension"));
+         String command = "execute in " + dimension + " run tp " + F8SanctuaryEngine.playerName(player)
+            + " " + F8SanctuaryEngine.posX(pos) + " " + (F8SanctuaryEngine.posY(pos) + 2) + " " + F8SanctuaryEngine.posZ(pos);
+         runCommand(server, command);
+         msg(player, "§6REIVAX DEV §8• §aTéléportation à la Borne enregistrée.");
+         return 1;
+      } catch (Throwable error) {
+         msg(player, "§cTéléportation impossible: " + error.getClass().getSimpleName());
+         return 0;
+      }
+   }
+
+   private static int cmdTest(Object context, String test) {
+      Object player = player(context);
+      if (!allowed(context)) return denied(player);
+      Object server = serverFromContext(context);
+      F81DevTools.DevState dev = STATES.computeIfAbsent(server, ignored -> new F81DevTools.DevState());
+      if (!dev.enabled) {
+         msg(player, "§cActivez d'abord /reivax dev on.");
+         return 0;
+      }
+      try {
+         if ("b1time".equals(test)) {
+            callStatic("fr.reivaxmc.progress.narrator.NarratorLegacy", "devPrimeB1Time", player);
+            runCommand(server, "time set day");
+            msg(player, "§6TEST DEV §8• §aAube et troisième nuit éveillée amorcées.");
+            return 1;
+         }
+         if ("return20".equals(test)) {
+            callStatic("fr.reivaxmc.progress.narrator.NarratorLegacy", "devPrimeLongReturn", player);
+            return cmdTpFoundation(context);
+         }
+      } catch (Throwable error) {
+         msg(player, "§cTest accéléré impossible: " + error.getClass().getSimpleName());
+      }
+      return 0;
    }
 
    private static void gotoTrace(Object var0, Object var1) throws Exception {

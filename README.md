@@ -18,4 +18,6 @@ C'est la **reconstruction propre** du mod (Alpha 18), repartie de la conception 
 
 ## Principe de développement
 
-On avance par **tranches courtes et testables**. On ne casse jamais ce qui marche sans l'avoir remplacé. Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*
+Le socle du Narrateur est stabilisé dans la version **0.8.8** : 97/100 événements de l’Âge I disposent d’un détecteur robuste, les deux événements Matrice attendent leur chapitre et l’échange villageois attend un environnement compatible. La suite du développement revient désormais au scénario, aux quêtes et à la progression de l’aventure.
+
+Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*
