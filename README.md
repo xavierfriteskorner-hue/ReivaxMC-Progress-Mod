@@ -18,7 +18,7 @@ C'est la **reconstruction propre** du mod (Alpha 18), repartie de la conception 
 
 ## Principe de développement
 
-Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.10.1** ouvre la campagne jouable avec le Chapitre I, **Le Foyer emprunté**, et pose ses systèmes durables : Conseil visuel synchronisé SOLO/DUO, frontière de Résonance, Journal intime hérité, points de Civilisation dépensables et Sanctuaire complet à salles scellées.
+Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.10.2** ouvre la campagne jouable avec le Chapitre I, **Le Foyer emprunté**, et pose ses systèmes durables : Conseil visuel synchronisé SOLO/DUO, frontière de Résonance renforcée, Journal intime hérité, points de Civilisation dépensables et Sanctuaire complet à salles scellées. L'interface de la Borne reste désormais lisible quelle que soit l'échelle de GUI.
 
 Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des missions, des réactions de la Voix et des futurs moments de civilisation.
 

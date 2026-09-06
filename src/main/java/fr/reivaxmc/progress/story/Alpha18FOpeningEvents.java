@@ -32,6 +32,7 @@ public final class Alpha18FOpeningEvents {
 
          StoryStartStateData18F var4 = StoryModeGate18F.state(var3);
          StoryStartStateData18F.Snapshot var5 = var4.snapshot();
+         boolean var6 = StoryOpening18F.campaignAlreadyRunning(var3, var5);
          if (var5.managed() && var5.started() && !var5.tracePlaced()) {
             var4.restartInterruptedIntro(var3.overworld().getGameTime());
             var5 = var4.snapshot();
@@ -46,7 +47,7 @@ public final class Alpha18FOpeningEvents {
             StoryOpening18F.sendStatus(var2, var4);
          }
 
-         if (var5.managed() && !var5.started()) {
+         if (var5.managed() && !var6) {
             Alpha18Probe.sendSystemMessage(
                var2, "§6[REIVAX Alpha 18F.6.7] §aMODE HISTOIRE prêt §7— appuyez sur §f3 du pavé numérique §7pour ouvrir REIVAX et lancer l'histoire."
             );
@@ -55,8 +56,8 @@ public final class Alpha18FOpeningEvents {
          } else if (var5.managed() && var5.traceExamined()) {
             Alpha18Probe.sendSystemMessage(var2, "§6[REIVAX Alpha 18F.6.7] §aTrace examinée §7— état retrouvé depuis le monde.");
          }
-      } catch (Throwable var6) {
-         System.err.println("[REIVAX Alpha18F.6.7] login status failed: " + var6);
+      } catch (Throwable var7) {
+         System.err.println("[REIVAX Alpha18F.6.7] login status failed: " + var7);
       }
    }
 

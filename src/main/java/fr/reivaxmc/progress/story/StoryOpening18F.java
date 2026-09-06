@@ -4,6 +4,7 @@ import fr.reivaxmc.progress.block.Alpha18FContent;
 import fr.reivaxmc.progress.network.Alpha18FPayloads;
 import fr.reivaxmc.progress.network.CompatPacketSender18F;
 import fr.reivaxmc.progress.network.SimplePayloads;
+import fr.reivaxmc.progress.progression.CampaignSavedData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +134,25 @@ public final class StoryOpening18F {
 
    public static void sendStatus(ServerPlayer var0, StoryStartStateData18F var1) {
       StoryStartStateData18F.Snapshot var2 = var1.snapshot();
-      CompatPacketSender18F.sendToPlayer(var0, new Alpha18FPayloads.StoryStatus(var2.managed(), var2.managed() && !var2.started(), var2.started()));
+      boolean var3 = campaignAlreadyRunning(var0.getServer(), var2);
+      CompatPacketSender18F.sendToPlayer(var0, new Alpha18FPayloads.StoryStatus(var2.managed(), var2.managed() && !var3, var3));
+   }
+
+   /**
+    * Les premiers prototypes et la campagne actuelle n'utilisent pas le même SavedData.
+    * Une sauvegarde déjà avancée ne doit donc jamais réafficher le lanceur du prologue si
+    * l'ancien état 18F manque ou a été recréé.
+    */
+   public static boolean campaignAlreadyRunning(MinecraftServer server, StoryStartStateData18F.Snapshot opening) {
+      if (opening.started()) return true;
+      if (server == null) return false;
+      CampaignSavedData campaign = CampaignSavedData.get(server);
+      return campaign.introRunning()
+         || campaign.introCompleted()
+         || campaign.progress() > 0
+         || campaign.foundationPlaced()
+         || campaign.fragmentFound()
+         || !campaign.stage().isBlank() && !"DORMANT".equals(campaign.stage());
    }
 
    private static void placeTrace(MinecraftServer var0, StoryStartStateData18F var1, StoryStartStateData18F.Snapshot var2) {
