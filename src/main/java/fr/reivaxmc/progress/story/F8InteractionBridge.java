@@ -238,13 +238,8 @@ public final class F8InteractionBridge {
                      return;
                   }
 
-                  Object var18 = F8SanctuaryEngine.invokeNoArg(var8, "foundationPos");
-                  String var10 = String.valueOf(F8SanctuaryEngine.invokeNoArg(var8, "foundationName"));
-                  int var11 = F8SanctuaryEngine.number(F8SanctuaryEngine.invokeNoArg(var8, "territoryRadius")).intValue();
-                  String var12 = String.valueOf(F8SanctuaryEngine.fieldValue(var8, "foundationFounder"));
-                  int var13 = F8SanctuaryEngine.number(F8SanctuaryEngine.fieldValue(var8, "foundationDay")).intValue();
-                  String var14 = F8SanctuaryEngine.posX(var18) + ", " + F8SanctuaryEngine.posY(var18) + ", " + F8SanctuaryEngine.posZ(var18);
-                  F7NarrativeEngine.pushUi(var17, "F8_FOYER_PANEL", var10 + "|" + var11 + "|" + var12 + "|" + var13 + "|" + var14);
+                  F8SanctuaryEngine.callStatic("fr.reivaxmc.progress.network.ProgressNetworking", "openFoyerPanel", var17);
+                  F92FoyerBoundaryEngine.reveal(var17);
                   return;
                }
 

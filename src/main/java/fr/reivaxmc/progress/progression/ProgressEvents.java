@@ -3,6 +3,8 @@ package fr.reivaxmc.progress.progression;
 import fr.reivaxmc.progress.story.F81DevTools;
 import fr.reivaxmc.progress.narrator.NarratorEngine;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
+import fr.reivaxmc.progress.story.F91FoyerChapterEngine;
+import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -32,12 +34,16 @@ public final class ProgressEvents {
    public void login(PlayerLoggedInEvent var1) {
       F81DevTools.onLogin(var1);
       NarratorEngine.onLogin(var1);
+      F91FoyerChapterEngine.onLogin(var1);
    }
 
    @SubscribeEvent
    public void rightClickBlock(RightClickBlock var1) {
-      F8InteractionBridge.onRightClickBlock(var1);
-      NarratorEngine.onRightClickBlock(var1);
+      boolean chapterHandled = F91FoyerChapterEngine.onRightClickBlock(var1);
+      if (!chapterHandled) {
+         F8InteractionBridge.onRightClickBlock(var1);
+         NarratorEngine.onRightClickBlock(var1);
+      }
    }
 
    @SubscribeEvent
@@ -53,12 +59,15 @@ public final class ProgressEvents {
    @SubscribeEvent
    public void playerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post var1) {
       NarratorEngine.onPlayerTick(var1);
+      F91FoyerChapterEngine.onPlayerTick(var1);
+      F92FoyerBoundaryEngine.onPlayerTick(var1);
    }
 
    @SubscribeEvent
    public void placed(EntityPlaceEvent var1) {
       F8InteractionBridge.onPlaced(var1);
       NarratorEngine.onBlockPlaced(var1);
+      F91FoyerChapterEngine.onBlockPlaced(var1);
    }
 
    @SubscribeEvent
@@ -87,6 +96,7 @@ public final class ProgressEvents {
    public void narratorLivingDeath(LivingDeathEvent var1) {
       F8InteractionBridge.onLivingDeath(var1);
       NarratorEngine.onLivingDeath(var1);
+      F91FoyerChapterEngine.onLivingDeath(var1);
    }
 
    @SubscribeEvent

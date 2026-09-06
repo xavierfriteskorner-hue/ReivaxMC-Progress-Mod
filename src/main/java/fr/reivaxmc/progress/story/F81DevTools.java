@@ -67,11 +67,17 @@ public final class F81DevTools {
             then(var7, literalExec("b1time", var0x -> cmdTest(var0x, "b1time")));
             then(var7, literalExec("return20", var0x -> cmdTest(var0x, "return20")));
             then(var3, var7);
+            Object var8 = literal("chapter1");
+            then(var8, literalExec("start", ctx -> cmdChapter1(ctx, "start")));
+            then(var8, literalExec("next", ctx -> cmdChapter1(ctx, "next")));
+            then(var8, literalExec("status", ctx -> cmdChapter1(ctx, "status")));
+            then(var8, literalExec("reset", ctx -> cmdChapter1(ctx, "reset")));
+            then(var3, var8);
             then(var2, var3);
             invoke(var1, "register", var2);
-            System.out.println("[REIVAX Alpha 18F.9.1.0] DEV/QA commands registered.");
-         } catch (Throwable var8) {
-            System.err.println("[REIVAX Alpha 18F.8.4.1] command registration failed: " + var8.getClass().getSimpleName() + ": " + var8.getMessage());
+            System.out.println("[REIVAX 0.9.0] DEV/QA commands registered.");
+         } catch (Throwable var9) {
+            System.err.println("[REIVAX 0.9.0] command registration failed: " + var9.getClass().getSimpleName() + ": " + var9.getMessage());
          }
       }
    }
@@ -109,7 +115,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test b1time|return20 · reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test ... · chapter1 start|next|status|reset · reset");
          return 1;
       }
    }
@@ -369,6 +375,21 @@ public final class F81DevTools {
          }
       } catch (Throwable error) {
          msg(player, "§cTest accéléré impossible: " + error.getClass().getSimpleName());
+      }
+      return 0;
+   }
+
+   private static int cmdChapter1(Object context, String action) {
+      Object rawPlayer = player(context);
+      if (!allowed(context)) return denied(rawPlayer);
+      Object server = serverFromContext(context);
+      F81DevTools.DevState dev = STATES.computeIfAbsent(server, ignored -> new F81DevTools.DevState());
+      if (!dev.enabled) {
+         msg(rawPlayer, "§cActivez d'abord /reivax dev on.");
+         return 0;
+      }
+      if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
+         return F91FoyerChapterEngine.devCommand(player, action);
       }
       return 0;
    }

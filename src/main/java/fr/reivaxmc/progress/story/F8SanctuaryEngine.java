@@ -92,6 +92,10 @@ public final class F8SanctuaryEngine {
                complete(var5, "F8_SANCTUARY_BUILT");
             }
 
+            // Migration sans reconstruction : les ailes futures manquantes sont ajoutées une seule fois,
+            // puis restent physiquement présentes et scellées pour les chapitres suivants.
+            if (!F94SanctuaryShell.isPresent(var0, var7)) F94SanctuaryShell.build(var0, var7);
+
             ensureProtectors(var0, var7, var5);
             F90Sanctuary.runtimeTick(var0, target(var0));
             if (completed(var5, "F84_SEAL_INSERTED")) {
@@ -412,6 +416,9 @@ public final class F8SanctuaryEngine {
 
          voice(var4, "Ici, donc.");
          objective(var4, "Installez-vous dans votre Foyer · commencez à construire votre base et sécurisez les environs.");
+         if (var0 instanceof net.minecraft.server.MinecraftServer server && var1 instanceof net.minecraft.server.level.ServerPlayer founder) {
+            F91FoyerChapterEngine.onFoundationEstablished(server, founder);
+         }
       } catch (Throwable var7) {
          System.err.println("[REIVAX Alpha 18F.8.4] Foundation completion failed: " + var7);
       }
@@ -1135,7 +1142,7 @@ public final class F8SanctuaryEngine {
             int var4 = posX(var1) - var3[0];
             int var5 = posY(var1) - var3[1];
             int var6 = posZ(var1) - var3[2];
-            return var4 >= -18 && var4 <= 18 && var6 >= -25 && var6 <= 33 && var5 >= -5 && var5 <= 17;
+            return var4 >= -30 && var4 <= 30 && var6 >= -25 && var6 <= 33 && var5 >= -5 && var5 <= 17;
          } else {
             return false;
          }
@@ -1565,7 +1572,9 @@ public final class F8SanctuaryEngine {
 
    static void setBlock(Object var0, int var1, int var2, int var3, Object var4) throws Exception {
       Object var5 = invokeNoArg(var4, "defaultBlockState");
-      invoke(var0, "setBlock", blockPos(var1, var2, var3), var5, 3);
+      // 18 = mise à jour client + forme connue, sans notifier toute la végétation voisine.
+      // Cela évite que fleurs, herbes et décorations soient cassées en chaîne puis abandonnées au sol.
+      invoke(var0, "setBlock", blockPos(var1, var2, var3), var5, 18);
    }
 
    static Object blockPos(int var0, int var1, int var2) throws Exception {

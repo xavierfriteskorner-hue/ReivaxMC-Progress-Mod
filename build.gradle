@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.8.8'
+version = '0.10.0'
 group = 'fr.reivaxmc.progress'
 
 base {
@@ -45,6 +45,8 @@ neoForge {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Évite les verrous ZipFS de certains environnements Windows pendant la fermeture des dépendances.
+    options.fork = true
 }
 
 tasks.register('checkA1Signals', JavaExec) {
@@ -111,6 +113,14 @@ tasks.register('checkB3Signals', JavaExec) {
     mainClass = 'fr.reivaxmc.progress.narrator.NarratorB3SelfTest'
 }
 
+tasks.register('checkChapter1', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les règles du Chapitre I : Foyer, choix persistant et parcours SOLO/DUO.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'fr.reivaxmc.progress.story.F91ChapterRulesSelfTest'
+}
+
 // Le projet utilise un auto-test Java autonome et n'embarque pas encore de tests JUnit.
 // Gradle 9 doit donc accepter que la tâche test ne découvre aucune classe JUnit.
 tasks.named('test') {
@@ -126,4 +136,5 @@ tasks.named('check') {
     dependsOn tasks.named('checkB1Signals')
     dependsOn tasks.named('checkB2Signals')
     dependsOn tasks.named('checkB3Signals')
+    dependsOn tasks.named('checkChapter1')
 }

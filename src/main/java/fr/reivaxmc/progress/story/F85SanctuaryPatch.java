@@ -334,6 +334,12 @@ public final class F85SanctuaryPatch {
    }
 
    private static void openFoyerPanel(Object var0, Object var1, Object var2) throws Exception {
+      try {
+         F8SanctuaryEngine.callStatic("fr.reivaxmc.progress.network.ProgressNetworking", "openFoyerPanel", var0);
+         F92FoyerBoundaryEngine.reveal(var0);
+         return;
+      } catch (Throwable ignored) {
+      }
       String var3 = String.valueOf(safeNoArg(var1, "foundationName"));
       int var4 = F8SanctuaryEngine.number(safeNoArg(var1, "territoryRadius")).intValue();
 

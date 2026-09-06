@@ -18,6 +18,10 @@ C'est la **reconstruction propre** du mod (Alpha 18), repartie de la conception 
 
 ## Principe de développement
 
-Le socle du Narrateur est stabilisé dans la version **0.8.8** : 97/100 événements de l’Âge I disposent d’un détecteur robuste, les deux événements Matrice attendent leur chapitre et l’échange villageois attend un environnement compatible. La suite du développement revient désormais au scénario, aux quêtes et à la progression de l’aventure.
+Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.10.0** ouvre la campagne jouable avec le Chapitre I, **Le Foyer emprunté**, et pose ses systèmes durables : Conseil synchronisé SOLO/DUO, frontière de Résonance, Journal intime hérité, points de Civilisation dépensables et Sanctuaire complet à salles scellées.
+
+Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des missions, des réactions de la Voix et des futurs moments de civilisation.
+
+Pour valider le lot sans rejouer le prologue, utilisez `/reivax dev on`, puis `/reivax dev chapter1 start`. La commande `/reivax dev chapter1 next` permet ensuite de rejoindre chaque contrôle important. Une seule procédure condensée se trouve dans `docs/tests/VALIDATION_CAMPAGNE_0.10.0.md`.
 
 Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*

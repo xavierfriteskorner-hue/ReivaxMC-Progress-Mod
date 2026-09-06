@@ -13,6 +13,9 @@ import fr.reivaxmc.progress.progression.CampaignSavedData;
 import fr.reivaxmc.progress.progression.WorldStructures;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
 import fr.reivaxmc.progress.story.F90SealGate;
+import fr.reivaxmc.progress.story.F92JournalData;
+import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
+import fr.reivaxmc.progress.story.F7NarrativeEngine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -51,9 +54,8 @@ public final class ProgressNetworking {
          SimplePayloads.OpenFragment.CODEC,
          (p, c) -> c.enqueueWork(() -> Minecraft.getInstance().setScreen(new FragmentAltarScreen()))
       );
-      r.playToClient(
-         SimplePayloads.OpenBook.TYPE, SimplePayloads.OpenBook.CODEC, (p, c) -> c.enqueueWork(() -> Minecraft.getInstance().setScreen(new DestinyBookScreen()))
-      );
+      r.playToClient(JournalPayloads.OpenJournal.TYPE, JournalPayloads.OpenJournal.CODEC,
+         (p, c) -> c.enqueueWork(() -> Minecraft.getInstance().setScreen(new DestinyBookScreen(p.chronicle(), p.shared(), p.personal()))));
       r.playToClient(
          SimplePayloads.OpenMatrix.TYPE, SimplePayloads.OpenMatrix.CODEC, (p, c) -> c.enqueueWork(() -> Minecraft.getInstance().setScreen(new MatrixScreen()))
       );
@@ -89,6 +91,12 @@ public final class ProgressNetworking {
             if (c.player() instanceof ServerPlayer sp) {
                confirmTransfer(sp, new BlockPos(p.x(), p.y(), p.z()));
             }
+         }));
+      r.playToServer(JournalPayloads.SaveNote.TYPE, JournalPayloads.SaveNote.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer sp) saveJournalNote(sp, p.text(), p.shared());
+         }));
+      r.playToServer(CivilizationPayloads.BuyUpgrade.TYPE, CivilizationPayloads.BuyUpgrade.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer sp) buyCivilizationUpgrade(sp, p.id());
          }));
       Alpha18FNetwork.register(e);
    }
@@ -209,6 +217,12 @@ public final class ProgressNetworking {
          case "FIND_MATRIX" -> "Le Fragment est à vous, mais la Résonance persiste dans la chambre…";
          case "BUILD_FIRST_HOME" -> "Choisissez votre base et placez la Borne de Fondation pour établir votre Foyer principal.";
          case "MIGRATION" -> "Votre civilisation est en migration. Replacez la Borne hors de tout Site historique.";
+         case "CH1_SHAPE_FOYER" -> "Donnez une forme au Foyer avec trois repères de vie.";
+         case "CH1_CHOOSE_PRIORITY" -> "Présentez à la Borne ce qui doit survivre en premier.";
+         case "CH1_FIND_ECHO" -> "Suivez l'Écho apparu autour du Foyer.";
+         case "CH1_RETURN_FRAGMENT" -> "Conservez le Fragment et revenez au cœur du Foyer ; seule la Matrice pourra l’analyser.";
+         case "CH1_DEFEND_FOYER" -> "Défendez le Foyer contre ce que la mémoire a réveillé.";
+         case "CH1_COMPLETE" -> "Le Foyer emprunté a livré sa mémoire. Développez librement votre civilisation.";
          default -> "Votre Premier Foyer est établi. Développez votre civilisation.";
       };
    }
@@ -276,7 +290,68 @@ public final class ProgressNetworking {
    }
 
    public static void openBook(ServerPlayer p) {
-      PacketDistributor.sendToPlayer(p, new SimplePayloads.OpenBook(), new CustomPacketPayload[0]);
+      MinecraftServer server = p.getServer();
+      if (server == null) return;
+      CampaignSavedData campaign = CampaignSavedData.get(server);
+      F92JournalData journal = F92JournalData.get(server);
+      PacketDistributor.sendToPlayer(p, new JournalPayloads.OpenJournal(campaign.timelinePacket(), journal.sharedPacket(),
+         journal.personalPacket(p.getUUID().toString())), new CustomPacketPayload[0]);
+   }
+
+   private static void saveJournalNote(ServerPlayer player, String text, boolean shared) {
+      MinecraftServer server = player.getServer();
+      if (server == null || text == null || text.isBlank() || text.length() > 180) return;
+      if (!player.getInventory().contains(new ItemStack((Item)ReivaxMCProgress.DESTINY_BOOK.get()))) return;
+      F92JournalData journal = F92JournalData.get(server);
+      boolean saved = shared
+         ? journal.addShared(day(server), name(player), text)
+         : journal.addPersonal(player.getUUID().toString(), text);
+      if (saved) {
+         player.displayClientMessage(Component.literal(shared ? "§6JOURNAL §8• §fPage partagée avec le Foyer." : "§6JOURNAL §8• §fNote conservée dans vos pages personnelles."), false);
+         openBook(player);
+      }
+   }
+
+   private static void buyCivilizationUpgrade(ServerPlayer player, String id) {
+      MinecraftServer server = player.getServer();
+      if (server == null) return;
+      CampaignSavedData campaign = CampaignSavedData.get(server);
+      if (!campaign.foundationPlaced() || !player.serverLevel().dimension().location().toString().equals(campaign.foundationDimension())
+         || player.blockPosition().distSqr(campaign.foundationPos()) > 144.0) {
+         player.displayClientMessage(Component.literal("§6BORNE §8• §fRevenez près de la Borne pour engager les points de Civilisation."), false);
+         return;
+      }
+      int cost;
+      String title;
+      if ("LISIERE_ACCORDEE".equals(id)) {
+         cost = 12;
+         title = "Lisière accordée";
+      } else if ("ANCRAGE_ETENDU".equals(id)) {
+         cost = 25;
+         title = "Ancrage étendu";
+      } else return;
+      if (!campaign.buyCivilizationUpgrade(id, cost)) {
+         player.displayClientMessage(Component.literal("§6CIVILISATION §8• §fAmélioration déjà acquise ou solde insuffisant."), false);
+         openFoyerPanel(player);
+         return;
+      }
+      campaign.addTimeline(day(server), name(player), title, name(player) + " a engagé " + cost + " points de Civilisation à la Borne.");
+      broadcast(server, campaign, "CIV_UPGRADE_" + id + "|GROUP||CIV=0", "CIVILISATION", title.toUpperCase(),
+         "La décision est inscrite dans le Foyer. Solde disponible : " + campaign.civilizationAvailable() + ".", 0);
+      F92FoyerBoundaryEngine.reveal(player);
+      syncAll(server, campaign);
+      openFoyerPanel(player);
+   }
+
+   public static void openFoyerPanel(ServerPlayer player) {
+      MinecraftServer server = player.getServer();
+      if (server == null) return;
+      CampaignSavedData campaign = CampaignSavedData.get(server);
+      BlockPos pos = campaign.foundationPos();
+      String data = campaign.foundationName() + "|" + campaign.territoryRadius() + "|" + campaign.foundationFounder() + "|"
+         + campaign.foundationDay() + "|" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "|"
+         + campaign.civilizationTotal() + "|" + campaign.civilizationAvailable() + "|" + campaign.civilizationUpgradesPacket();
+      F7NarrativeEngine.pushUi(player, "F8_FOYER_PANEL", data);
    }
 
    public static void openMatrix(ServerPlayer p) {

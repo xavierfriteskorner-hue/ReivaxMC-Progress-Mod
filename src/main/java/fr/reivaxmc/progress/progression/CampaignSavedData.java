@@ -21,6 +21,7 @@ public final class CampaignSavedData extends SavedData {
    public static final int MAIN_TERRITORY_RADIUS = 96;
    private int progress;
    private int score;
+   private int civilizationSpent;
    private String stage = "DORMANT";
    private boolean introRunning;
    private boolean introCompleted;
@@ -61,6 +62,7 @@ public final class CampaignSavedData extends SavedData {
    private int foundationDay;
    private final Set<String> done = new HashSet<>();
    private final Set<String> bookRecipients = new HashSet<>();
+   private final Set<String> civilizationUpgrades = new HashSet<>();
    private final List<String> timeline = new ArrayList<>();
    private final List<CampaignSavedData.HistoricalSite> historicalSites = new ArrayList<>();
    private final List<CampaignSavedData.ArtifactRecord> artifacts = new ArrayList<>();
@@ -79,6 +81,7 @@ public final class CampaignSavedData extends SavedData {
       CampaignSavedData d = new CampaignSavedData();
       d.progress = t.getInt("Progress");
       d.score = t.getInt("Score");
+      d.civilizationSpent = t.getInt("CivilizationSpent");
       d.stage = t.getString("Stage");
       d.introRunning = t.getBoolean("IntroRunning");
       d.introCompleted = t.getBoolean("IntroCompleted");
@@ -119,6 +122,7 @@ public final class CampaignSavedData extends SavedData {
       d.foundationDay = t.getInt("FoundationDay");
       readStrings(t, "Done", d.done);
       readStrings(t, "BookRecipients", d.bookRecipients);
+      readStrings(t, "CivilizationUpgrades", d.civilizationUpgrades);
       readStrings(t, "Timeline", d.timeline);
       ListTag hs = t.getList("HistoricalSites", 10);
 
@@ -164,6 +168,7 @@ public final class CampaignSavedData extends SavedData {
    public CompoundTag save(CompoundTag t, Provider p) {
       t.putInt("Progress", this.progress);
       t.putInt("Score", this.score);
+      t.putInt("CivilizationSpent", this.civilizationSpent);
       t.putString("Stage", this.stage);
       t.putBoolean("IntroRunning", this.introRunning);
       t.putBoolean("IntroCompleted", this.introCompleted);
@@ -204,6 +209,7 @@ public final class CampaignSavedData extends SavedData {
       t.putInt("FoundationDay", this.foundationDay);
       t.put("Done", writeStrings(this.done));
       t.put("BookRecipients", writeStrings(this.bookRecipients));
+      t.put("CivilizationUpgrades", writeStrings(this.civilizationUpgrades));
       t.put("Timeline", writeStrings(this.timeline));
       ListTag hs = new ListTag();
 
@@ -281,6 +287,32 @@ public final class CampaignSavedData extends SavedData {
 
    public int score() {
       return this.score;
+   }
+
+   /** Total historique gagné : il ne diminue jamais et reste affichable dans la Chronologie. */
+   public int civilizationTotal() {
+      return this.score;
+   }
+
+   /** Solde réellement dépensable à la Borne. */
+   public int civilizationAvailable() {
+      return Math.max(0, this.score - this.civilizationSpent);
+   }
+
+   public boolean hasCivilizationUpgrade(String id) {
+      return id != null && this.civilizationUpgrades.contains(id);
+   }
+
+   public synchronized boolean buyCivilizationUpgrade(String id, int cost) {
+      if (id == null || id.isBlank() || cost < 0 || this.civilizationUpgrades.contains(id) || civilizationAvailable() < cost) return false;
+      this.civilizationSpent += cost;
+      this.civilizationUpgrades.add(id);
+      this.setDirty();
+      return true;
+   }
+
+   public String civilizationUpgradesPacket() {
+      return String.join(",", this.civilizationUpgrades);
    }
 
    public String stage() {
@@ -458,8 +490,16 @@ public final class CampaignSavedData extends SavedData {
       return this.foundationName;
    }
 
+   public String foundationFounder() {
+      return this.foundationFounder;
+   }
+
+   public int foundationDay() {
+      return this.foundationDay;
+   }
+
    public int territoryRadius() {
-      return 96;
+      return hasCivilizationUpgrade("ANCRAGE_ETENDU") ? 128 : MAIN_TERRITORY_RADIUS;
    }
 
    public void foundSettlement(BlockPos p, String dim, String who, UUID uuid, int day, long time) {
@@ -485,7 +525,7 @@ public final class CampaignSavedData extends SavedData {
          this.foundationName,
          this.foundationDimension,
          this.foundationPos(),
-         96,
+         this.territoryRadius(),
          this.foundationFounder,
          this.foundationFounderUuid,
          this.foundationDay,
@@ -518,7 +558,8 @@ public final class CampaignSavedData extends SavedData {
    }
 
    public boolean isInsideMainTerritory(String dim, BlockPos p) {
-      return this.foundationPlaced && this.foundationDimension.equals(dim) && d2(p.getX(), p.getZ(), this.foundationX, this.foundationZ) <= 9216L;
+      int radius = this.territoryRadius();
+      return this.foundationPlaced && this.foundationDimension.equals(dim) && d2(p.getX(), p.getZ(), this.foundationX, this.foundationZ) <= (long)radius * radius;
    }
 
    public List<CampaignSavedData.HistoricalSite> historicalSites() {

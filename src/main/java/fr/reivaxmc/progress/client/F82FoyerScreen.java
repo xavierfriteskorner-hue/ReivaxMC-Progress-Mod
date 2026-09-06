@@ -3,8 +3,11 @@ package fr.reivaxmc.progress.client;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import net.neoforged.neoforge.network.PacketDistributor;
+import fr.reivaxmc.progress.network.CivilizationPayloads;
 
 public final class F82FoyerScreen extends Screen {
    private final String name;
@@ -12,6 +15,11 @@ public final class F82FoyerScreen extends Screen {
    private final String founder;
    private final int day;
    private final String coords;
+   private final int civilizationTotal;
+   private final int civilizationAvailable;
+   private final String upgrades;
+   private Button boundaryUpgrade;
+   private Button territoryUpgrade;
    private int tab = 0;
 
    public F82FoyerScreen(String var1) {
@@ -22,6 +30,44 @@ public final class F82FoyerScreen extends Screen {
       this.founder = var2.length > 2 && !var2[2].isBlank() ? var2[2] : "Fondateurs";
       this.day = var2.length > 3 ? parseInt(var2[3], 1) : 1;
       this.coords = var2.length > 4 && !var2[4].isBlank() ? var2[4] : "—";
+      this.civilizationTotal = var2.length > 5 ? parseInt(var2[5], 0) : 0;
+      this.civilizationAvailable = var2.length > 6 ? parseInt(var2[6], this.civilizationTotal) : this.civilizationTotal;
+      this.upgrades = var2.length > 7 ? var2[7] : "";
+   }
+
+   @Override
+   protected void init() {
+      int panelWidth = Math.min(760, this.width - 34);
+      int panelHeight = Math.min(470, this.height - 30);
+      int panelX = (this.width - panelWidth) / 2;
+      int panelY = (this.height - panelHeight) / 2;
+      int right = panelX + panelWidth - 42;
+      boundaryUpgrade = addRenderableWidget(Button.builder(Component.literal(hasUpgrade("LISIERE_ACCORDEE") ? "ACQUIS" : "12 POINTS"),
+         button -> buy("LISIERE_ACCORDEE")).bounds(right - 106, panelY + 211, 106, 22).build());
+      territoryUpgrade = addRenderableWidget(Button.builder(Component.literal(hasUpgrade("ANCRAGE_ETENDU") ? "ACQUIS" : "25 POINTS"),
+         button -> buy("ANCRAGE_ETENDU")).bounds(right - 106, panelY + 257, 106, 22).build());
+      updateUpgradeButtons();
+   }
+
+   private void buy(String id) {
+      PacketDistributor.sendToServer(new CivilizationPayloads.BuyUpgrade(id));
+   }
+
+   private boolean hasUpgrade(String id) {
+      for (String value : upgrades.split(",")) if (id.equals(value)) return true;
+      return false;
+   }
+
+   private void updateUpgradeButtons() {
+      boolean visible = tab == 3;
+      if (boundaryUpgrade != null) {
+         boundaryUpgrade.visible = visible;
+         boundaryUpgrade.active = visible && !hasUpgrade("LISIERE_ACCORDEE") && civilizationAvailable >= 12;
+      }
+      if (territoryUpgrade != null) {
+         territoryUpgrade.visible = visible;
+         territoryUpgrade.active = visible && !hasUpgrade("ANCRAGE_ETENDU") && civilizationAvailable >= 25;
+      }
    }
 
    public void renderBackground(GuiGraphics var1, int var2, int var3, float var4) {
@@ -136,18 +182,18 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void options(GuiGraphics var1, int var2, int var3, int var4) {
-      this.title(var1, "OPTIONS DU FOYER", var2, var3);
+      this.title(var1, "DÉCISIONS DE CIVILISATION", var2, var3);
       this.paragraph(
          var1,
-         "Ce menu est maintenant une vraie interface persistante. Les fonctions ci-dessous seront activées progressivement sans remplacer la Borne.",
+         "Points gagnés : " + civilizationTotal + "   •   disponibles : " + civilizationAvailable
+            + ". Les points d'Âge racontent votre progression ; seuls les points de Civilisation se dépensent ici.",
          var2,
          var3 + 30,
          var4
       );
-      this.option(var1, var2, var3 + 92, var4, "RENOMMER LE FOYER", "À venir");
-      this.option(var1, var2, var3 + 132, var4, "GESTION DU TERRITOIRE", "À venir");
-      this.option(var1, var2, var3 + 172, var4, "HABITANTS & CIVILISATION", "À venir");
-      this.option(var1, var2, var3 + 212, var4, "MIGRATION / NOUVEL ANCRAGE", "À venir");
+      this.option(var1, var2, var3 + 92, var4, "LISIÈRE ACCORDÉE", hasUpgrade("LISIERE_ACCORDEE") ? "Résonance stabilisée" : "Contour perçu plus tôt");
+      this.option(var1, var2, var3 + 138, var4, "ANCRAGE ÉTENDU", hasUpgrade("ANCRAGE_ETENDU") ? "Rayon 128 blocs" : "96 → 128 blocs");
+      this.paragraph(var1, "Ces améliorations modifient le Foyer et restent acquises. Elles n'augmentent pas simplement les dégâts : elles changent la manière d'habiter le territoire.", var2, var3 + 194, var4);
    }
 
    private void title(GuiGraphics var1, String var2, int var3, int var4) {
@@ -201,6 +247,7 @@ public final class F82FoyerScreen extends Screen {
             int var15 = var10 + var14 * (var13 + var12);
             if (this.hit(var1, var3, var15, var11, var13, 28)) {
                this.tab = var14;
+               updateUpgradeButtons();
                return true;
             }
          }
