@@ -6,12 +6,12 @@ Ce contrôle remplace les validations séparées du moteur, du Chapitre I et des
 
 1. Installer `reivaxmc_progress-0.10.0.jar`.
 2. Dans un monde de test, exécuter `/reivax dev on` puis `/reivax dev chapter1 start`.
-3. Exécuter `/reivax dev chapter1 next` : les trois repères sont validés et les objets de doctrine sont fournis.
+3. Exécuter `/reivax dev chapter1 next` : les trois repères sont validés et l'écran du Conseil s'ouvre.
 
 ## Contrôle condensé SOLO
 
-1. Présenter FER, LIVRE ou PAIN à la Borne. Le choix doit être confirmé immédiatement en SOLO.
-2. Utiliser `/reivax dev chapter1 next`, examiner l'Écho, puis réutiliser `next` pour revenir au Foyer.
+1. Dans l'onglet CONSEIL de la Borne, sélectionner puis confirmer une priorité. Aucun objet ne doit être requis ni consommé ; le choix est immédiat en SOLO.
+2. Utiliser `/reivax dev chapter1 next`, examiner l'Écho, puis utiliser `/reivax dev tp foundation` pour revenir au Foyer sans dupliquer le Fragment.
 3. Vérifier que le Fragment reste dans l'inventaire, puis résoudre le combat avec `next`.
 4. Ouvrir la Borne : son contour apparaît brièvement. Se rendre près de la lisière, puis la franchir dans les deux sens ; les deux messages de traversée doivent apparaître.
 5. Onglet OPTIONS : vérifier le total et le solde de Civilisation. Acheter Lisière accordée, puis Ancrage étendu si le solde le permet ; le rayon affiché passe à 128 blocs.
@@ -21,9 +21,9 @@ Ce contrôle remplace les validations séparées du moteur, du Chapitre I et des
 ## Contrôle DUO ultérieur — seulement quatre minutes
 
 1. Dans un monde où le Chapitre I attend le choix, regrouper les deux joueurs près de la Borne.
-2. Joueur A présente FER ; les deux écrans doivent annoncer le Conseil en attente.
-3. Joueur B présente LIVRE ; les deux écrans doivent annoncer la Dissonance et rien ne progresse.
-4. Joueur B présente FER ; le consensus est validé sur les deux écrans et l'Écho apparaît.
+2. Joueur A vote Protection dans l'écran du Conseil ; les deux écrans doivent afficher son choix et l'attente du partenaire.
+3. Joueur B vote Compréhension ; les deux écrans doivent annoncer la Dissonance et rien ne progresse.
+4. Joueur B remplace son vote par Protection ; le consensus est validé sur les deux écrans et l'Écho apparaît.
 5. Chacun ouvre sa copie du Journal : la note partagée est commune, la note privée de l'autre reste invisible.
 
 ## Sanctuaire

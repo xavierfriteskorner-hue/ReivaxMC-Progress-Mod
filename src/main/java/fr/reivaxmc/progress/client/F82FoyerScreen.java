@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 import fr.reivaxmc.progress.network.CivilizationPayloads;
+import fr.reivaxmc.progress.network.CouncilPayloads;
 
 public final class F82FoyerScreen extends Screen {
    private final String name;
@@ -18,8 +19,14 @@ public final class F82FoyerScreen extends Screen {
    private final int civilizationTotal;
    private final int civilizationAvailable;
    private final String upgrades;
+   private final String chapterStage;
+   private final String doctrine;
+   private final String councilRoster;
    private Button boundaryUpgrade;
    private Button territoryUpgrade;
+   private Button councilConfirm;
+   private String selectedDoctrine = "";
+   private boolean voteSent;
    private int tab = 0;
 
    public F82FoyerScreen(String var1) {
@@ -33,6 +40,10 @@ public final class F82FoyerScreen extends Screen {
       this.civilizationTotal = var2.length > 5 ? parseInt(var2[5], 0) : 0;
       this.civilizationAvailable = var2.length > 6 ? parseInt(var2[6], this.civilizationTotal) : this.civilizationTotal;
       this.upgrades = var2.length > 7 ? var2[7] : "";
+      this.chapterStage = var2.length > 8 ? var2[8] : "";
+      this.doctrine = var2.length > 9 ? var2[9] : "";
+      this.councilRoster = var2.length > 10 ? var2[10] : "";
+      if (councilOpen()) this.tab = 2;
    }
 
    @Override
@@ -46,7 +57,10 @@ public final class F82FoyerScreen extends Screen {
          button -> buy("LISIERE_ACCORDEE")).bounds(right - 106, panelY + 211, 106, 22).build());
       territoryUpgrade = addRenderableWidget(Button.builder(Component.literal(hasUpgrade("ANCRAGE_ETENDU") ? "ACQUIS" : "25 POINTS"),
          button -> buy("ANCRAGE_ETENDU")).bounds(right - 106, panelY + 257, 106, 22).build());
+      councilConfirm = addRenderableWidget(Button.builder(Component.literal("CONFIRMER CE CHOIX"), button -> castVote())
+         .bounds(panelX + (panelWidth - 210) / 2, panelY + panelHeight - 78, 210, 22).build());
       updateUpgradeButtons();
+      updateCouncilButton();
    }
 
    private void buy(String id) {
@@ -59,7 +73,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void updateUpgradeButtons() {
-      boolean visible = tab == 3;
+      boolean visible = tab == 4;
       if (boundaryUpgrade != null) {
          boundaryUpgrade.visible = visible;
          boundaryUpgrade.active = visible && !hasUpgrade("LISIERE_ACCORDEE") && civilizationAvailable >= 12;
@@ -68,6 +82,24 @@ public final class F82FoyerScreen extends Screen {
          territoryUpgrade.visible = visible;
          territoryUpgrade.active = visible && !hasUpgrade("ANCRAGE_ETENDU") && civilizationAvailable >= 25;
       }
+   }
+
+   private boolean councilOpen() {
+      return "CHOOSE_PRIORITY".equals(chapterStage);
+   }
+
+   private void castVote() {
+      if (!councilOpen() || selectedDoctrine.isBlank() || voteSent) return;
+      voteSent = true;
+      updateCouncilButton();
+      PacketDistributor.sendToServer(new CouncilPayloads.CastVote(selectedDoctrine));
+   }
+
+   private void updateCouncilButton() {
+      if (councilConfirm == null) return;
+      councilConfirm.visible = tab == 2 && councilOpen();
+      councilConfirm.active = councilConfirm.visible && !selectedDoctrine.isBlank() && !voteSent;
+      councilConfirm.setMessage(Component.literal(voteSent ? "VOTE TRANSMIS…" : "CONFIRMER CE CHOIX"));
    }
 
    public void renderBackground(GuiGraphics var1, int var2, int var3, float var4) {
@@ -86,11 +118,11 @@ public final class F82FoyerScreen extends Screen {
       var1.drawString(this.font, "FOYER PRINCIPAL", var7 + 24, var8 + 20, -1002190, false);
       var1.drawString(this.font, this.name, var7 + 24, var8 + 37, -724503, true);
       var1.drawString(this.font, "X", var7 + var5 - 28, var8 + 20, -4672341, false);
-      String[] var9 = new String[]{"VUE D'ENSEMBLE", "TERRITOIRE", "JOURNAL", "OPTIONS"};
+      String[] var9 = new String[]{"VUE D'ENSEMBLE", "TERRITOIRE", "CONSEIL", "JOURNAL", "OPTIONS"};
       int var10 = var7 + 22;
       int var11 = var8 + 70;
       byte var12 = 8;
-      int var13 = (var5 - 44 - var12 * 3) / 4;
+      int var13 = (var5 - 44 - var12 * 4) / 5;
 
       for (int var14 = 0; var14 < var9.length; var14++) {
          int var15 = var10 + var14 * (var13 + var12);
@@ -118,6 +150,8 @@ public final class F82FoyerScreen extends Screen {
       } else if (this.tab == 1) {
          this.territory(var1, 0, 0, var24);
       } else if (this.tab == 2) {
+         this.council(var1, 0, 0, var24);
+      } else if (this.tab == 3) {
          this.journal(var1, 0, 0, var24);
       } else {
          this.options(var1, 0, 0, var24);
@@ -161,6 +195,64 @@ public final class F82FoyerScreen extends Screen {
       );
       this.box(var1, var2, var3 + 92, var4, 64, "RAYON ACTUEL", this.radius + " blocs");
       this.box(var1, var2, var3 + 166, var4, 64, "POINT D'ANCRAGE", this.coords);
+   }
+
+   private void council(GuiGraphics graphics, int x, int y, int width) {
+      this.title(graphics, "CONSEIL DU FOYER", x, y);
+      if (!councilOpen()) {
+         String status = doctrine.isBlank()
+            ? "La Borne n'appelle encore aucune décision. Le Conseil s'ouvrira lorsque le Foyer aura pris forme."
+            : "Priorité inscrite : " + doctrineLabel(doctrine) + ". Cette décision appartient désormais à l'histoire du Foyer.";
+         this.paragraph(graphics, status, x, y + 32, width);
+         return;
+      }
+
+      this.paragraph(graphics, "Choisissez ce qui doit survivre en premier. Aucun objet n'est requis ou consommé.", x, y + 24, width);
+      String[] ids = {"BASTION", "MEMORY", "SOLIDARITY"};
+      int gap = 8;
+      int cardWidth = (width - gap * 2) / 3;
+      int cardY = y + 58;
+      for (int i = 0; i < ids.length; i++) {
+         int cardX = x + i * (cardWidth + gap);
+         boolean selected = ids[i].equals(selectedDoctrine);
+         graphics.fill(cardX, cardY, cardX + cardWidth, cardY + 76, selected ? -1140655540 : -1440602325);
+         graphics.fill(cardX, cardY, cardX + (selected ? 4 : 2), cardY + 76, selected ? -2054356 : -3104453);
+         graphics.drawCenteredString(this.font, doctrineLabel(ids[i]), cardX + cardWidth / 2, cardY + 12, selected ? -461589 : -1514534);
+         this.paragraph(graphics, doctrineDescription(ids[i]), cardX + 9, cardY + 34, cardWidth - 18);
+      }
+
+      graphics.drawString(this.font, "VOIX DU CONSEIL", x, y + 151, -4277583, false);
+      int lineY = y + 172;
+      if (councilRoster.isBlank()) {
+         graphics.drawString(this.font, "En attente des membres du Foyer…", x + 8, lineY, -7369852, false);
+      } else {
+         for (String entry : councilRoster.split(";")) {
+            String[] parts = entry.split("~", -1);
+            String member = parts.length > 0 ? parts[0] : "Membre";
+            String vote = parts.length > 1 ? parts[1] : "";
+            String value = vote.isBlank() ? "EN ATTENTE" : doctrineLabel(vote);
+            graphics.drawString(this.font, "• " + member, x + 8, lineY, -2895929, false);
+            graphics.drawString(this.font, value, x + width - this.font.width(value) - 8, lineY, vote.isBlank() ? -7369852 : -461589, false);
+            lineY += 17;
+         }
+      }
+   }
+
+   private static String doctrineLabel(String id) {
+      return switch (id) {
+         case "BASTION" -> "PROTECTION";
+         case "MEMORY" -> "COMPRÉHENSION";
+         case "SOLIDARITY" -> "PARTAGE";
+         default -> "—";
+      };
+   }
+
+   private static String doctrineDescription(String id) {
+      return switch (id) {
+         case "BASTION" -> "Tenir. Défendre. Préserver les murs.";
+         case "MEMORY" -> "Chercher. Comprendre. Préserver la mémoire.";
+         default -> "Nourrir. Unir. Préserver les autres.";
+      };
    }
 
    private void journal(GuiGraphics var1, int var2, int var3, int var4) {
@@ -241,14 +333,34 @@ public final class F82FoyerScreen extends Screen {
          int var10 = var8 + 22;
          int var11 = var9 + 70;
          byte var12 = 8;
-         int var13 = (var6 - 44 - var12 * 3) / 4;
+         int var13 = (var6 - 44 - var12 * 4) / 5;
 
-         for (int var14 = 0; var14 < 4; var14++) {
+         for (int var14 = 0; var14 < 5; var14++) {
             int var15 = var10 + var14 * (var13 + var12);
             if (this.hit(var1, var3, var15, var11, var13, 28)) {
                this.tab = var14;
                updateUpgradeButtons();
+               updateCouncilButton();
                return true;
+            }
+         }
+
+         if (tab == 2 && councilOpen()) {
+            float scale = Math.min(1.0F, (float)(var7 - 172) / 260.0F);
+            double localX = (var1 - (var8 + 30)) / scale;
+            double localY = (var3 - (var9 + 122)) / scale;
+            int contentWidth = (int)((var6 - 60) / scale);
+            int gap = 8;
+            int cardWidth = (contentWidth - gap * 2) / 3;
+            String[] ids = {"BASTION", "MEMORY", "SOLIDARITY"};
+            for (int i = 0; i < ids.length; i++) {
+               int cardX = i * (cardWidth + gap);
+               if (hit(localX, localY, cardX, 58, cardWidth, 76)) {
+                  selectedDoctrine = ids[i];
+                  voteSent = false;
+                  updateCouncilButton();
+                  return true;
+               }
             }
          }
 

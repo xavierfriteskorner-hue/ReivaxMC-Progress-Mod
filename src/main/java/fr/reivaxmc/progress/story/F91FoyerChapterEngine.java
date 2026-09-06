@@ -102,19 +102,6 @@ public final class F91FoyerChapterEngine {
          return true;
       }
 
-      if (!campaign.foundationPlaced() || !campaign.foundationPos().equals(pos)) return false;
-      String held = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem()).toString();
-      if (F91ChapterRules.CHOOSE_PRIORITY.equals(state.stage())) {
-         consume(event);
-         String doctrine = F91ChapterRules.doctrineForItem(held);
-         if (doctrine.isBlank()) {
-            player.displayClientMessage(Component.literal("§6BORNE §8• §fPrésentez un lingot de fer, un livre ou du pain."), false);
-         } else {
-            chooseDoctrine(player, data, doctrine);
-         }
-         return true;
-      }
-
       return false;
    }
 
@@ -133,6 +120,26 @@ public final class F91FoyerChapterEngine {
    /** Démarrage immédiat appelé à la pose de la Borne, le tick restant le filet de sécurité. */
    public static void onFoundationEstablished(MinecraftServer server, ServerPlayer founder) {
       startChapter(server, founder, F91FoyerChapterData.get(server));
+   }
+
+   /** Vote demandé depuis l'interface de la Borne. Aucun objet n'est requis ni consommé. */
+   public static void submitCouncilVote(ServerPlayer player, String doctrine) {
+      MinecraftServer server = player.getServer();
+      if (server == null || !Set.of(F91ChapterRules.BASTION, F91ChapterRules.MEMORY, F91ChapterRules.SOLIDARITY).contains(doctrine)) return;
+      CampaignSavedData campaign = CampaignSavedData.get(server);
+      F91FoyerChapterData data = F91FoyerChapterData.get(server);
+      if (!F91ChapterRules.CHOOSE_PRIORITY.equals(data.snapshot().stage())) {
+         player.displayClientMessage(Component.literal("§6CONSEIL DU FOYER §8• §fAucune décision n'attend actuellement votre voix."), false);
+         ProgressNetworking.openFoyerPanel(player);
+         return;
+      }
+      if (!campaign.foundationPlaced()
+         || !player.serverLevel().dimension().location().toString().equals(campaign.foundationDimension())
+         || player.blockPosition().distSqr(campaign.foundationPos()) > 144.0) {
+         player.displayClientMessage(Component.literal("§6CONSEIL DU FOYER §8• §fRevenez près de la Borne pour voter."), false);
+         return;
+      }
+      chooseDoctrine(player, data, doctrine);
    }
 
    public static int devCommand(ServerPlayer player, String action) {
@@ -214,7 +221,7 @@ public final class F91FoyerChapterEngine {
       if (F91ChapterRules.CHOOSE_PRIORITY.equals(state.stage())) {
          CampaignSavedData.get(server).stage("CH1_CHOOSE_PRIORITY");
          milestone(server, "CH1_HOME", "UN LIEU QUI VOUS RESSEMBLE", "Trois repères suffisent. Un Foyer n'est pas ce qui vous protège du monde : c'est ce que vous refusez de lui abandonner.", 20, 4);
-         broadcastObjective(server, "Choisissez ce qui doit survivre en premier · touchez la Borne avec FER : protéger · LIVRE : comprendre · PAIN : partager.");
+         broadcastObjective(server, "Choisissez ce qui doit survivre en premier · ouvrez le Conseil depuis la Borne.");
       } else {
          broadcastObjective(server, homeObjective(count));
          actor.displayClientMessage(Component.literal("§6FOYER §8• §a" + F91ChapterRules.signalLabel(signal) + " reconnu §7(" + count + "/3)"), false);
@@ -242,14 +249,16 @@ public final class F91FoyerChapterEngine {
       if (result == F91FoyerChapterData.CouncilResult.INVALID) return;
       if (result == F91FoyerChapterData.CouncilResult.WAITING) {
          ProgressNetworking.broadcast(server, campaign, "CH1_COUNCIL_WAIT|GROUP||CIV=0", "NARRATOR_GUIDANCE", "CONSEIL DU FOYER",
-            actor.getGameProfile().getName() + " propose « " + F91ChapterRules.doctrineLabel(doctrine) + " ». L'autre voix doit répondre avec son propre objet.", 0);
-         broadcastObjective(server, "Conseil en cours · chaque membre présente FER, LIVRE ou PAIN à la Borne.");
+            actor.getGameProfile().getName() + " propose « " + F91ChapterRules.doctrineLabel(doctrine) + " ». L'autre voix doit maintenant se prononcer.", 0);
+         broadcastObjective(server, "Conseil en cours · chaque membre ouvre la Borne et confirme sa priorité.");
+         ProgressNetworking.refreshCouncilPanels(server);
          return;
       }
       if (result == F91FoyerChapterData.CouncilResult.DISSONANCE) {
          ProgressNetworking.broadcast(server, campaign, "CH1_COUNCIL_DISSONANCE|GROUP||CIV=0", "NARRATOR_WHISPER", "DISSONANCE",
             "Vos priorités se contredisent. La Borne ne choisira pas à votre place : l'un de vous doit répondre de nouveau.", 0);
-         broadcastObjective(server, "Dissonance · représentez vos objets à la Borne jusqu'à partager la même priorité.");
+         broadcastObjective(server, "Dissonance · modifiez vos votes dans le Conseil jusqu'à partager la même priorité.");
+         ProgressNetworking.refreshCouncilPanels(server);
          return;
       }
       if (result != F91FoyerChapterData.CouncilResult.CONFIRMED) return;
@@ -263,6 +272,7 @@ public final class F91FoyerChapterEngine {
       milestone(server, "CH1_DOCTRINE", "PRIORITÉ — " + F91ChapterRules.doctrineLabel(doctrine), line, 10, 5);
       placeEcho(server, data);
       broadcastObjective(server, "Suivez l'Écho apparu autour du Foyer · la Résonance vous indiquera sa direction.");
+      ProgressNetworking.refreshCouncilPanels(server);
    }
 
    private static boolean councilReady(List<ServerPlayer> players, CampaignSavedData campaign, Set<String> required) {
@@ -411,8 +421,8 @@ public final class F91FoyerChapterEngine {
       return switch (state.stage()) {
          case F91ChapterRules.SHAPE_FOYER -> homeObjective(F91ChapterRules.signalCount(state.homeSignals()));
          case F91ChapterRules.CHOOSE_PRIORITY -> state.councilVoters().isEmpty()
-            ? "Choisissez ce qui doit survivre en premier · FER : protéger · LIVRE : comprendre · PAIN : partager."
-            : "Conseil du Foyer en cours · chaque membre doit présenter son choix à la Borne.";
+            ? "Choisissez ce qui doit survivre en premier · ouvrez le Conseil depuis la Borne."
+            : "Conseil du Foyer en cours · chaque membre doit confirmer son choix dans la Borne.";
          case F91ChapterRules.FIND_ECHO -> "Suivez l'Écho autour du Foyer · la Résonance indique sa direction.";
          case F91ChapterRules.RETURN_FRAGMENT -> "Conservez le Fragment et revenez au cœur du Foyer · la Matrice demeure inaccessible.";
          case F91ChapterRules.DEFEND_FOYER -> "Défendez le Foyer · Témoins neutralisés " + state.witnessesDefeated() + "/" + state.witnessTarget() + ".";
@@ -529,12 +539,10 @@ public final class F91FoyerChapterEngine {
             registerHomeSignal(server, player, data, F91ChapterRules.REST);
             registerHomeSignal(server, player, data, F91ChapterRules.STORAGE);
             registerHomeSignal(server, player, data, F91ChapterRules.WORK);
-            give(player, new ItemStack(Items.IRON_INGOT));
-            give(player, new ItemStack(Items.BOOK));
-            give(player, new ItemStack(Items.BREAD));
-            player.displayClientMessage(Component.literal("§6CHAPITRE I DEV §8• §fChoisissez FER, LIVRE ou PAIN puis touchez la Borne."), false);
+            ProgressNetworking.openFoyerPanel(player);
+            player.displayClientMessage(Component.literal("§6CHAPITRE I DEV §8• §fLe Conseil est ouvert dans la Borne : choisissez puis confirmez votre priorité."), false);
          }
-         case F91ChapterRules.CHOOSE_PRIORITY -> chooseDoctrine(player, data, F91ChapterRules.MEMORY);
+         case F91ChapterRules.CHOOSE_PRIORITY -> ProgressNetworking.openFoyerPanel(player);
          case F91ChapterRules.FIND_ECHO -> {
             BlockPos echo = state.echoPos();
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),
@@ -542,7 +550,6 @@ public final class F91FoyerChapterEngine {
             player.displayClientMessage(Component.literal("§6CHAPITRE I DEV §8• §fInspectez la Pierre devant vous par CLIC DROIT."), false);
          }
          case F91ChapterRules.RETURN_FRAGMENT -> {
-            give(player, new ItemStack((Item)ReivaxMCProgress.UNKNOWN_FRAGMENT.get()));
             CampaignSavedData campaign = CampaignSavedData.get(server);
             BlockPos home = campaign.foundationPos();
             server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),

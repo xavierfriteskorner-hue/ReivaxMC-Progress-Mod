@@ -13,6 +13,8 @@ import fr.reivaxmc.progress.progression.CampaignSavedData;
 import fr.reivaxmc.progress.progression.WorldStructures;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
 import fr.reivaxmc.progress.story.F90SealGate;
+import fr.reivaxmc.progress.story.F91FoyerChapterData;
+import fr.reivaxmc.progress.story.F91FoyerChapterEngine;
 import fr.reivaxmc.progress.story.F92JournalData;
 import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
 import fr.reivaxmc.progress.story.F7NarrativeEngine;
@@ -37,7 +39,7 @@ public final class ProgressNetworking {
    }
 
    public static void register(RegisterPayloadHandlersEvent e) {
-      PayloadRegistrar r = e.registrar("13");
+      PayloadRegistrar r = e.registrar("14");
       r.playToClient(ProgressSyncPayload.TYPE, ProgressSyncPayload.CODEC, (p, c) -> c.enqueueWork(() -> ClientCampaignState.apply(p)));
       r.playToClient(
          SimplePayloads.StartIntro.TYPE,
@@ -97,6 +99,9 @@ public final class ProgressNetworking {
          }));
       r.playToServer(CivilizationPayloads.BuyUpgrade.TYPE, CivilizationPayloads.BuyUpgrade.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer sp) buyCivilizationUpgrade(sp, p.id());
+         }));
+      r.playToServer(CouncilPayloads.CastVote.TYPE, CouncilPayloads.CastVote.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer sp) F91FoyerChapterEngine.submitCouncilVote(sp, p.doctrine());
          }));
       Alpha18FNetwork.register(e);
    }
@@ -218,7 +223,7 @@ public final class ProgressNetworking {
          case "BUILD_FIRST_HOME" -> "Choisissez votre base et placez la Borne de Fondation pour établir votre Foyer principal.";
          case "MIGRATION" -> "Votre civilisation est en migration. Replacez la Borne hors de tout Site historique.";
          case "CH1_SHAPE_FOYER" -> "Donnez une forme au Foyer avec trois repères de vie.";
-         case "CH1_CHOOSE_PRIORITY" -> "Présentez à la Borne ce qui doit survivre en premier.";
+         case "CH1_CHOOSE_PRIORITY" -> "Ouvrez le Conseil de la Borne et choisissez ce qui doit survivre en premier.";
          case "CH1_FIND_ECHO" -> "Suivez l'Écho apparu autour du Foyer.";
          case "CH1_RETURN_FRAGMENT" -> "Conservez le Fragment et revenez au cœur du Foyer ; seule la Matrice pourra l’analyser.";
          case "CH1_DEFEND_FOYER" -> "Défendez le Foyer contre ce que la mémoire a réveillé.";
@@ -347,11 +352,33 @@ public final class ProgressNetworking {
       MinecraftServer server = player.getServer();
       if (server == null) return;
       CampaignSavedData campaign = CampaignSavedData.get(server);
+      F91FoyerChapterData.Snapshot chapter = F91FoyerChapterData.get(server).snapshot();
       BlockPos pos = campaign.foundationPos();
       String data = campaign.foundationName() + "|" + campaign.territoryRadius() + "|" + campaign.foundationFounder() + "|"
          + campaign.foundationDay() + "|" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "|"
-         + campaign.civilizationTotal() + "|" + campaign.civilizationAvailable() + "|" + campaign.civilizationUpgradesPacket();
+         + campaign.civilizationTotal() + "|" + campaign.civilizationAvailable() + "|" + campaign.civilizationUpgradesPacket()
+         + "|" + chapter.stage() + "|" + chapter.doctrine() + "|" + councilRoster(server, chapter);
       F7NarrativeEngine.pushUi(player, "F8_FOYER_PANEL", data);
+   }
+
+   /** Rafraîchit le même Conseil sur tous les écrans après chaque vote. */
+   public static void refreshCouncilPanels(MinecraftServer server) {
+      for (ServerPlayer member : server.getPlayerList().getPlayers()) openFoyerPanel(member);
+   }
+
+   private static String councilRoster(MinecraftServer server, F91FoyerChapterData.Snapshot chapter) {
+      StringBuilder packet = new StringBuilder();
+      java.util.Set<String> voters = chapter.councilVoters().isEmpty()
+         ? server.getPlayerList().getPlayers().stream().map(player -> player.getUUID().toString()).collect(java.util.stream.Collectors.toSet())
+         : chapter.councilVoters();
+      for (String uuid : voters) {
+         ServerPlayer online = server.getPlayerList().getPlayers().stream()
+            .filter(player -> player.getUUID().toString().equals(uuid)).findFirst().orElse(null);
+         if (packet.length() > 0) packet.append(';');
+         packet.append(online == null ? "Membre absent" : online.getGameProfile().getName())
+            .append('~').append(chapter.councilVotes().getOrDefault(uuid, ""));
+      }
+      return packet.toString();
    }
 
    public static void openMatrix(ServerPlayer p) {
