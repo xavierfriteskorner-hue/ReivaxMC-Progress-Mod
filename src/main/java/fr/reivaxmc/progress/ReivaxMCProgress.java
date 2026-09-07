@@ -1,6 +1,7 @@
 package fr.reivaxmc.progress;
 
 import fr.reivaxmc.progress.block.FoundationBeaconBlock;
+import fr.reivaxmc.progress.block.EchoStoneBlock;
 import fr.reivaxmc.progress.block.FragmentAltarBlock;
 import fr.reivaxmc.progress.block.MemorialPlaqueBlock;
 import fr.reivaxmc.progress.block.OriginMatrixBlock;
@@ -64,6 +65,37 @@ public final class ReivaxMCProgress {
    public static final DeferredItem<BlockItem> FOUNDATION_BEACON_ITEM = ITEMS.registerSimpleBlockItem(
       "foundation_beacon", FOUNDATION_BEACON, new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC)
    );
+   /** Matériaux architecturaux dédiés : ils remplacent les anciens blocs narratifs détournés. */
+   public static final DeferredBlock<Block> SANCTUARY_STONE = BLOCKS.register(
+      "sanctuary_stone", () -> new Block(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE))
+   );
+   public static final DeferredItem<BlockItem> SANCTUARY_STONE_ITEM = ITEMS.registerSimpleBlockItem(
+      "sanctuary_stone", SANCTUARY_STONE, new net.minecraft.world.item.Item.Properties().rarity(Rarity.RARE)
+   );
+   public static final DeferredBlock<Block> SANCTUARY_LUMEN = BLOCKS.register(
+      "sanctuary_lumen", () -> new Block(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.AMETHYST).lightLevel(s -> 12))
+   );
+   public static final DeferredItem<BlockItem> SANCTUARY_LUMEN_ITEM = ITEMS.registerSimpleBlockItem(
+      "sanctuary_lumen", SANCTUARY_LUMEN, new net.minecraft.world.item.Item.Properties().rarity(Rarity.EPIC)
+   );
+   public static final DeferredBlock<Block> ECHO_STONE = BLOCKS.register(
+      "echo_stone", () -> new EchoStoneBlock(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE).lightLevel(s -> 7))
+   );
+   public static final DeferredItem<BlockItem> ECHO_STONE_ITEM = ITEMS.registerSimpleBlockItem(
+      "echo_stone", ECHO_STONE, new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC)
+   );
+   public static final DeferredBlock<Block> SEAL_RECEPTACLE = BLOCKS.register(
+      "seal_receptacle", () -> new Block(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.POLISHED_DEEPSLATE).lightLevel(s -> 4))
+   );
+   public static final DeferredItem<BlockItem> SEAL_RECEPTACLE_ITEM = ITEMS.registerSimpleBlockItem(
+      "seal_receptacle", SEAL_RECEPTACLE, new net.minecraft.world.item.Item.Properties().rarity(Rarity.EPIC)
+   );
+   public static final DeferredBlock<Block> REGISTRY_CONSOLE = BLOCKS.register(
+      "registry_console", () -> new Block(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.AMETHYST).lightLevel(s -> 9))
+   );
+   public static final DeferredItem<BlockItem> REGISTRY_CONSOLE_ITEM = ITEMS.registerSimpleBlockItem(
+      "registry_console", REGISTRY_CONSOLE, new net.minecraft.world.item.Item.Properties().rarity(Rarity.EPIC)
+   );
    public static final DeferredBlock<Block> ORIGIN_RELIQUARY = BLOCKS.register(
       "origin_reliquary",
       () -> new OriginReliquaryBlock(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE).noOcclusion().lightLevel(s -> 8))
@@ -99,7 +131,11 @@ public final class ReivaxMCProgress {
       () -> new fr.reivaxmc.progress.item.DestinyBookItem(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.RARE))
    );
    public static final DeferredItem<Item> UNKNOWN_FRAGMENT = ITEMS.register(
-      "unknown_fragment", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC))
+      "unknown_fragment", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
+   );
+   public static final DeferredItem<Item> RESONANCE_COMPASS = ITEMS.register(
+      "resonance_compass", () -> new fr.reivaxmc.progress.item.ResonanceCompassItem(
+         new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
    );
    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register(
       "main",
@@ -111,11 +147,13 @@ public final class ReivaxMCProgress {
                o.accept((ItemLike)ORIGIN_SEAL.get());
                o.accept((ItemLike)DESTINY_BOOK.get());
                o.accept((ItemLike)UNKNOWN_FRAGMENT.get());
+               o.accept((ItemLike)RESONANCE_COMPASS.get());
                o.accept((ItemLike)FOUNDATION_BEACON_ITEM.get());
                o.accept((ItemLike)ORIGIN_MATRIX_ITEM.get());
                o.accept((ItemLike)ORIGIN_RELIQUARY_ITEM.get());
                o.accept((ItemLike)MEMORIAL_PLAQUE_ITEM.get());
                o.accept((ItemLike)FRAGMENT_ALTAR_ITEM.get());
+               o.accept((ItemLike)ECHO_STONE_ITEM.get());
                o.accept((ItemLike)VEILLEUR_SPAWN_EGG.get());
                o.accept((ItemLike)PROTECTEUR_SPAWN_EGG.get());
             })

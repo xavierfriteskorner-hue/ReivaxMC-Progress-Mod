@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "chapter": "CH2_LA_DETTE_DU_FOYER",
+  "player_label": "PISTE",
+  "events": [
+    {
+      "id": "CH2_TRAIL_FOLLOWED",
+      "title": "PISTE SUIVIE — LA DETTE DU FOYER",
+      "text": "Trois Fêlures répondent autour du Foyer. Deux suffiront pour comprendre leur appel ; la troisième restera votre choix."
+    },
+    {
+      "id": "CH2_RIFT_1",
+      "title": "LA PIERRE DE L'ÉCHO",
+      "text": "Ses inscriptions s'allument avant votre main. Elles ne racontent pas le passé : elles vérifient que vous en avez un."
+    },
+    {
+      "id": "CH2_RIFT_2",
+      "title": "LE SEUIL SANS PORTE",
+      "text": "Vous franchissez une frontière bâtie autour d'une absence. De chaque côté, le Foyer semble être ailleurs."
+    },
+    {
+      "id": "CH2_RIFT_3",
+      "title": "LA TABLE DES ABSENTS",
+      "text": "Huit places. Sept noms effacés. La dernière ligne du registre n'a pas été écrite avec de l'encre.",
+      "optional": true,
+      "age_points": 15,
+      "civilization_points": 5
+    },
+    {
+      "id": "CH2_CENSUS_START",
+      "title": "LE RECENSEMENT",
+      "text": "Sept silhouettes apparaissent au-delà de la lisière. Une huitième se tient déjà du mauvais côté."
+    },
+    {
+      "id": "CH2_CENSUS_END",
+      "title": "CEUX QUI MANQUENT",
+      "text": "Vous avez compté ceux que les murs ont laissés dehors. Vous n'avez jamais demandé qui manquait à l'intérieur."
+    },
+    {
+      "id": "CH2_CONCORDANCE",
+      "title": "PREMIÈRE CONCORDANCE",
+      "text": "La Borne n'analyse rien. Le Sanctuaire vient seulement d'ouvrir une mémoire."
+    },
+    {
+      "id": "CH2_COMPLETE",
+      "title": "LA DETTE DU FOYER",
+      "text": "Les noms avaient été remplacés par des nombres bien avant votre arrivée. Derrière le sceau occidental, la Matrice ouvre un œil — puis se tait.",
+      "age_points": 150,
+      "civilization_points": 32
+    }
+  ]
+}

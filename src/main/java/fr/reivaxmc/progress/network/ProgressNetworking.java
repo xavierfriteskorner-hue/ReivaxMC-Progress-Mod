@@ -18,6 +18,8 @@ import fr.reivaxmc.progress.story.F91FoyerChapterEngine;
 import fr.reivaxmc.progress.story.F92JournalData;
 import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
 import fr.reivaxmc.progress.story.F7NarrativeEngine;
+import fr.reivaxmc.progress.story.C110TrailData;
+import fr.reivaxmc.progress.story.C110TrailEngine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,7 +41,7 @@ public final class ProgressNetworking {
    }
 
    public static void register(RegisterPayloadHandlersEvent e) {
-      PayloadRegistrar r = e.registrar("14");
+      PayloadRegistrar r = e.registrar("15");
       r.playToClient(ProgressSyncPayload.TYPE, ProgressSyncPayload.CODEC, (p, c) -> c.enqueueWork(() -> ClientCampaignState.apply(p)));
       r.playToClient(
          SimplePayloads.StartIntro.TYPE,
@@ -102,6 +104,9 @@ public final class ProgressNetworking {
          }));
       r.playToServer(CouncilPayloads.CastVote.TYPE, CouncilPayloads.CastVote.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer sp) F91FoyerChapterEngine.submitCouncilVote(sp, p.doctrine());
+         }));
+      r.playToServer(TrailPayloads.Follow.TYPE, TrailPayloads.Follow.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer sp) C110TrailEngine.follow(sp);
          }));
       Alpha18FNetwork.register(e);
    }
@@ -228,6 +233,13 @@ public final class ProgressNetworking {
          case "CH1_RETURN_FRAGMENT" -> "Conservez le Fragment et revenez au cœur du Foyer ; seule la Matrice pourra l’analyser.";
          case "CH1_DEFEND_FOYER" -> "Défendez le Foyer contre ce que la mémoire a réveillé.";
          case "CH1_COMPLETE" -> "Le Foyer emprunté a livré sa mémoire. Développez librement votre civilisation.";
+         case "CH2_OFFERED" -> "Une nouvelle Piste attend dans la Borne : La Dette du Foyer.";
+         case "CH2_SEEK_RIFTS" -> "Suivez les Fêlures autour du Foyer. Deux concordances suffiront.";
+         case "CH2_RETURN_FOYER" -> "Deux Fêlures concordent. Revenez à la Borne.";
+         case "CH2_CENSUS" -> "Le Recensement a commencé. Approchez trois Veilleurs.";
+         case "CH2_RETURN_SANCTUARY" -> "Gardez le Fragment et retournez au Sanctuaire.";
+         case "CH2_REGISTRY" -> "La salle orientale est ouverte. Consultez le Registre des Absents.";
+         case "CH2_COMPLETE" -> "La Dette du Foyer est inscrite. Le Sanctuaire garde encore des salles closes.";
          default -> "Votre Premier Foyer est établi. Développez votre civilisation.";
       };
    }
@@ -357,7 +369,8 @@ public final class ProgressNetworking {
       String data = campaign.foundationName() + "|" + campaign.territoryRadius() + "|" + campaign.foundationFounder() + "|"
          + campaign.foundationDay() + "|" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "|"
          + campaign.civilizationTotal() + "|" + campaign.civilizationAvailable() + "|" + campaign.civilizationUpgradesPacket()
-         + "|" + chapter.stage() + "|" + chapter.doctrine() + "|" + councilRoster(server, chapter);
+         + "|" + chapter.stage() + "|" + chapter.doctrine() + "|" + councilRoster(server, chapter)
+         + "|" + C110TrailEngine.packet(C110TrailData.get(server).snapshot());
       F7NarrativeEngine.pushUi(player, "F8_FOYER_PANEL", data);
    }
 

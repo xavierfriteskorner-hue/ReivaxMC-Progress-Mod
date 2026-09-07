@@ -4,7 +4,9 @@ Ce document verrouille les responsabilités avant la construction des prochains 
 
 ## Le Sanctuaire
 
-Le Sanctuaire est un immense édifice persistant dont le joueur ne visite d’abord que le vestibule, la grande salle, les Stèles et la zone permettant de récupérer la Borne et le Livre. La chambre de la Matrice existe physiquement plus profondément dans l’édifice. Elle doit être visible ou suggérée très tôt, mais demeure inaccessible.
+Le Sanctuaire est un immense édifice persistant, semi-enfoui et entièrement construit dès l'apparition de la Trace. Le joueur ne visite d'abord que le vestibule, la grande salle et les objets fondateurs. La chambre de la Matrice existe physiquement dans l'aile occidentale : elle est visible ou suggérée très tôt, mais demeure inaccessible. L'aile orientale contient le Registre et les galeries profondes attendent les futurs chapitres.
+
+L'entrée est encadrée par deux monolithes verticaux. Chacun porte trois logements circulaires légèrement creusés destinés aux Sceaux. Aucun Sceau n'est placé dans un cercle au sol.
 
 Les autres salles ne s’ouvrent pas avec une suite banale de clés colorées. Elles répondent à des **Concordances** composées de plusieurs éléments :
 
@@ -29,7 +31,7 @@ La Borne appartient à la civilisation actuelle. Elle sert à :
 - consulter le territoire et ses évolutions ;
 - choisir une doctrine et ses orientations ;
 - acheter ou sélectionner des améliorations de civilisation ;
-- suivre les missions collectives et les décisions communes ;
+- suivre les Pistes collectives et les décisions communes ;
 - enregistrer les départs, retours et migrations.
 
 Elle ne lit jamais un Fragment et ne remplace jamais la Matrice.
@@ -51,7 +53,7 @@ Après certaines analyses, des pages peuvent être complétées, corrigées ou c
 
 ### Points de Civilisation
 
-- Sont gagnés grâce aux missions, choix collectifs, constructions significatives et actions de coopération.
+- Sont gagnés grâce aux Pistes, choix collectifs, constructions significatives et actions de coopération.
 - Sont dépensés à la Borne pour obtenir des améliorations ou ouvrir une orientation.
 - Doivent afficher deux valeurs : **disponibles** et **gagnés au total**.
 - Ne permettent jamais d’acheter directement une technologie que les joueurs n’ont pas encore découverte.
@@ -60,4 +62,4 @@ Le total historique sert aux conditions narratives ; le solde disponible sert au
 
 ## Pas de troisième monnaie
 
-Il n’existe pas de « points de campagne » supplémentaires. Une mission peut donner des points d’Âge, des points de Civilisation, une récompense matérielle, une conséquence narrative ou une combinaison de ces éléments. Le score interne du code doit être présenté comme des points de Civilisation, jamais comme une troisième progression mystérieuse.
+Il n’existe pas de « points de campagne » supplémentaires. Une Piste peut donner des points d’Âge, des points de Civilisation, une récompense matérielle, une conséquence narrative ou une combinaison de ces éléments. Le score interne du code doit être présenté comme des points de Civilisation, jamais comme une troisième progression mystérieuse.

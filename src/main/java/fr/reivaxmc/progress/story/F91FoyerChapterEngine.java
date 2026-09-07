@@ -304,7 +304,7 @@ public final class F91FoyerChapterEngine {
          if (level.getBlockState(candidate).isAir() && !level.getBlockState(candidate.below()).isAir() && level.getFluidState(candidate.below()).isEmpty()) echo = candidate;
       }
       if (echo == null) echo = home.offset(18, 1, 0);
-      level.setBlock(echo, ((Block)ReivaxMCProgress.MEMORIAL_PLAQUE.get()).defaultBlockState(), 3);
+      buildEchoMonolith(level, echo);
       data.placeEcho(echo, level.dimension().location().toString(), level.getGameTime());
       level.playSound(null, echo, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.2F, 0.55F);
    }
@@ -389,7 +389,7 @@ public final class F91FoyerChapterEngine {
 
    private static void grantReward(ServerPlayer player, F91FoyerChapterData data, String doctrine) {
       if (!data.claimReward(player.getUUID().toString())) return;
-      give(player, new ItemStack((Item)ReivaxMCProgress.MEMORIAL_PLAQUE_ITEM.get()));
+      give(player, new ItemStack((Item)ReivaxMCProgress.ECHO_STONE_ITEM.get()));
       switch (doctrine) {
          case F91ChapterRules.BASTION -> {
             give(player, new ItemStack(Items.SHIELD));
@@ -577,11 +577,29 @@ public final class F91FoyerChapterEngine {
    private static void clearChapterWorld(MinecraftServer server, F91FoyerChapterData.Snapshot state) {
       if (state.echoPlaced()) {
          ServerLevel level = levelFor(server, state.echoDimension());
-         if (level != null && level.getBlockState(state.echoPos()).is((Block)ReivaxMCProgress.MEMORIAL_PLAQUE.get())) level.setBlock(state.echoPos(), Blocks.AIR.defaultBlockState(), 3);
+         if (level != null && level.getBlockState(state.echoPos()).is((Block)ReivaxMCProgress.ECHO_STONE.get())) {
+            for (int y = -1; y <= 3; y++) {
+               for (int x = -1; x <= 1; x++) level.setBlock(state.echoPos().offset(x, y, 0), Blocks.AIR.defaultBlockState(), 3);
+            }
+         }
       }
       String dimension = CampaignSavedData.get(server).foundationDimension();
       server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),
          "execute in " + dimension + " run kill @e[tag=" + WITNESS_TAG + "]");
+   }
+
+   /** Une vraie silhouette monumentale, construite sans entité ni chute d'objets. */
+   private static void buildEchoMonolith(ServerLevel level, BlockPos core) {
+      Block echo = (Block)ReivaxMCProgress.ECHO_STONE.get();
+      for (int y = 0; y <= 2; y++) level.setBlock(core.above(y), echo.defaultBlockState(), 3);
+      for (int y = 0; y <= 2; y++) {
+         level.setBlock(core.offset(-1, y, 0), Blocks.CHISELED_DEEPSLATE.defaultBlockState(), 3);
+         level.setBlock(core.offset(1, y, 0), Blocks.CHISELED_DEEPSLATE.defaultBlockState(), 3);
+      }
+      level.setBlock(core.offset(0, 3, 0), Blocks.LIGHTNING_ROD.defaultBlockState(), 3);
+      level.setBlock(core.offset(-1, -1, 0), Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), 3);
+      level.setBlock(core.offset(0, -1, 0), Blocks.GILDED_BLACKSTONE.defaultBlockState(), 3);
+      level.setBlock(core.offset(1, -1, 0), Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), 3);
    }
 
    /** Petit pont isolé pour ne pas exposer le stockage interne du Narrateur. */

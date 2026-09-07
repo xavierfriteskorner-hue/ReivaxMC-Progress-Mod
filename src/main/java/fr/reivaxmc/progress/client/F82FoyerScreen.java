@@ -9,6 +9,7 @@ import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 import fr.reivaxmc.progress.network.CivilizationPayloads;
 import fr.reivaxmc.progress.network.CouncilPayloads;
+import fr.reivaxmc.progress.network.TrailPayloads;
 
 public final class F82FoyerScreen extends Screen {
    private final String name;
@@ -22,9 +23,16 @@ public final class F82FoyerScreen extends Screen {
    private final String chapterStage;
    private final String doctrine;
    private final String councilRoster;
+   private final String trailStage;
+   private final String trailTitle;
+   private final String trailObjective;
+   private final int trailRifts;
+   private final int trailWitnesses;
+   private final boolean trailCompleted;
    private Button boundaryUpgrade;
    private Button territoryUpgrade;
    private Button councilConfirm;
+   private Button followTrail;
    private String selectedDoctrine = "";
    private boolean voteSent;
    private int tab = 0;
@@ -43,7 +51,15 @@ public final class F82FoyerScreen extends Screen {
       this.chapterStage = var2.length > 8 ? var2[8] : "";
       this.doctrine = var2.length > 9 ? var2[9] : "";
       this.councilRoster = var2.length > 10 ? var2[10] : "";
+      String[] trail = var2.length > 11 ? var2[11].split("~", -1) : new String[0];
+      this.trailStage = trail.length > 0 ? trail[0] : "LOCKED";
+      this.trailTitle = trail.length > 1 ? trail[1] : "La Dette du Foyer";
+      this.trailObjective = trail.length > 2 ? trail[2] : "Aucune Piste n'est actuellement suivie.";
+      this.trailRifts = trail.length > 3 ? parseInt(trail[3], 0) : 0;
+      this.trailWitnesses = trail.length > 4 ? parseInt(trail[4], 0) : 0;
+      this.trailCompleted = trail.length > 5 && "1".equals(trail[5]);
       if (councilOpen()) this.tab = 2;
+      else if ("OFFERED".equals(this.trailStage)) this.tab = 3;
    }
 
    @Override
@@ -60,8 +76,11 @@ public final class F82FoyerScreen extends Screen {
          button -> buy("ANCRAGE_ETENDU")).bounds(right - 96, contentY + 90, 96, 20).build());
       councilConfirm = addRenderableWidget(Button.builder(Component.literal("CONFIRMER CE CHOIX"), button -> castVote())
          .bounds(panelX + (panelWidth - 190) / 2, panelY + panelHeight - 58, 190, 20).build());
+      followTrail = addRenderableWidget(Button.builder(Component.literal("SUIVRE CETTE PISTE"), button -> followTrail())
+         .bounds(panelX + (panelWidth - 190) / 2, panelY + panelHeight - 58, 190, 20).build());
       updateUpgradeButtons();
       updateCouncilButton();
+      updateTrailButton();
    }
 
    private void buy(String id) {
@@ -74,7 +93,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void updateUpgradeButtons() {
-      boolean visible = tab == 4;
+      boolean visible = tab == 5;
       if (boundaryUpgrade != null) {
          boundaryUpgrade.visible = visible;
          boundaryUpgrade.active = visible && !hasUpgrade("LISIERE_ACCORDEE") && civilizationAvailable >= 12;
@@ -103,6 +122,20 @@ public final class F82FoyerScreen extends Screen {
       councilConfirm.setMessage(Component.literal(voteSent ? "VOTE TRANSMIS…" : "CONFIRMER CE CHOIX"));
    }
 
+   private void followTrail() {
+      PacketDistributor.sendToServer(new TrailPayloads.Follow());
+      if (followTrail != null) {
+         followTrail.active = false;
+         followTrail.setMessage(Component.literal("PISTE INSCRITE…"));
+      }
+   }
+
+   private void updateTrailButton() {
+      if (followTrail == null) return;
+      followTrail.visible = tab == 3 && "OFFERED".equals(trailStage);
+      followTrail.active = followTrail.visible;
+   }
+
    public void renderBackground(GuiGraphics var1, int var2, int var3, float var4) {
       var1.fill(0, 0, this.width, this.height, -1207959552);
    }
@@ -119,11 +152,11 @@ public final class F82FoyerScreen extends Screen {
       var1.drawString(this.font, "FOYER PRINCIPAL", var7 + 18, var8 + 10, -1002190, false);
       var1.drawString(this.font, this.name, var7 + 18, var8 + 25, -724503, true);
       var1.drawString(this.font, "X", var7 + var5 - 24, var8 + 12, -4672341, false);
-      String[] var9 = new String[]{"FOYER", "TERRITOIRE", "CONSEIL", "JOURNAL", "OPTIONS"};
+      String[] var9 = new String[]{"FOYER", "TERRITOIRE", "CONSEIL", "PISTES", "JOURNAL", "OPTIONS"};
       int var10 = var7 + 14;
       int var11 = var8 + 48;
       byte var12 = 4;
-      int var13 = (var5 - 44 - var12 * 4) / 5;
+      int var13 = (var5 - 44 - var12 * 5) / 6;
 
       for (int var14 = 0; var14 < var9.length; var14++) {
          int var15 = var10 + var14 * (var13 + var12);
@@ -147,6 +180,8 @@ public final class F82FoyerScreen extends Screen {
       } else if (this.tab == 2) {
          this.council(var1, var20, var21, var22);
       } else if (this.tab == 3) {
+         this.trails(var1, var20, var21, var22);
+      } else if (this.tab == 4) {
          this.journal(var1, var20, var21, var22);
       } else {
          this.options(var1, var20, var21, var22);
@@ -249,6 +284,23 @@ public final class F82FoyerScreen extends Screen {
       };
    }
 
+   private void trails(GuiGraphics graphics, int x, int y, int width) {
+      this.title(graphics, "PISTES DU FOYER", x, y);
+      if ("LOCKED".equals(trailStage)) {
+         this.paragraph(graphics, "Aucune Piste ne répond encore. Continuez à vivre : le monde n'exige pas que vous abandonniez tout pour lui.", x, y + 28, width);
+         return;
+      }
+      int color = trailCompleted ? -5713253 : -461589;
+      graphics.fill(x, y + 28, x + width, y + 116, -1440602325);
+      graphics.fill(x, y + 28, x + 4, y + 116, color);
+      graphics.drawString(this.font, trailTitle.toUpperCase(), x + 14, y + 40, color, false);
+      this.paragraph(graphics, trailObjective, x + 14, y + 60, width - 28);
+      String status = "Fêlures : " + trailRifts + "/3" + (trailWitnesses > 0 ? "   •   Veilleurs : " + trailWitnesses + "/3" : "");
+      graphics.drawString(this.font, status, x + 14, y + 98, -2895929, false);
+      this.paragraph(graphics,
+         "Une Piste peut être suivie sans bloquer l'exploration, la construction ou les autres projets du Foyer.", x, y + 138, width);
+   }
+
    private void journal(GuiGraphics var1, int var2, int var3, int var4) {
       this.title(var1, "JOURNAL DU FOYER", var2, var3);
       this.paragraph(
@@ -327,14 +379,15 @@ public final class F82FoyerScreen extends Screen {
          int var10 = var8 + 14;
          int var11 = var9 + 48;
          byte var12 = 4;
-         int var13 = (var6 - 44 - var12 * 4) / 5;
+         int var13 = (var6 - 44 - var12 * 5) / 6;
 
-         for (int var14 = 0; var14 < 5; var14++) {
+         for (int var14 = 0; var14 < 6; var14++) {
             int var15 = var10 + var14 * (var13 + var12);
             if (this.hit(var1, var3, var15, var11, var13, 24)) {
                this.tab = var14;
                updateUpgradeButtons();
                updateCouncilButton();
+               updateTrailButton();
                return true;
             }
          }

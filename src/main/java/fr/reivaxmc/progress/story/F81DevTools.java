@@ -73,6 +73,12 @@ public final class F81DevTools {
             then(var8, literalExec("status", ctx -> cmdChapter1(ctx, "status")));
             then(var8, literalExec("reset", ctx -> cmdChapter1(ctx, "reset")));
             then(var3, var8);
+            Object var10 = literal("chapter2");
+            then(var10, literalExec("start", ctx -> cmdChapter2(ctx, "start")));
+            then(var10, literalExec("next", ctx -> cmdChapter2(ctx, "next")));
+            then(var10, literalExec("status", ctx -> cmdChapter2(ctx, "status")));
+            then(var10, literalExec("reset", ctx -> cmdChapter2(ctx, "reset")));
+            then(var3, var10);
             then(var2, var3);
             invoke(var1, "register", var2);
             System.out.println("[REIVAX 0.9.0] DEV/QA commands registered.");
@@ -115,7 +121,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test ... · chapter1 start|next|status|reset · reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test ... · chapter1 ... · chapter2 start|next|status|reset · reset");
          return 1;
       }
    }
@@ -390,6 +396,21 @@ public final class F81DevTools {
       }
       if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
          return F91FoyerChapterEngine.devCommand(player, action);
+      }
+      return 0;
+   }
+
+   private static int cmdChapter2(Object context, String action) {
+      Object rawPlayer = player(context);
+      if (!allowed(context)) return denied(rawPlayer);
+      Object server = serverFromContext(context);
+      F81DevTools.DevState dev = STATES.computeIfAbsent(server, ignored -> new F81DevTools.DevState());
+      if (!dev.enabled) {
+         msg(rawPlayer, "§cActivez d'abord /reivax dev on.");
+         return 0;
+      }
+      if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
+         return C110TrailEngine.devCommand(player, action);
       }
       return 0;
    }

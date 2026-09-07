@@ -1142,7 +1142,7 @@ public final class F8SanctuaryEngine {
             int var4 = posX(var1) - var3[0];
             int var5 = posY(var1) - var3[1];
             int var6 = posZ(var1) - var3[2];
-            return var4 >= -30 && var4 <= 30 && var6 >= -25 && var6 <= 33 && var5 >= -5 && var5 <= 17;
+            return var4 >= -38 && var4 <= 38 && var6 >= -45 && var6 <= 40 && var5 >= -5 && var5 <= 22;
          } else {
             return false;
          }
@@ -1526,12 +1526,12 @@ public final class F8SanctuaryEngine {
    }
 
    static Object sanctuaryStoneBlock() throws Exception {
-      Object var0 = staticField("fr.reivaxmc.progress.ReivaxMCProgress", "MEMORIAL_PLAQUE");
+      Object var0 = staticField("fr.reivaxmc.progress.ReivaxMCProgress", "SANCTUARY_STONE");
       return invokeNoArg(var0, "get");
    }
 
    static Object sanctuaryLumenBlock() throws Exception {
-      Object var0 = staticField("fr.reivaxmc.progress.ReivaxMCProgress", "FRAGMENT_ALTAR");
+      Object var0 = staticField("fr.reivaxmc.progress.ReivaxMCProgress", "SANCTUARY_LUMEN");
       return invokeNoArg(var0, "get");
    }
 

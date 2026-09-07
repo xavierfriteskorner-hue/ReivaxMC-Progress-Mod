@@ -18,10 +18,10 @@ C'est la **reconstruction propre** du mod (Alpha 18), repartie de la conception 
 
 ## Principe de développement
 
-Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.10.2** ouvre la campagne jouable avec le Chapitre I, **Le Foyer emprunté**, et pose ses systèmes durables : Conseil visuel synchronisé SOLO/DUO, frontière de Résonance renforcée, Journal intime hérité, points de Civilisation dépensables et Sanctuaire complet à salles scellées. L'interface de la Borne reste désormais lisible quelle que soit l'échelle de GUI.
+Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.11.0** livre deux chapitres jouables, **Le Foyer emprunté** et **La Dette du Foyer**, ainsi que le moteur de Pistes, le Conseil synchronisé SOLO/DUO, le Journal intime, les points de Civilisation dépensables et le grand Sanctuaire dont toutes les salles existent dès le départ.
 
-Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des missions, des réactions de la Voix et des futurs moments de civilisation.
+Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des Pistes, des réactions de la Voix et des futurs moments de civilisation.
 
-Pour valider le lot sans rejouer le prologue, utilisez `/reivax dev on`, puis `/reivax dev chapter1 start`. La commande `/reivax dev chapter1 next` permet ensuite de rejoindre chaque contrôle important. Une seule procédure condensée se trouve dans `docs/tests/VALIDATION_CAMPAGNE_0.10.0.md`.
+Pour valider le gros lot sans rejouer le prologue, utilisez `/reivax dev on`, puis `/reivax dev chapter2 start`. La commande `/reivax dev chapter2 next` rejoint chaque contrôle important. La procédure condensée se trouve dans `docs/tests/VALIDATION_UNIQUE_0.11.0.md`.
 
 Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*
