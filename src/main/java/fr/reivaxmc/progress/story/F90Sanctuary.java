@@ -49,8 +49,8 @@ public final class F90Sanctuary {
    // Stèle = GROS POTEAU de pierre très noire, avec un CREUX au milieu où l'on voit le disque (Sceau)
    // enchâssé -> on comprend qu'il faut y déposer le Sceau. var5 = true quand le Sceau est en place (lueur).
    private static void buildReceptacle(Object var0, int var1, int var2, int var3, int var4, boolean var5) throws Exception {
-      int var6 = var1 + var4 * 7; // x du poteau (de part et d'autre de l'entrée)
-      int var7 = var3 + 28;       // z ; la face avant (vers +z) regarde le joueur
+      int var6 = var1 + var4 * 9; // monolithes 0.12 : réellement à gauche/droite de l'entrée
+      int var7 = var3 + 36;       // placés sur le parvis, visibles avant de franchir le seuil
       Object var8 = F8SanctuaryEngine.originMatrixBlock();   // le Sceau/disque, au fond du creux
       Object var9 = F8SanctuaryEngine.sanctuaryLumenBlock(); // lueur quand enchâssé
       Object var10 = F8SanctuaryEngine.staticField("net.minecraft.world.level.block.Blocks", "POLISHED_BLACKSTONE");
@@ -107,8 +107,8 @@ public final class F90Sanctuary {
          int var5 = F8SanctuaryEngine.posZ(var1);
 
          for (int var9 : new int[]{-1, 1}) {
-            int var10 = var2[0] + var9 * 7;
-            int var11 = var2[2] + 28;
+            int var10 = var2[0] + var9 * 9;
+            int var11 = var2[2] + 36;
             if (Math.abs(var3 - var10) <= 2 && var4 >= var2[1] && var4 <= var2[1] + 4 && Math.abs(var5 - var11) <= 2) {
                return var9;
             }

@@ -43,6 +43,8 @@ public final class C110TrailEngine {
 
    public static void onLogin(PlayerLoggedInEvent event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
+      repairSanctuary(player);
+      migrateLegacySites(player);
       offerIfReady(player);
       restore(player);
    }
@@ -55,13 +57,20 @@ public final class C110TrailEngine {
       C110TrailData data = C110TrailData.get(server);
       C110TrailData.Snapshot state = data.snapshot();
 
+      repairSanctuary(player);
+      if (state.placedMask() != 0 && state.siteLayoutVersion() < 2)
+         ensureSites(player.serverLevel(), CampaignSavedData.get(server), data);
+
       if (isRunning(state.stage())) ensureSites(player.serverLevel(), CampaignSavedData.get(server), data);
       if (C110TrailRules.RETURN_FOYER.equals(state.stage()) && atFoyer(player, 11.0)) beginCensus(player, data);
       if (C110TrailRules.CENSUS.equals(state.stage())) {
          ensureCensus(player.serverLevel(), CampaignSavedData.get(server), data);
          observeNearbyWatcher(player, data);
+         guideToNearestWatcher(player, data);
       }
       if (C110TrailRules.RETURN_SANCTUARY.equals(state.stage())) tryConcordance(player, data);
+      if (C110TrailRules.REGISTRY.equals(state.stage()) && player.blockPosition().closerThan(C110SanctuaryArchitecture.registryConsole(server), 8.0))
+         player.displayClientMessage(Component.literal("§bREGISTRE DES ABSENTS §8• §fCliquez la console lumineuse pour inscrire la Concordance."), true);
       if (state.completed()) grantPersonalReward(player, data);
       applyDoctrine(player, data);
    }
@@ -192,44 +201,94 @@ public final class C110TrailEngine {
    private static void ensureSites(ServerLevel level, CampaignSavedData campaign, C110TrailData data) {
       if (!campaign.foundationPlaced() || !level.dimension().location().toString().equals(campaign.foundationDimension())) return;
       C110TrailData.Snapshot state = data.snapshot();
-      int[][] offsets = {{48, 19}, {-58, 31}, {24, -72}};
+      // Les Fêlures ne surgissent plus pratiquement sous la Borne : elles forment
+      // une vraie courte exploration, dans trois directions très distinctes.
+      int[][] offsets = {{142, 61}, {-176, 83}, {74, -214}};
+      if (state.placedMask() != 0 && state.siteLayoutVersion() < 2) {
+         BlockPos[] moved = state.sites().clone();
+         for (int i = 0; i < 3; i++) {
+            if ((state.placedMask() & (1 << i)) == 0) continue;
+            cleanLegacySite(level, state.sites()[i], i);
+            BlockPos base = campaign.foundationPos().offset(offsets[i][0], 0, offsets[i][1]);
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, base.getX(), base.getZ());
+            moved[i] = new BlockPos(base.getX(), y, base.getZ());
+            buildSite(level, moved[i], i);
+         }
+         data.migrateSites(moved, state.placedMask(), 2);
+         state = data.snapshot();
+      }
       for (int i = 0; i < 3; i++) {
          if ((state.placedMask() & (1 << i)) != 0) continue;
          BlockPos base = campaign.foundationPos().offset(offsets[i][0], 0, offsets[i][1]);
          int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, base.getX(), base.getZ());
          BlockPos site = new BlockPos(base.getX(), y, base.getZ());
-         if (i == 0) buildEchoStone(level, site);
-         else if (i == 1) buildDoorlessThreshold(level, site);
-         else buildTableOfAbsent(level, site);
+         buildSite(level, site, i);
          data.placeSite(i, site);
+      }
+      data.siteLayoutVersion(2);
+   }
+
+   private static void migrateLegacySites(ServerPlayer player) {
+      MinecraftServer server = player.getServer();
+      if (server == null) return;
+      C110TrailData data = C110TrailData.get(server);
+      C110TrailData.Snapshot state = data.snapshot();
+      if (state.placedMask() != 0 && state.siteLayoutVersion() < 2)
+         ensureSites(player.serverLevel(), CampaignSavedData.get(server), data);
+   }
+
+   private static void buildSite(ServerLevel level, BlockPos site, int index) {
+      if (index == 0) buildEchoStone(level, site);
+      else if (index == 1) buildDoorlessThreshold(level, site);
+      else buildTableOfAbsent(level, site);
+   }
+
+   /** Retire uniquement les blocs caractéristiques posés par l'ancienne Fêlure. */
+   private static void cleanLegacySite(ServerLevel level, BlockPos p, int index) {
+      int radius = index == 0 ? 3 : 2;
+      int maxY = index == 0 ? 4 : 5;
+      int depth = index == 2 ? 2 : 0;
+      for (int x = -radius; x <= radius; x++) for (int y = -1; y <= maxY; y++) for (int z = -depth; z <= depth; z++) {
+         BlockPos q = p.offset(x, y, z);
+         Block block = level.getBlockState(q).getBlock();
+         if (block == ReivaxMCProgress.ECHO_STONE.get() || block == ReivaxMCProgress.SANCTUARY_STONE.get()
+            || block == ReivaxMCProgress.SANCTUARY_LUMEN.get() || block == Blocks.CHISELED_DEEPSLATE
+            || block == Blocks.GILDED_BLACKSTONE || block == Blocks.POLISHED_BLACKSTONE_BRICKS
+            || block == Blocks.DARK_OAK_SLAB || block == Blocks.DARK_OAK_FENCE
+            || block == Blocks.DARK_OAK_STAIRS || block == Blocks.SOUL_LANTERN)
+            level.setBlock(q, Blocks.AIR.defaultBlockState(), 18);
       }
    }
 
    private static void buildEchoStone(ServerLevel level, BlockPos p) {
       Block echo = (Block)ReivaxMCProgress.ECHO_STONE.get();
-      for (int y = 0; y < 5; y++) {
-         int width = y == 0 || y == 4 ? 1 : 2;
-         for (int x = -width; x <= width; x++) level.setBlock(p.offset(x, y, 0),
-            x == 0 ? echo.defaultBlockState() : Blocks.CHISELED_DEEPSLATE.defaultBlockState(), 3);
+      for (int y=0;y<7;y++) {
+         int width=(y==0||y==6)?1:2;
+         for(int x=-width;x<=width;x++) level.setBlock(p.offset(x,y,0),(x==0&&y>=1&&y<=5?echo:Blocks.CHISELED_DEEPSLATE).defaultBlockState(),18);
       }
-      for (int x = -3; x <= 3; x++) level.setBlock(p.offset(x, -1, 0),
-         (Math.abs(x) == 2 ? Blocks.GILDED_BLACKSTONE : Blocks.POLISHED_BLACKSTONE_BRICKS).defaultBlockState(), 3);
+      for(int z=-2;z<=2;z++) for(int x=-4;x<=4;x++) if(Math.abs(x)+Math.abs(z)<=5)
+         level.setBlock(p.offset(x,-1,z),(Math.abs(x)==3?Blocks.GILDED_BLACKSTONE:Blocks.POLISHED_BLACKSTONE_BRICKS).defaultBlockState(),18);
+      for(int side:new int[]{-1,1}) {
+         level.setBlock(p.offset(side*4,0,0),Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState(),18);
+         level.setBlock(p.offset(side*4,1,0),Blocks.SOUL_LANTERN.defaultBlockState(),18);
+      }
    }
 
    private static void buildDoorlessThreshold(ServerLevel level, BlockPos p) {
-      for (int side : new int[]{-2, 2}) for (int y = 0; y <= 5; y++) level.setBlock(p.offset(side, y, 0),
-         (y == 2 ? (Block)ReivaxMCProgress.SANCTUARY_LUMEN.get() : (Block)ReivaxMCProgress.SANCTUARY_STONE.get()).defaultBlockState(), 3);
-      for (int x = -2; x <= 2; x++) level.setBlock(p.offset(x, 5, 0), ((Block)ReivaxMCProgress.SANCTUARY_STONE.get()).defaultBlockState(), 3);
-      level.setBlock(p, ((Block)ReivaxMCProgress.ECHO_STONE.get()).defaultBlockState(), 3);
+      for (int side : new int[]{-3,3}) for (int y=0;y<=7;y++) level.setBlock(p.offset(side,y,0),
+         (y==3?(Block)ReivaxMCProgress.SANCTUARY_LUMEN.get():(Block)ReivaxMCProgress.SANCTUARY_STONE.get()).defaultBlockState(),18);
+      for(int x=-3;x<=3;x++) level.setBlock(p.offset(x,7,0),((Block)ReivaxMCProgress.SANCTUARY_STONE.get()).defaultBlockState(),18);
+      for(int x=-4;x<=4;x++) level.setBlock(p.offset(x,-1,0),Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(),18);
+      level.setBlock(p,((Block)ReivaxMCProgress.ECHO_STONE.get()).defaultBlockState(),18);
    }
 
    private static void buildTableOfAbsent(ServerLevel level, BlockPos p) {
-      level.setBlock(p, ((Block)ReivaxMCProgress.ECHO_STONE.get()).defaultBlockState(), 3);
-      for (int x = -2; x <= 2; x++) level.setBlock(p.offset(x, 1, 0), Blocks.DARK_OAK_SLAB.defaultBlockState(), 3);
-      level.setBlock(p.offset(-2, 0, 0), Blocks.DARK_OAK_FENCE.defaultBlockState(), 3);
-      level.setBlock(p.offset(2, 0, 0), Blocks.DARK_OAK_FENCE.defaultBlockState(), 3);
-      for (int z : new int[]{-2, 2}) for (int x = -2; x <= 2; x += 2) level.setBlock(p.offset(x, 0, z), Blocks.DARK_OAK_STAIRS.defaultBlockState(), 3);
-      level.setBlock(p.offset(0, 2, 0), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
+      level.setBlock(p,((Block)ReivaxMCProgress.ECHO_STONE.get()).defaultBlockState(),18);
+      for(int x=-3;x<=3;x++) level.setBlock(p.offset(x,1,0),Blocks.DARK_OAK_SLAB.defaultBlockState(),18);
+      level.setBlock(p.offset(-3,0,0),Blocks.DARK_OAK_FENCE.defaultBlockState(),18);
+      level.setBlock(p.offset(3,0,0),Blocks.DARK_OAK_FENCE.defaultBlockState(),18);
+      for(int z:new int[]{-3,3}) for(int x=-3;x<=3;x+=2) level.setBlock(p.offset(x,0,z),Blocks.DARK_OAK_STAIRS.defaultBlockState(),18);
+      level.setBlock(p.offset(0,2,0),Blocks.SOUL_LANTERN.defaultBlockState(),18);
    }
 
    private static void discoverRift(ServerPlayer player, C110TrailData data, int index) {
@@ -274,18 +333,24 @@ public final class C110TrailEngine {
    }
 
    private static void ensureCensus(ServerLevel level, CampaignSavedData campaign, C110TrailData data) {
-      if (!campaign.foundationPlaced() || data.snapshot().censusSpawned()) return;
+      if (!campaign.foundationPlaced()) return;
       BlockPos home = campaign.foundationPos();
       int r = campaign.territoryRadius() + 10;
+      C110TrailData.Snapshot snapshot=data.snapshot();
       for (int i = 0; i < 8; i++) {
+         if((snapshot.witnessMask()&(1<<i))!=0) continue;
          double angle = Math.PI * 2.0 * i / 7.0;
          int distance = i == 7 ? 17 : r;
          int x = home.getX() + (int)Math.round(Math.cos(angle) * distance);
          int z = home.getZ() + (int)Math.round(Math.sin(angle) * distance);
          int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-         spawnWatcher(level, i, new BlockPos(x, y, z));
+         BlockPos pos=new BlockPos(x,y,z);
+         AABB area=new AABB(pos).inflate(4);
+         int index=i;
+         boolean exists=!level.getEntities((Entity)null,area,e->e.getTags().contains(WATCHER_PREFIX+index)).isEmpty();
+         if(!exists) spawnWatcher(level,i,pos);
       }
-      data.censusSpawned();
+      if(!snapshot.censusSpawned()) data.censusSpawned();
    }
 
    private static void spawnWatcher(ServerLevel level, int index, BlockPos pos) {
@@ -319,6 +384,22 @@ public final class C110TrailEngine {
             return;
          }
       }
+   }
+
+   private static void guideToNearestWatcher(ServerPlayer player,C110TrailData data) {
+      if(player.tickCount%100!=0) return;
+      C110TrailData.Snapshot s=data.snapshot(); Entity nearest=null; double best=Double.MAX_VALUE;
+      AABB search=new AABB(player.blockPosition()).inflate(180);
+      for(Entity e:player.serverLevel().getEntities((Entity)null,search,e->e.getTags().contains("reivax_ch2_watcher"))) {
+         double d=e.distanceToSqr(player); if(d<best){best=d;nearest=e;}
+      }
+      if(nearest==null) return;
+      int dx=(int)Math.round(nearest.getX()-player.getX()), dz=(int)Math.round(nearest.getZ()-player.getZ());
+      String dir=Math.abs(dx)>Math.abs(dz)?(dx>=0?"est":"ouest"):(dz>=0?"sud":"nord");
+      int distance=(int)Math.sqrt(best);
+      player.displayClientMessage(Component.literal("§6RECENSEMENT §8• §fProchain Veilleur : §e"+distance+" blocs vers le "+dir+" §8• §7"+s.witnessCount()+"/3"),true);
+      double len=Math.max(1,Math.sqrt((double)dx*dx+(double)dz*dz));
+      for(int i=2;i<=12;i+=2) player.serverLevel().sendParticles(ParticleTypes.SCULK_SOUL,player.getX()+dx/len*i,player.getY()+1.2,player.getZ()+dz/len*i,2,.15,.3,.15,.01);
    }
 
    private static void finishCensus(ServerPlayer player, MinecraftServer server) {
@@ -415,14 +496,16 @@ public final class C110TrailEngine {
          catch (Throwable ignored) { target = campaign.foundationPos(); }
          label = "SANCTUAIRE";
       } else {
-         target = objectiveTarget(server, campaign, trail);
+         V12TrailData.Snapshot chapter3=V12TrailData.get(server).snapshot();
+         target = (!V12TrailRules.LOCKED.equals(chapter3.stage())&&!V12TrailRules.OFFERED.equals(chapter3.stage())&&!V12TrailRules.COMPLETE.equals(chapter3.stage()))
+            ? V12Chapter3Engine.currentTarget(server) : objectiveTarget(server, campaign, trail);
          label = "PISTE ACTUELLE";
       }
       int dx = target.getX() - player.getBlockX();
       int dz = target.getZ() - player.getBlockZ();
       int distance = (int)Math.sqrt((double)dx * dx + (double)dz * dz);
       String direction = Math.abs(dx) > Math.abs(dz) ? (dx >= 0 ? "est" : "ouest") : (dz >= 0 ? "sud" : "nord");
-      boolean exact = F91ChapterRules.MEMORY.equals(F91FoyerChapterData.get(server).snapshot().doctrine());
+      boolean exact = F91ChapterRules.MEMORY.equals(F91FoyerChapterData.get(server).snapshot().doctrine()) || campaign.hasCivilizationUpgrade("CARTOGRAPHIE_RESONANTE");
       String guidance = exact ? target.getX() + ", " + target.getY() + ", " + target.getZ() + " · " + distance + " blocs"
          : "environ " + distance + " blocs vers le " + direction;
       player.displayClientMessage(Component.literal("§bBOUSSOLE — " + label + " §8• §f" + guidance), true);
@@ -463,7 +546,7 @@ public final class C110TrailEngine {
       }
       else if (C110TrailRules.RETURN_SANCTUARY.equals(s.stage())) {
          if (!carriesFragment(player)) give(player, new ItemStack((Item)ReivaxMCProgress.UNKNOWN_FRAGMENT.get()));
-         try { BlockPos p = C110SanctuaryArchitecture.eastThreshold(player.getServer()); player.teleportTo(player.serverLevel(), p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 0, 0); } catch (Throwable ignored) {}
+         try { BlockPos p=C110SanctuaryArchitecture.eastThreshold(player.getServer()).offset(-6,0,0); player.teleportTo(player.serverLevel(),p.getX()+.5,p.getY(),p.getZ()+.5,270,0); } catch(Throwable ignored) {}
       } else if (C110TrailRules.REGISTRY.equals(s.stage())) {
          try { int[] o = F8SanctuaryEngine.target(player.getServer()); BlockPos p = new BlockPos(o[0] + 27, o[1] + 2, o[2] - 16);
             player.teleportTo(player.serverLevel(), p.getX() - 2.5, p.getY(), p.getZ() + 0.5, 0, 0);
@@ -478,6 +561,13 @@ public final class C110TrailEngine {
    }
 
    private static boolean isRunning(String stage) { return !C110TrailRules.LOCKED.equals(stage) && !C110TrailRules.OFFERED.equals(stage); }
+   private static void repairSanctuary(ServerPlayer player) {
+      MinecraftServer server=player.getServer(); if(server==null) return;
+      CampaignSavedData c=CampaignSavedData.get(server);
+      if(!c.isCompleted(F94SanctuaryShell.BUILT)) return;
+      try { int[] o=F8SanctuaryEngine.target(server); if(!C110SanctuaryArchitecture.isPresent(server,o)) C110SanctuaryArchitecture.build(server,o); }
+      catch(Throwable ignored) {}
+   }
    private static boolean atFoyer(ServerPlayer player, double radius) {
       MinecraftServer server = player.getServer(); if (server == null) return false;
       CampaignSavedData c = CampaignSavedData.get(server);

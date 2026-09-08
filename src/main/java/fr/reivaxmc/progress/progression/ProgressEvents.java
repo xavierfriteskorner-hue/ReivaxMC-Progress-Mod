@@ -6,6 +6,7 @@ import fr.reivaxmc.progress.story.F8InteractionBridge;
 import fr.reivaxmc.progress.story.F91FoyerChapterEngine;
 import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
 import fr.reivaxmc.progress.story.C110TrailEngine;
+import fr.reivaxmc.progress.story.V12Chapter3Engine;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -37,11 +38,13 @@ public final class ProgressEvents {
       NarratorEngine.onLogin(var1);
       F91FoyerChapterEngine.onLogin(var1);
       C110TrailEngine.onLogin(var1);
+      V12Chapter3Engine.onLogin(var1);
    }
 
    @SubscribeEvent
    public void rightClickBlock(RightClickBlock var1) {
-      boolean chapterHandled = C110TrailEngine.onRightClickBlock(var1);
+      boolean chapterHandled = V12Chapter3Engine.onRightClickBlock(var1);
+      if (!chapterHandled) chapterHandled = C110TrailEngine.onRightClickBlock(var1);
       if (!chapterHandled) chapterHandled = F91FoyerChapterEngine.onRightClickBlock(var1);
       if (!chapterHandled) {
          F8InteractionBridge.onRightClickBlock(var1);
@@ -66,6 +69,7 @@ public final class ProgressEvents {
       F91FoyerChapterEngine.onPlayerTick(var1);
       F92FoyerBoundaryEngine.onPlayerTick(var1);
       C110TrailEngine.onPlayerTick(var1);
+      V12Chapter3Engine.onPlayerTick(var1);
    }
 
    @SubscribeEvent

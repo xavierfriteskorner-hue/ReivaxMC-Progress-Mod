@@ -14,13 +14,14 @@ import net.minecraft.world.level.saveddata.SavedData.Factory;
 /** Sauvegarde mondiale, partagée en SOLO/DUO, de La Dette du Foyer. */
 public final class C110TrailData extends SavedData {
    public static final String DATA_NAME = "reivaxmc_chapter2_debt";
-   public static final int SCHEMA_VERSION = 1;
+   public static final int SCHEMA_VERSION = 2;
 
    private String stage = C110TrailRules.LOCKED;
    private long stageTick;
    private String lastActor = "";
    private final BlockPos[] sites = {BlockPos.ZERO, BlockPos.ZERO, BlockPos.ZERO};
    private int placedMask;
+   private int siteLayoutVersion;
    private int discoveredMask;
    private int witnessMask;
    private boolean censusSpawned;
@@ -47,6 +48,7 @@ public final class C110TrailData extends SavedData {
       data.lastActor = tag.getString("LastActor");
       for (int i = 0; i < 3; i++) data.sites[i] = new BlockPos(tag.getInt("SiteX" + i), tag.getInt("SiteY" + i), tag.getInt("SiteZ" + i));
       data.placedMask = tag.getInt("PlacedMask");
+      data.siteLayoutVersion = tag.getInt("SiteLayoutVersion");
       data.discoveredMask = tag.getInt("DiscoveredMask");
       data.witnessMask = tag.getInt("WitnessMask");
       data.censusSpawned = tag.getBoolean("CensusSpawned");
@@ -70,6 +72,7 @@ public final class C110TrailData extends SavedData {
          tag.putInt("SiteX" + i, sites[i].getX()); tag.putInt("SiteY" + i, sites[i].getY()); tag.putInt("SiteZ" + i, sites[i].getZ());
       }
       tag.putInt("PlacedMask", placedMask);
+      tag.putInt("SiteLayoutVersion", siteLayoutVersion);
       tag.putInt("DiscoveredMask", discoveredMask);
       tag.putInt("WitnessMask", witnessMask);
       tag.putBoolean("CensusSpawned", censusSpawned);
@@ -98,6 +101,20 @@ public final class C110TrailData extends SavedData {
    public synchronized void placeSite(int index, BlockPos pos) {
       if (index < 0 || index >= 3) return;
       sites[index] = pos.immutable(); placedMask |= 1 << index; setDirty();
+   }
+
+   /** Déplace les seules structures gérées par le chapitre sans toucher à sa progression. */
+   public synchronized void migrateSites(BlockPos[] positions, int mask, int layoutVersion) {
+      for (int i = 0; i < 3; i++) if ((mask & (1 << i)) != 0) sites[i] = positions[i].immutable();
+      placedMask |= mask;
+      siteLayoutVersion = layoutVersion;
+      setDirty();
+   }
+
+   public synchronized void siteLayoutVersion(int version) {
+      if (siteLayoutVersion == version) return;
+      siteLayoutVersion = version;
+      setDirty();
    }
 
    public synchronized boolean discover(int index, String actor, long tick) {
@@ -145,20 +162,20 @@ public final class C110TrailData extends SavedData {
    public synchronized boolean useSolidarity(long day) { if (solidarityDay == day) return false; solidarityDay = day; setDirty(); return true; }
 
    public synchronized void reset() {
-      stage = C110TrailRules.LOCKED; stageTick = 0L; lastActor = ""; placedMask = discoveredMask = witnessMask = 0;
+      stage = C110TrailRules.LOCKED; stageTick = 0L; lastActor = ""; placedMask = discoveredMask = witnessMask = siteLayoutVersion = 0;
       for (int i = 0; i < 3; i++) sites[i] = BlockPos.ZERO;
       censusSpawned = concordance = registryOpened = completed = optionalRewarded = false;
       bastionDay = solidarityDay = -1L; rewardedPlayers.clear(); setDirty();
    }
 
    public synchronized Snapshot snapshot() {
-      return new Snapshot(stage, stageTick, lastActor, sites.clone(), placedMask, discoveredMask, witnessMask, censusSpawned,
+      return new Snapshot(stage, stageTick, lastActor, sites.clone(), placedMask, siteLayoutVersion, discoveredMask, witnessMask, censusSpawned,
          concordance, registryOpened, completed, optionalRewarded, Set.copyOf(rewardedPlayers));
    }
 
    private static String safe(String value) { return value == null ? "" : value; }
 
-   public record Snapshot(String stage, long stageTick, String lastActor, BlockPos[] sites, int placedMask, int discoveredMask,
+   public record Snapshot(String stage, long stageTick, String lastActor, BlockPos[] sites, int placedMask, int siteLayoutVersion, int discoveredMask,
       int witnessMask, boolean censusSpawned, boolean concordance, boolean registryOpened, boolean completed,
       boolean optionalRewarded, Set<String> rewardedPlayers) {
       public int discoveredCount() { return C110TrailRules.count(discoveredMask); }

@@ -1,0 +1,34 @@
+{
+  "$schema": "./piste_v2.schema.json",
+  "id": "anothers_voice",
+  "version": 1,
+  "title": "La voix d'un autre",
+  "subtitle": "Une phrase juste porte désormais le mauvais nom.",
+  "chapter": "AGE1_CHAPTER3_SIDE",
+  "priority": 25,
+  "policy": "PERSONAL",
+  "unlock": {
+    "all": ["CH3_PROCESSION_COMPLETE"],
+    "delayTicks": 1800,
+    "trigger": "OPEN_JOURNAL"
+  },
+  "steps": [
+    {
+      "id": "READ_MISATTRIBUTED_LINE",
+      "type": "JOURNAL_DECISION",
+      "objective": "Examinez la phrase dont l'auteur a changé.",
+      "target": "MISATTRIBUTED_ENTRY",
+      "next": "COMPLETE",
+      "event": "SIDE_ANOTHER_VOICE_DECIDED",
+      "journal": "SIDE_ANOTHER_VOICE_PERSONAL",
+      "parameters": {
+        "choices": ["CORRECT_WITH_TRACE", "KEEP_BOTH", "LEAVE_UNCHANGED"]
+      }
+    }
+  ],
+  "rewards": {
+    "age": 10,
+    "civilization": 4,
+    "personalReceipt": "SIDE_ANOTHERS_VOICE_REWARD"
+  }
+}

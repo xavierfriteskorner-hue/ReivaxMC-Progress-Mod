@@ -1,0 +1,43 @@
+{
+  "$schema": "./piste_v2.schema.json",
+  "id": "one_more_place",
+  "version": 1,
+  "title": "Une place de plus",
+  "subtitle": "La Borne compte une présence que personne n'a invitée.",
+  "chapter": "AGE1_CHAPTER3_SIDE",
+  "priority": 30,
+  "policy": "SOLO_DUO_SHARED",
+  "unlock": {
+    "all": ["CH3_EIGHTH_LINE"],
+    "delayTicks": 2400,
+    "trigger": "MEAL_AT_HOME"
+  },
+  "steps": [
+    {
+      "id": "NOTICE_PLACE",
+      "type": "RETURN_HOME",
+      "objective": "Une place supplémentaire apparaît dans la mémoire du Foyer.",
+      "target": "FOUNDATION_BEACON",
+      "next": "DECIDE_PLACE",
+      "event": "SIDE_PLACE_APPEARS"
+    },
+    {
+      "id": "DECIDE_PLACE",
+      "type": "JOURNAL_DECISION",
+      "objective": "Ignorez, documentez ou marquez symboliquement cette place.",
+      "target": "EXTRA_PLACE_RESPONSE",
+      "next": "COMPLETE",
+      "event": "SIDE_PLACE_DECIDED",
+      "journal": "SIDE_PLACE_COMMON",
+      "parameters": {
+        "choices": ["IGNORE", "DOCUMENT", "OFFER_RATION"],
+        "confirmConsumption": true
+      }
+    }
+  ],
+  "rewards": {
+    "age": 10,
+    "civilization": 4,
+    "personalReceipt": "SIDE_ONE_MORE_PLACE_REWARD"
+  }
+}

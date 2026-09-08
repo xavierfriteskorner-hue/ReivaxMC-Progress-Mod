@@ -79,6 +79,12 @@ public final class F81DevTools {
             then(var10, literalExec("status", ctx -> cmdChapter2(ctx, "status")));
             then(var10, literalExec("reset", ctx -> cmdChapter2(ctx, "reset")));
             then(var3, var10);
+            Object var11 = literal("chapter3");
+            then(var11, literalExec("start", ctx -> cmdChapter3(ctx, "start")));
+            then(var11, literalExec("next", ctx -> cmdChapter3(ctx, "next")));
+            then(var11, literalExec("status", ctx -> cmdChapter3(ctx, "status")));
+            then(var11, literalExec("reset", ctx -> cmdChapter3(ctx, "reset")));
+            then(var3, var11);
             then(var2, var3);
             invoke(var1, "register", var2);
             System.out.println("[REIVAX 0.9.0] DEV/QA commands registered.");
@@ -121,7 +127,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · test ... · chapter1 ... · chapter2 start|next|status|reset · reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · chapter1|chapter2|chapter3 start|next|status|reset");
          return 1;
       }
    }
@@ -412,6 +418,14 @@ public final class F81DevTools {
       if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
          return C110TrailEngine.devCommand(player, action);
       }
+      return 0;
+   }
+
+   private static int cmdChapter3(Object context,String action) {
+      Object rawPlayer=player(context);if(!allowed(context))return denied(rawPlayer);Object server=serverFromContext(context);
+      F81DevTools.DevState dev=STATES.computeIfAbsent(server,ignored->new F81DevTools.DevState());
+      if(!dev.enabled){msg(rawPlayer,"§cActivez d'abord /reivax dev on.");return 0;}
+      if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)return V12Chapter3Engine.devCommand(p,action);
       return 0;
    }
 

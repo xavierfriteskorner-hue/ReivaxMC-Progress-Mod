@@ -1,0 +1,103 @@
+{
+  "$schema": "./piste_v2.schema.json",
+  "id": "chapter3_names_removed",
+  "version": 1,
+  "title": "Les Noms retirés",
+  "subtitle": "Le Registre conserve une huitième absence.",
+  "chapter": "AGE1_CHAPTER3",
+  "priority": 100,
+  "policy": "SHARED_WITH_PERSONAL_VIEW",
+  "unlock": {
+    "all": ["CH2_DEBT_COMPLETE"],
+    "delayTicks": 1200,
+    "trigger": "DAWN_OR_RETURN_HOME"
+  },
+  "steps": [
+    {
+      "id": "EIGHTH_LINE",
+      "type": "RETURN_SANCTUARY",
+      "objective": "Le Registre a tourné une page. Revenez dans sa salle.",
+      "target": "REGISTRY_CONSOLE",
+      "next": "PROCESSION_LOCATE",
+      "event": "CH3_EIGHTH_LINE",
+      "journal": "CH3_PERSONAL_EIGHTH_LINE"
+    },
+    {
+      "id": "PROCESSION_LOCATE",
+      "type": "ENTER_RADIUS",
+      "objective": "La Boussole reconnaît un ancien chemin de transfert.",
+      "target": "CH3_PROCESSION_SITE",
+      "next": "PROCESSION_OBSERVE"
+    },
+    {
+      "id": "PROCESSION_OBSERVE",
+      "type": "FOLLOW_PROCESSION",
+      "objective": "Suivez la File sans l'attaquer ni la dépasser.",
+      "required": 1,
+      "next": "NUMBERED_HOME_LOCATE",
+      "event": "CH3_PROCESSION_COMPLETE",
+      "journal": "CH3_COMMON_PROCESSION",
+      "parameters": {
+        "silhouettes": 6,
+        "loops": 4,
+        "recoveryWindowTicks": 400
+      }
+    },
+    {
+      "id": "NUMBERED_HOME_LOCATE",
+      "type": "ENTER_RADIUS",
+      "objective": "Retrouvez l'habitation liée aux numéros de la File.",
+      "target": "CH3_NUMBERED_HOME",
+      "next": "NUMBERED_HOME_INSPECT"
+    },
+    {
+      "id": "NUMBERED_HOME_INSPECT",
+      "type": "INSPECT_POSITIONS",
+      "objective": "Examinez les quatre traces humaines de la Maison numérotée.",
+      "target": "CH3_NUMBERED_HOME_CLUES",
+      "required": 4,
+      "next": "RETURN_REGISTRY",
+      "event": "CH3_HOME_RECONSTRUCTED",
+      "journal": "CH3_COMMON_NUMBERED_HOME"
+    },
+    {
+      "id": "RETURN_REGISTRY",
+      "type": "RETURN_SANCTUARY",
+      "objective": "Rapportez les quatre traces au Registre.",
+      "target": "REGISTRY_CONSOLE",
+      "next": "CROSS_CALL",
+      "event": "CH3_GALLERY_OPEN"
+    },
+    {
+      "id": "CROSS_CALL",
+      "type": "ACTIVATE_PAIRED",
+      "objective": "Réunissez les deux moitiés de l'Appel croisé.",
+      "target": "TESTIMONY_DESKS",
+      "required": 2,
+      "next": "MEMORY_COUNCIL",
+      "event": "CH3_CROSS_CALL_COMPLETE",
+      "parameters": {
+        "duoWindowTicks": 240,
+        "soloWindowTicks": 500
+      }
+    },
+    {
+      "id": "MEMORY_COUNCIL",
+      "type": "COUNCIL_CHOICE",
+      "objective": "Décidez comment votre civilisation conservera les absents.",
+      "target": "MEMORY_POLICY",
+      "next": "COMPLETE",
+      "event": "CH3_MEMORY_POLICY_CHOSEN",
+      "parameters": {
+        "choices": ["RESTORE_NAMES", "KEEP_BOTH", "LEAVE_BLANKS"],
+        "allowPendingDisagreement": true
+      }
+    }
+  ],
+  "rewards": {
+    "age": 180,
+    "civilization": 40,
+    "personalReceipt": "CH3_NAMES_REMOVED_REWARD",
+    "historicalSite": "NUMBERED_HOME"
+  }
+}

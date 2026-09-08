@@ -1142,7 +1142,7 @@ public final class F8SanctuaryEngine {
             int var4 = posX(var1) - var3[0];
             int var5 = posY(var1) - var3[1];
             int var6 = posZ(var1) - var3[2];
-            return var4 >= -38 && var4 <= 38 && var6 >= -45 && var6 <= 40 && var5 >= -5 && var5 <= 22;
+            return var4 >= -40 && var4 <= 40 && var6 >= -46 && var6 <= 43 && var5 >= -5 && var5 <= 31;
          } else {
             return false;
          }

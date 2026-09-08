@@ -10,6 +10,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import fr.reivaxmc.progress.network.CivilizationPayloads;
 import fr.reivaxmc.progress.network.CouncilPayloads;
 import fr.reivaxmc.progress.network.TrailPayloads;
+import fr.reivaxmc.progress.network.V12Payloads;
 
 public final class F82FoyerScreen extends Screen {
    private final String name;
@@ -29,8 +30,12 @@ public final class F82FoyerScreen extends Screen {
    private final int trailRifts;
    private final int trailWitnesses;
    private final boolean trailCompleted;
+   private final String chapter3Stage,chapter3Title,chapter3Objective;
+   private final int chapter3Traces,chapter3Witnesses;
+   private final boolean chapter3Completed;
    private Button boundaryUpgrade;
    private Button territoryUpgrade;
+   private Button mapUpgrade,watchUpgrade,tableUpgrade;
    private Button councilConfirm;
    private Button followTrail;
    private String selectedDoctrine = "";
@@ -58,8 +63,12 @@ public final class F82FoyerScreen extends Screen {
       this.trailRifts = trail.length > 3 ? parseInt(trail[3], 0) : 0;
       this.trailWitnesses = trail.length > 4 ? parseInt(trail[4], 0) : 0;
       this.trailCompleted = trail.length > 5 && "1".equals(trail[5]);
+      String[] third=var2.length>12?var2[12].split("~",-1):new String[0];
+      this.chapter3Stage=third.length>0?third[0]:"LOCKED";this.chapter3Title=third.length>1?third[1]:"Les Noms retirés";
+      this.chapter3Objective=third.length>2?third[2]:"La mémoire n'a pas encore ouvert cette Piste.";
+      this.chapter3Traces=third.length>3?parseInt(third[3],0):0;this.chapter3Witnesses=third.length>4?parseInt(third[4],0):0;this.chapter3Completed=third.length>5&&"1".equals(third[5]);
       if (councilOpen()) this.tab = 2;
-      else if ("OFFERED".equals(this.trailStage)) this.tab = 3;
+      else if ("OFFERED".equals(this.trailStage)||"OFFERED".equals(this.chapter3Stage)) this.tab = 3;
    }
 
    @Override
@@ -74,6 +83,9 @@ public final class F82FoyerScreen extends Screen {
          button -> buy("LISIERE_ACCORDEE")).bounds(right - 96, contentY + 52, 96, 20).build());
       territoryUpgrade = addRenderableWidget(Button.builder(Component.literal(hasUpgrade("ANCRAGE_ETENDU") ? "ACQUIS" : "25 POINTS"),
          button -> buy("ANCRAGE_ETENDU")).bounds(right - 96, contentY + 90, 96, 20).build());
+      mapUpgrade=addRenderableWidget(Button.builder(Component.literal(hasUpgrade("CARTOGRAPHIE_RESONANTE")?"ACQUIS":"18 POINTS"),bbutton->buy("CARTOGRAPHIE_RESONANTE")).bounds(right-96,contentY+128,96,20).build());
+      watchUpgrade=addRenderableWidget(Button.builder(Component.literal(hasUpgrade("VEILLE_LISIERE")?"ACQUIS":"22 POINTS"),button->buy("VEILLE_LISIERE")).bounds(right-96,contentY+166,96,20).build());
+      tableUpgrade=addRenderableWidget(Button.builder(Component.literal(hasUpgrade("TABLE_COMMUNE")?"ACQUIS":"20 POINTS"),button->buy("TABLE_COMMUNE")).bounds(right-96,contentY+204,96,20).build());
       councilConfirm = addRenderableWidget(Button.builder(Component.literal("CONFIRMER CE CHOIX"), button -> castVote())
          .bounds(panelX + (panelWidth - 190) / 2, panelY + panelHeight - 58, 190, 20).build());
       followTrail = addRenderableWidget(Button.builder(Component.literal("SUIVRE CETTE PISTE"), button -> followTrail())
@@ -102,7 +114,9 @@ public final class F82FoyerScreen extends Screen {
          territoryUpgrade.visible = visible;
          territoryUpgrade.active = visible && !hasUpgrade("ANCRAGE_ETENDU") && civilizationAvailable >= 25;
       }
+      upgradeButton(mapUpgrade,"CARTOGRAPHIE_RESONANTE",18,visible);upgradeButton(watchUpgrade,"VEILLE_LISIERE",22,visible);upgradeButton(tableUpgrade,"TABLE_COMMUNE",20,visible);
    }
+   private void upgradeButton(Button b,String id,int cost,boolean visible){if(b!=null){b.visible=visible;b.active=visible&&!hasUpgrade(id)&&civilizationAvailable>=cost;}}
 
    private boolean councilOpen() {
       return "CHOOSE_PRIORITY".equals(chapterStage);
@@ -123,7 +137,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void followTrail() {
-      PacketDistributor.sendToServer(new TrailPayloads.Follow());
+      if(showChapter3())PacketDistributor.sendToServer(new V12Payloads.Follow());else PacketDistributor.sendToServer(new TrailPayloads.Follow());
       if (followTrail != null) {
          followTrail.active = false;
          followTrail.setMessage(Component.literal("PISTE INSCRITE…"));
@@ -132,7 +146,7 @@ public final class F82FoyerScreen extends Screen {
 
    private void updateTrailButton() {
       if (followTrail == null) return;
-      followTrail.visible = tab == 3 && "OFFERED".equals(trailStage);
+      followTrail.visible = tab == 3 && (showChapter3()?"OFFERED".equals(chapter3Stage):"OFFERED".equals(trailStage));
       followTrail.active = followTrail.visible;
    }
 
@@ -286,6 +300,12 @@ public final class F82FoyerScreen extends Screen {
 
    private void trails(GuiGraphics graphics, int x, int y, int width) {
       this.title(graphics, "PISTES DU FOYER", x, y);
+      if(showChapter3()){
+         int color=chapter3Completed?-5713253:-461589;graphics.fill(x,y+28,x+width,y+116,-1440602325);graphics.fill(x,y+28,x+4,y+116,color);
+         graphics.drawString(this.font,chapter3Title.toUpperCase(),x+14,y+40,color,false);this.paragraph(graphics,chapter3Objective,x+14,y+60,width-28);
+         String status="Traces de vie : "+chapter3Traces+"/4"+(chapter3Witnesses>0?"   •   Procession : "+chapter3Witnesses+"/6":"");graphics.drawString(this.font,status,x+14,y+98,-2895929,false);
+         this.paragraph(graphics,"Cette Piste reste libre : elle attend votre curiosité, jamais votre obéissance.",x,y+138,width);return;
+      }
       if ("LOCKED".equals(trailStage)) {
          this.paragraph(graphics, "Aucune Piste ne répond encore. Continuez à vivre : le monde n'exige pas que vous abandonniez tout pour lui.", x, y + 28, width);
          return;
@@ -331,8 +351,12 @@ public final class F82FoyerScreen extends Screen {
       );
       this.option(var1, var2, var3 + 52, var4, "LISIÈRE ACCORDÉE", hasUpgrade("LISIERE_ACCORDEE") ? "Résonance stabilisée" : "Contour perçu plus tôt");
       this.option(var1, var2, var3 + 90, var4, "ANCRAGE ÉTENDU", hasUpgrade("ANCRAGE_ETENDU") ? "Rayon 128 blocs" : "96 → 128 blocs");
-      this.paragraph(var1, "Ces décisions restent acquises et changent votre manière d'habiter le territoire.", var2, var3 + 132, var4 - 110);
+      this.option(var1,var2,var3+128,var4,"CARTOGRAPHIE RÉSONANTE",hasUpgrade("CARTOGRAPHIE_RESONANTE")?"Coordonnées révélées":"Cibles exactes de la Boussole");
+      this.option(var1,var2,var3+166,var4,"VEILLE DE LA LISIÈRE",hasUpgrade("VEILLE_LISIERE")?"Alerte active":"Menaces signalées au Foyer");
+      this.option(var1,var2,var3+204,var4,"TABLE COMMUNE",hasUpgrade("TABLE_COMMUNE")?"Foyer partagé":"Soutien mutuel renforcé");
    }
+
+   private boolean showChapter3(){return trailCompleted&&!"LOCKED".equals(chapter3Stage);}
 
    private void title(GuiGraphics var1, String var2, int var3, int var4) {
       var1.drawString(this.font, var2, var3, var4, -1002190, false);

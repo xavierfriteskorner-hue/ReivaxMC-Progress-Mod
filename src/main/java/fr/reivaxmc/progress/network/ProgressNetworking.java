@@ -9,6 +9,7 @@ import fr.reivaxmc.progress.client.IntroCinematicScreen;
 import fr.reivaxmc.progress.client.MatrixScreen;
 import fr.reivaxmc.progress.client.MemorialScreen;
 import fr.reivaxmc.progress.client.ReliquaryScreen;
+import fr.reivaxmc.progress.client.V12RegistryScreen;
 import fr.reivaxmc.progress.progression.CampaignSavedData;
 import fr.reivaxmc.progress.progression.WorldStructures;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
@@ -20,6 +21,8 @@ import fr.reivaxmc.progress.story.F92FoyerBoundaryEngine;
 import fr.reivaxmc.progress.story.F7NarrativeEngine;
 import fr.reivaxmc.progress.story.C110TrailData;
 import fr.reivaxmc.progress.story.C110TrailEngine;
+import fr.reivaxmc.progress.story.V12Chapter3Engine;
+import fr.reivaxmc.progress.story.V12TrailData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -41,7 +44,7 @@ public final class ProgressNetworking {
    }
 
    public static void register(RegisterPayloadHandlersEvent e) {
-      PayloadRegistrar r = e.registrar("15");
+      PayloadRegistrar r = e.registrar("16");
       r.playToClient(ProgressSyncPayload.TYPE, ProgressSyncPayload.CODEC, (p, c) -> c.enqueueWork(() -> ClientCampaignState.apply(p)));
       r.playToClient(
          SimplePayloads.StartIntro.TYPE,
@@ -76,6 +79,8 @@ public final class ProgressNetworking {
       r.playToClient(
          MemorialInfoPayload.TYPE, MemorialInfoPayload.CODEC, (p, c) -> c.enqueueWork(() -> Minecraft.getInstance().setScreen(new MemorialScreen(p.text())))
       );
+      r.playToClient(V12Payloads.OpenRegistry.TYPE,V12Payloads.OpenRegistry.CODEC,(p,c)->c.enqueueWork(()->Minecraft.getInstance().setScreen(
+         new V12RegistryScreen(p.stage(),p.perception(),p.census(),p.testimonies(),p.versions(),p.memory()))));
       r.playToServer(SimplePayloads.ClaimSeal.TYPE, SimplePayloads.ClaimSeal.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer sp) {
                claimSeal(sp);
@@ -108,6 +113,8 @@ public final class ProgressNetworking {
       r.playToServer(TrailPayloads.Follow.TYPE, TrailPayloads.Follow.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer sp) C110TrailEngine.follow(sp);
          }));
+      r.playToServer(V12Payloads.Follow.TYPE,V12Payloads.Follow.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp)V12Chapter3Engine.follow(sp);}));
+      r.playToServer(V12Payloads.Action.TYPE,V12Payloads.Action.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp){if("ACK".equals(p.action()))V12Chapter3Engine.acknowledge(sp);else if("VOTE".equals(p.action()))V12Chapter3Engine.vote(sp,p.value());}}));
       Alpha18FNetwork.register(e);
    }
 
@@ -240,6 +247,9 @@ public final class ProgressNetworking {
          case "CH2_RETURN_SANCTUARY" -> "Gardez le Fragment et retournez au Sanctuaire.";
          case "CH2_REGISTRY" -> "La salle orientale est ouverte. Consultez le Registre des Absents.";
          case "CH2_COMPLETE" -> "La Dette du Foyer est inscrite. Le Sanctuaire garde encore des salles closes.";
+         case "CH3_OFFERED" -> "Une nouvelle Piste attend dans la Borne : Les Noms retirés.";
+         case "CH3_EIGHTH_LINE" -> "Consultez la huitième ligne du Registre des Absents.";
+         case "CH3_COMPLETE" -> "Les Noms retirés sont inscrits. Votre politique de mémoire demeure.";
          default -> "Votre Premier Foyer est établi. Développez votre civilisation.";
       };
    }
@@ -346,6 +356,15 @@ public final class ProgressNetworking {
       } else if ("ANCRAGE_ETENDU".equals(id)) {
          cost = 25;
          title = "Ancrage étendu";
+      } else if ("CARTOGRAPHIE_RESONANTE".equals(id)) {
+         cost = 18;
+         title = "Cartographie résonante";
+      } else if ("VEILLE_LISIERE".equals(id)) {
+         cost = 22;
+         title = "Veille de la lisière";
+      } else if ("TABLE_COMMUNE".equals(id)) {
+         cost = 20;
+         title = "Table commune";
       } else return;
       if (!campaign.buyCivilizationUpgrade(id, cost)) {
          player.displayClientMessage(Component.literal("§6CIVILISATION §8• §fAmélioration déjà acquise ou solde insuffisant."), false);
@@ -370,7 +389,8 @@ public final class ProgressNetworking {
          + campaign.foundationDay() + "|" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + "|"
          + campaign.civilizationTotal() + "|" + campaign.civilizationAvailable() + "|" + campaign.civilizationUpgradesPacket()
          + "|" + chapter.stage() + "|" + chapter.doctrine() + "|" + councilRoster(server, chapter)
-         + "|" + C110TrailEngine.packet(C110TrailData.get(server).snapshot());
+         + "|" + C110TrailEngine.packet(C110TrailData.get(server).snapshot())
+         + "|" + V12Chapter3Engine.packet(V12TrailData.get(server).snapshot());
       F7NarrativeEngine.pushUi(player, "F8_FOYER_PANEL", data);
    }
 
