@@ -22,6 +22,7 @@ public final class C110SanctuaryArchitecture {
    public static final String REFORGED = "F122_SANCTUARY_DECORATED";
    public static final String REGISTRY_OPEN = "F110_REGISTRY_OPEN";
    public static final String GALLERY_OPEN = "F120_GALLERY_OPEN";
+   public static final String MATRIX_OPEN = "F130_MATRIX_OPEN";
    private static final int NO_DROPS = 18;
 
    private C110SanctuaryArchitecture() {}
@@ -43,7 +44,7 @@ public final class C110SanctuaryArchitecture {
       nave(level, origin, stone, lumen, campaign);
       entrance(level, origin, stone, lumen, campaign);
       registry(level, origin, stone, lumen, campaign.isCompleted(REGISTRY_OPEN));
-      matrix(level, origin, stone, lumen);
+      matrix(level, origin, stone, lumen, campaign.isCompleted(MATRIX_OPEN));
       gallery(level, origin, stone, lumen, campaign.isCompleted(GALLERY_OPEN));
       exterior(level, origin, stone, lumen);
       roofscape(level, origin, stone, lumen);
@@ -145,8 +146,8 @@ public final class C110SanctuaryArchitecture {
       for(int z:new int[]{-22,-10,-2})light(l,o,32,z);
    }
 
-   private static void matrix(ServerLevel l,int[] o,Block stone,Block lumen) {
-      wing(l,o,-36,-18,-28,3,stone,lumen);sideDoor(l,o,-18,-16);
+   private static void matrix(ServerLevel l,int[] o,Block stone,Block lumen,boolean opened) {
+      wing(l,o,-36,-18,-28,3,stone,lumen);if(opened)clear(l,o,-20,-17,-18,-14,1,5);else sideDoor(l,o,-18,-16);
       for(int x=-33;x<=-21;x++)set(l,at(o,x,0,-16),x%2==0?lumen:Blocks.POLISHED_DEEPSLATE);
       dais(l,o,-29,-16,lumen);set(l,at(o,-29,2,-16),(Block)ReivaxMCProgress.ORIGIN_MATRIX.get());
       for(int z=-24;z<=-8;z+=4){pillar(l,o,-34,z,6,stone,lumen);pillar(l,o,-20,z,6,stone,lumen);}
@@ -384,12 +385,16 @@ public final class C110SanctuaryArchitecture {
 
    public static void openRegistry(MinecraftServer s,int[] o){clear(s.overworld(),o,17,20,-18,-14,1,5);CampaignSavedData c=CampaignSavedData.get(s);if(!c.isCompleted(REGISTRY_OPEN))c.complete(REGISTRY_OPEN,0,0);effectDoor(s,eastThreshold(s));}
    public static void openGallery(MinecraftServer s){int[] o=origin(s);clear(s.overworld(),o,21,25,-30,-27,1,5);CampaignSavedData c=CampaignSavedData.get(s);if(!c.isCompleted(GALLERY_OPEN))c.complete(GALLERY_OPEN,0,0);effectDoor(s,galleryThreshold(s));}
+   public static void openMatrixChamber(MinecraftServer s){int[]o=origin(s);clear(s.overworld(),o,-20,-17,-18,-14,1,5);CampaignSavedData c=CampaignSavedData.get(s);if(!c.isCompleted(MATRIX_OPEN))c.complete(MATRIX_OPEN,0,0);effectDoor(s,matrixThreshold(s));}
    private static void effectDoor(MinecraftServer s,BlockPos p){ServerLevel l=s.overworld();l.sendParticles(ParticleTypes.END_ROD,p.getX()+.5,p.getY()+2,p.getZ()+.5,90,1.2,2.2,2.2,.05);l.sendParticles(ParticleTypes.REVERSE_PORTAL,p.getX()+.5,p.getY()+2,p.getZ()+.5,120,1.5,2.5,2.5,.08);l.playSound(null,p,SoundEvents.RESPAWN_ANCHOR_DEPLETE.value(),SoundSource.BLOCKS,1.7F,.65F);}
    public static boolean isRegistryConsole(MinecraftServer s,BlockPos p){try{return p.closerThan(registryConsole(s),3);}catch(Throwable ignored){return false;}}
    public static BlockPos registryConsole(MinecraftServer s){return at(origin(s),27,2,-16);}
    public static BlockPos eastThreshold(MinecraftServer s){try{return at(F8SanctuaryEngine.target(s),18,2,-16);}catch(Throwable ignored){return BlockPos.ZERO;}}
    public static BlockPos galleryThreshold(MinecraftServer s){try{return at(F8SanctuaryEngine.target(s),23,2,-29);}catch(Throwable ignored){return BlockPos.ZERO;}}
    public static BlockPos galleryLectern(MinecraftServer s,int side){return at(origin(s),side<0?-8:8,1,-36);}
+   public static BlockPos galleryWitness(MinecraftServer s,int index){return at(origin(s),index==0?-14:index==1?0:14,3,-40);}
+   public static BlockPos matrixThreshold(MinecraftServer s){return at(origin(s),-18,2,-16);}
+   public static BlockPos matrixConsole(MinecraftServer s){return at(origin(s),-29,2,-16);}
 
    public static void pulseMatrix(MinecraftServer s){try{int[]o=F8SanctuaryEngine.target(s);ServerLevel l=s.overworld();BlockPos m=at(o,-29,2,-16),r=at(o,27,2,-16);for(int x=-28;x<=26;x+=2)l.sendParticles(ParticleTypes.ELECTRIC_SPARK,o[0]+x+.5,o[1]+2.6,o[2]-15.5,5,.2,.3,.2,.02);l.sendParticles(ParticleTypes.SONIC_BOOM,m.getX()+.5,m.getY()+1,m.getZ()+.5,1,0,0,0,0);l.sendParticles(ParticleTypes.SCULK_SOUL,r.getX()+.5,r.getY()+1,r.getZ()+.5,90,1.4,1.5,1.4,.04);for(ServerPlayer p:s.getPlayerList().getPlayers()){p.serverLevel().sendParticles(ParticleTypes.REVERSE_PORTAL,p.getX(),p.getY()+1,p.getZ(),35,1,1,.8,.06);p.serverLevel().playSound(null,p.blockPosition(),SoundEvents.SCULK_SHRIEKER_SHRIEK,SoundSource.AMBIENT,1.5F,.72F);p.displayClientMessage(Component.literal("§3MATRICE §8• §fUne ligne de lumière fend le Sanctuaire vers l'ouest. Quelque chose ouvre un œil — puis se tait."),false);}}catch(Throwable ignored){}}
 

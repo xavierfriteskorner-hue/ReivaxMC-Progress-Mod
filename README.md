@@ -18,10 +18,10 @@ C'est la **reconstruction propre** du mod (Alpha 18), repartie de la conception 
 
 ## Principe de développement
 
-Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.12.0** livre trois chapitres jouables, dont **Les Noms retirés**, une refonte semi-enfouie du Sanctuaire, le Registre interactif, la Galerie de Concordance, des décisions de mémoire synchronisées SOLO/DUO et cinq décisions de Civilisation réellement dépensables.
+Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements robustes. La version **0.13.0** livre quatre chapitres jouables. **La Mémoire n'est pas la vérité** ajoute trois témoignages incompatibles, les Archives brisées, un second Fragment, une Concordance forte SOLO/DUO et la première analyse réelle de la Matrice, tout en conservant le Sanctuaire achevé en 0.12.2.
 
 Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des Pistes, des réactions de la Voix et des futurs moments de civilisation.
 
-Pour valider le gros lot sans rejouer le prologue, utilisez `/reivax dev on`, puis `/reivax dev chapter3 start`. La commande `/reivax dev chapter3 next` rejoint chaque contrôle important. La procédure condensée se trouve dans `docs/tests/VALIDATION_UNIQUE_0.12.0.md`.
+Pour valider le gros lot sans rejouer le prologue, utilisez `/reivax dev on`, puis `/reivax dev chapter4 start`. La commande `/reivax dev chapter4 next` avance d'un grand acte. La procédure condensée se trouve dans `docs/tests/VALIDATION_UNIQUE_0.13.0.md`.
 
 Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*

@@ -497,8 +497,11 @@ public final class C110TrailEngine {
          label = "SANCTUAIRE";
       } else {
          V12TrailData.Snapshot chapter3=V12TrailData.get(server).snapshot();
-         target = (!V12TrailRules.LOCKED.equals(chapter3.stage())&&!V12TrailRules.OFFERED.equals(chapter3.stage())&&!V12TrailRules.COMPLETE.equals(chapter3.stage()))
-            ? V12Chapter3Engine.currentTarget(server) : objectiveTarget(server, campaign, trail);
+         V13Chapter4Data.Snapshot chapter4=V13Chapter4Data.get(server).snapshot();
+         target = (!V13Chapter4Rules.LOCKED.equals(chapter4.stage())&&!V13Chapter4Rules.OFFERED.equals(chapter4.stage())&&!V13Chapter4Rules.COMPLETE.equals(chapter4.stage()))
+            ? V13Chapter4Engine.currentTarget(server)
+            : (!V12TrailRules.LOCKED.equals(chapter3.stage())&&!V12TrailRules.OFFERED.equals(chapter3.stage())&&!V12TrailRules.COMPLETE.equals(chapter3.stage()))
+               ? V12Chapter3Engine.currentTarget(server) : objectiveTarget(server, campaign, trail);
          label = "PISTE ACTUELLE";
       }
       int dx = target.getX() - player.getBlockX();

@@ -87,6 +87,12 @@ public final class F81DevTools {
             then(var11, literalExec("status", ctx -> cmdChapter3(ctx, "status")));
             then(var11, literalExec("reset", ctx -> cmdChapter3(ctx, "reset")));
             then(var3, var11);
+            Object var12 = literal("chapter4");
+            then(var12, literalExec("start", ctx -> cmdChapter4(ctx, "start")));
+            then(var12, literalExec("next", ctx -> cmdChapter4(ctx, "next")));
+            then(var12, literalExec("status", ctx -> cmdChapter4(ctx, "status")));
+            then(var12, literalExec("reset", ctx -> cmdChapter4(ctx, "reset")));
+            then(var3, var12);
             then(var2, var3);
             invoke(var1, "register", var2);
             System.out.println("[REIVAX 0.9.0] DEV/QA commands registered.");
@@ -129,7 +135,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · chapter1|chapter2|chapter3 start|next|status|reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · chapter1|chapter2|chapter3|chapter4 start|next|status|reset");
          return 1;
       }
    }
@@ -428,6 +434,14 @@ public final class F81DevTools {
       F81DevTools.DevState dev=STATES.computeIfAbsent(server,ignored->new F81DevTools.DevState());
       if(!dev.enabled){msg(rawPlayer,"§cActivez d'abord /reivax dev on.");return 0;}
       if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)return V12Chapter3Engine.devCommand(p,action);
+      return 0;
+   }
+
+   private static int cmdChapter4(Object context,String action) {
+      Object rawPlayer=player(context);if(!allowed(context))return denied(rawPlayer);Object server=serverFromContext(context);
+      F81DevTools.DevState dev=STATES.computeIfAbsent(server,ignored->new F81DevTools.DevState());
+      if(!dev.enabled){msg(rawPlayer,"§cActivez d'abord /reivax dev on.");return 0;}
+      if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)return V13Chapter4Engine.devCommand(p,action);
       return 0;
    }
 

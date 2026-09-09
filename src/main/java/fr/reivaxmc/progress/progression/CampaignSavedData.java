@@ -595,6 +595,13 @@ public final class CampaignSavedData extends SavedData {
       return Collections.unmodifiableList(this.historicalSites);
    }
 
+   /** Ajoute un site narratif sans déplacer le Foyer et sans créer de doublon. */
+   public void addHistoricalSite(String name, BlockPos pos, String dimension, String founder, int day) {
+      if (name == null || pos == null || this.historicalSites.stream().anyMatch(h -> h.name.equals(name) && h.pos.equals(pos))) return;
+      this.historicalSites.add(new CampaignSavedData.HistoricalSite(name, dimension, pos, 18, founder, "", day, day, -1));
+      this.setDirty();
+   }
+
    public List<CampaignSavedData.ArtifactRecord> artifacts() {
       return Collections.unmodifiableList(this.artifacts);
    }

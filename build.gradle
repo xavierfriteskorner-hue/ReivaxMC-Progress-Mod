@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.12.2'
+version = '0.13.0'
 group = 'fr.reivaxmc.progress'
 
 base {
@@ -137,6 +137,14 @@ tasks.register('checkChapter3', JavaExec) {
     mainClass = 'fr.reivaxmc.progress.story.V12TrailRulesSelfTest'
 }
 
+tasks.register('checkChapter4', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les objectifs, la Concordance SOLO/DUO et les conséquences de mémoire du Chapitre IV.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'fr.reivaxmc.progress.story.V13Chapter4RulesSelfTest'
+}
+
 tasks.register('checkSanctuary', JavaExec) {
     group = 'verification'
     description = 'Vérifie le plan canonique, les sept gardiens, les monolithes et la téléportation DEV.'
@@ -163,5 +171,6 @@ tasks.named('check') {
     dependsOn tasks.named('checkChapter1')
     dependsOn tasks.named('checkChapter2')
     dependsOn tasks.named('checkChapter3')
+    dependsOn tasks.named('checkChapter4')
     dependsOn tasks.named('checkSanctuary')
 }

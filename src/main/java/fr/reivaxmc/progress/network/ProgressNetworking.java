@@ -10,6 +10,8 @@ import fr.reivaxmc.progress.client.MatrixScreen;
 import fr.reivaxmc.progress.client.MemorialScreen;
 import fr.reivaxmc.progress.client.ReliquaryScreen;
 import fr.reivaxmc.progress.client.V12RegistryScreen;
+import fr.reivaxmc.progress.client.V13MatrixScreen;
+import fr.reivaxmc.progress.client.V13WitnessScreen;
 import fr.reivaxmc.progress.progression.CampaignSavedData;
 import fr.reivaxmc.progress.progression.WorldStructures;
 import fr.reivaxmc.progress.story.F8InteractionBridge;
@@ -23,6 +25,8 @@ import fr.reivaxmc.progress.story.C110TrailData;
 import fr.reivaxmc.progress.story.C110TrailEngine;
 import fr.reivaxmc.progress.story.V12Chapter3Engine;
 import fr.reivaxmc.progress.story.V12TrailData;
+import fr.reivaxmc.progress.story.V13Chapter4Data;
+import fr.reivaxmc.progress.story.V13Chapter4Engine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -44,7 +48,7 @@ public final class ProgressNetworking {
    }
 
    public static void register(RegisterPayloadHandlersEvent e) {
-      PayloadRegistrar r = e.registrar("16");
+      PayloadRegistrar r = e.registrar("17");
       r.playToClient(ProgressSyncPayload.TYPE, ProgressSyncPayload.CODEC, (p, c) -> c.enqueueWork(() -> ClientCampaignState.apply(p)));
       r.playToClient(
          SimplePayloads.StartIntro.TYPE,
@@ -81,6 +85,8 @@ public final class ProgressNetworking {
       );
       r.playToClient(V12Payloads.OpenRegistry.TYPE,V12Payloads.OpenRegistry.CODEC,(p,c)->c.enqueueWork(()->Minecraft.getInstance().setScreen(
          new V12RegistryScreen(p.stage(),p.perception(),p.census(),p.testimonies(),p.versions(),p.memory()))));
+      r.playToClient(V13Payloads.OpenWitness.TYPE,V13Payloads.OpenWitness.CODEC,(p,c)->c.enqueueWork(()->Minecraft.getInstance().setScreen(new V13WitnessScreen(p.index(),p.title(),p.account(),p.personal(),p.fracture()))));
+      r.playToClient(V13Payloads.OpenMatrix.TYPE,V13Payloads.OpenMatrix.CODEC,(p,c)->c.enqueueWork(()->Minecraft.getInstance().setScreen(new V13MatrixScreen(p.stage(),p.heading(),p.body(),p.personal(),p.policy(),p.canAnalyze(),p.canAcknowledge()))));
       r.playToServer(SimplePayloads.ClaimSeal.TYPE, SimplePayloads.ClaimSeal.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer sp) {
                claimSeal(sp);
@@ -115,6 +121,8 @@ public final class ProgressNetworking {
          }));
       r.playToServer(V12Payloads.Follow.TYPE,V12Payloads.Follow.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp)V12Chapter3Engine.follow(sp);}));
       r.playToServer(V12Payloads.Action.TYPE,V12Payloads.Action.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp){if("ACK".equals(p.action()))V12Chapter3Engine.acknowledge(sp);else if("VOTE".equals(p.action()))V12Chapter3Engine.vote(sp,p.value());}}));
+      r.playToServer(V13Payloads.Follow.TYPE,V13Payloads.Follow.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp)V13Chapter4Engine.follow(sp);}));
+      r.playToServer(V13Payloads.Action.TYPE,V13Payloads.Action.CODEC,(p,c)->c.enqueueWork(()->{if(c.player() instanceof ServerPlayer sp){if("WITNESS".equals(p.action())){try{V13Chapter4Engine.acknowledgeWitness(sp,Integer.parseInt(p.value()));}catch(NumberFormatException ignored){}}else if("ANALYZE".equals(p.action()))V13Chapter4Engine.analyze(sp);else if("ACK_REVELATION".equals(p.action()))V13Chapter4Engine.acknowledgeRevelation(sp);}}));
       Alpha18FNetwork.register(e);
    }
 
@@ -391,6 +399,7 @@ public final class ProgressNetworking {
          + "|" + chapter.stage() + "|" + chapter.doctrine() + "|" + councilRoster(server, chapter)
          + "|" + C110TrailEngine.packet(C110TrailData.get(server).snapshot())
          + "|" + V12Chapter3Engine.packet(V12TrailData.get(server).snapshot());
+      data += "|" + V13Chapter4Engine.packet(V13Chapter4Data.get(server).snapshot());
       F7NarrativeEngine.pushUi(player, "F8_FOYER_PANEL", data);
    }
 

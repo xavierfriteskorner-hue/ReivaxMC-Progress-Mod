@@ -11,6 +11,7 @@ import fr.reivaxmc.progress.network.CivilizationPayloads;
 import fr.reivaxmc.progress.network.CouncilPayloads;
 import fr.reivaxmc.progress.network.TrailPayloads;
 import fr.reivaxmc.progress.network.V12Payloads;
+import fr.reivaxmc.progress.network.V13Payloads;
 
 public final class F82FoyerScreen extends Screen {
    private final String name;
@@ -33,6 +34,9 @@ public final class F82FoyerScreen extends Screen {
    private final String chapter3Stage,chapter3Title,chapter3Objective;
    private final int chapter3Traces,chapter3Witnesses;
    private final boolean chapter3Completed;
+   private final String chapter4Stage,chapter4Title,chapter4Objective;
+   private final int chapter4Testimonies,chapter4Margins;
+   private final boolean chapter4Completed;
    private Button boundaryUpgrade;
    private Button territoryUpgrade;
    private Button mapUpgrade,watchUpgrade,tableUpgrade;
@@ -67,8 +71,12 @@ public final class F82FoyerScreen extends Screen {
       this.chapter3Stage=third.length>0?third[0]:"LOCKED";this.chapter3Title=third.length>1?third[1]:"Les Noms retirés";
       this.chapter3Objective=third.length>2?third[2]:"La mémoire n'a pas encore ouvert cette Piste.";
       this.chapter3Traces=third.length>3?parseInt(third[3],0):0;this.chapter3Witnesses=third.length>4?parseInt(third[4],0):0;this.chapter3Completed=third.length>5&&"1".equals(third[5]);
+      String[] fourth=var2.length>13?var2[13].split("~",-1):new String[0];
+      this.chapter4Stage=fourth.length>0?fourth[0]:"LOCKED";this.chapter4Title=fourth.length>1?fourth[1]:"La Mémoire n'est pas la vérité";
+      this.chapter4Objective=fourth.length>2?fourth[2]:"La Galerie n'a pas encore rendu cette Piste visible.";
+      this.chapter4Testimonies=fourth.length>3?parseInt(fourth[3],0):0;this.chapter4Margins=fourth.length>4?parseInt(fourth[4],0):0;this.chapter4Completed=fourth.length>5&&"1".equals(fourth[5]);
       if (councilOpen()) this.tab = 2;
-      else if ("OFFERED".equals(this.trailStage)||"OFFERED".equals(this.chapter3Stage)) this.tab = 3;
+      else if ("OFFERED".equals(this.trailStage)||"OFFERED".equals(this.chapter3Stage)||"OFFERED".equals(this.chapter4Stage)) this.tab = 3;
    }
 
    @Override
@@ -137,7 +145,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private void followTrail() {
-      if(showChapter3())PacketDistributor.sendToServer(new V12Payloads.Follow());else PacketDistributor.sendToServer(new TrailPayloads.Follow());
+      if(showChapter4())PacketDistributor.sendToServer(new V13Payloads.Follow());else if(showChapter3())PacketDistributor.sendToServer(new V12Payloads.Follow());else PacketDistributor.sendToServer(new TrailPayloads.Follow());
       if (followTrail != null) {
          followTrail.active = false;
          followTrail.setMessage(Component.literal("PISTE INSCRITE…"));
@@ -146,7 +154,7 @@ public final class F82FoyerScreen extends Screen {
 
    private void updateTrailButton() {
       if (followTrail == null) return;
-      followTrail.visible = tab == 3 && (showChapter3()?"OFFERED".equals(chapter3Stage):"OFFERED".equals(trailStage));
+      followTrail.visible = tab == 3 && (showChapter4()?"OFFERED".equals(chapter4Stage):(showChapter3()?"OFFERED".equals(chapter3Stage):"OFFERED".equals(trailStage)));
       followTrail.active = followTrail.visible;
    }
 
@@ -300,6 +308,12 @@ public final class F82FoyerScreen extends Screen {
 
    private void trails(GuiGraphics graphics, int x, int y, int width) {
       this.title(graphics, "PISTES DU FOYER", x, y);
+      if(showChapter4()){
+         int color=chapter4Completed?-5713253:-461589;graphics.fill(x,y+28,x+width,y+116,-1440602325);graphics.fill(x,y+28,x+4,y+116,color);
+         graphics.drawString(this.font,chapter4Title.toUpperCase(),x+14,y+40,color,false);this.paragraph(graphics,chapter4Objective,x+14,y+60,width-28);
+         graphics.drawString(this.font,"Témoignages : "+chapter4Testimonies+"/3   •   Marges facultatives : "+chapter4Margins+"/2",x+14,y+98,-2895929,false);
+         this.paragraph(graphics,"La Matrice rend les Fragments après chaque lecture. Les versions personnelles restent dans le Journal.",x,y+138,width);return;
+      }
       if(showChapter3()){
          int color=chapter3Completed?-5713253:-461589;graphics.fill(x,y+28,x+width,y+116,-1440602325);graphics.fill(x,y+28,x+4,y+116,color);
          graphics.drawString(this.font,chapter3Title.toUpperCase(),x+14,y+40,color,false);this.paragraph(graphics,chapter3Objective,x+14,y+60,width-28);
@@ -357,6 +371,7 @@ public final class F82FoyerScreen extends Screen {
    }
 
    private boolean showChapter3(){return trailCompleted&&!"LOCKED".equals(chapter3Stage);}
+   private boolean showChapter4(){return !"LOCKED".equals(chapter4Stage);}
 
    private void title(GuiGraphics var1, String var2, int var3, int var4) {
       var1.drawString(this.font, var2, var3, var4, -1002190, false);

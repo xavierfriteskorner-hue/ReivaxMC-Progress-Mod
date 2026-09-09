@@ -133,6 +133,9 @@ public final class ReivaxMCProgress {
    public static final DeferredItem<Item> UNKNOWN_FRAGMENT = ITEMS.register(
       "unknown_fragment", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
    );
+   public static final DeferredItem<Item> LAYERED_FRAGMENT = ITEMS.register(
+      "layered_fragment", () -> new Item(new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
+   );
    public static final DeferredItem<Item> RESONANCE_COMPASS = ITEMS.register(
       "resonance_compass", () -> new fr.reivaxmc.progress.item.ResonanceCompassItem(
          new net.minecraft.world.item.Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
@@ -147,6 +150,7 @@ public final class ReivaxMCProgress {
                o.accept((ItemLike)ORIGIN_SEAL.get());
                o.accept((ItemLike)DESTINY_BOOK.get());
                o.accept((ItemLike)UNKNOWN_FRAGMENT.get());
+               o.accept((ItemLike)LAYERED_FRAGMENT.get());
                o.accept((ItemLike)RESONANCE_COMPASS.get());
                o.accept((ItemLike)FOUNDATION_BEACON_ITEM.get());
                o.accept((ItemLike)ORIGIN_MATRIX_ITEM.get());

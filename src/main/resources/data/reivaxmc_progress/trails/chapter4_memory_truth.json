@@ -1,0 +1,14 @@
+{
+  "id": "chapter4_memory_truth",
+  "title": "La Mémoire n'est pas la vérité",
+  "kind": "main",
+  "requires": ["chapter3_names_removed:complete", "gallery:open"],
+  "acts": [
+    {"id":"three_testimonies","trigger":"inspect_set","count":3,"shared":true,"personal_variants":true},
+    {"id":"broken_archives","trigger":"travel_and_interact","item":"reivaxmc_progress:layered_fragment","optional_margins":2},
+    {"id":"strong_concordance","trigger":"paired_lecterns","solo_window_ticks":500,"duo_window_ticks":240,"distinct_players_in_duo":true},
+    {"id":"matrix_analysis","trigger":"matrix","consume_fragments":false,"personal_acknowledgement":true}
+  ],
+  "rewards": {"age":220,"civilization":55},
+  "spoilers_locked": ["voice_identity","journal_owner","matrix_origin","anticipatory_trace_cause"]
+}
