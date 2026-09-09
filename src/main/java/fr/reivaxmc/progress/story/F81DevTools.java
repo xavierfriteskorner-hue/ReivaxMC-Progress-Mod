@@ -33,7 +33,9 @@ public final class F81DevTools {
       "F8_VOICE_FOUNDATION_1",
       "F8_VOICE_FOUNDATION_2",
       "F8_FOUNDATION_BEACON_RECOVERED",
-      "F8_FIRST_FOYER_ESTABLISHED"
+      "F8_FIRST_FOYER_ESTABLISHED",
+      "F8_SPAWNED_W1", "F8_SPAWNED_W2", "F8_SPAWNED_W3", "F8_SPAWNED_W4",
+      "F8_SPAWNED_W5", "F8_SPAWNED_W6", "F8_SPAWNED_FG1"
    };
 
    private F81DevTools() {
@@ -454,11 +456,13 @@ public final class F81DevTools {
       runCommand(var0, "time set day");
       int[] var2 = F8SanctuaryEngine.target(var0);
       String var3 = F8SanctuaryEngine.playerName(var1);
-      // Téléport DEV volontairement désactivé (test du trajet réel). Chaîne conservée mais inutilisée.
-      String unusedDevTeleportCmd = "tp " + var3 + " " + var2[0] + " " + (var2[1] + 3) + " " + (var2[2] + 62);
+      if (!C110SanctuaryArchitecture.isPresent(var0, var2)) C110SanctuaryArchitecture.build(var0, var2);
+      // Arrivée sur l'allée, devant les monolithes, en regardant la façade.
+      runCommand(var0, "tp " + var3 + " " + var2[0] + " " + (var2[1] + 2) + " " + (var2[2] + 47) + " 180 0");
       F7NarrativeEngine.routeStoryMessage(
-         var1, "§6OBJECTIF PRINCIPAL §8· §fSuivez la Résonance jusqu'au Sanctuaire. La commande DEV ne vous téléporte plus : testez le trajet réel.", true
+         var1, "§6OBJECTIF PRINCIPAL §8• §fVous êtes devant le Sanctuaire. Approchez-vous : les Veilleurs doivent s'éveiller et barrer le seuil.", true
       );
+      msg(var1, "§8[DEV] Téléportation effectuée sur l'allée extérieure du Sanctuaire.");
    }
 
    private static void gotoFoundation(Object var0, Object var1) throws Exception {

@@ -36,6 +36,7 @@ public final class CampaignSavedData extends SavedData {
    private boolean migration;
    private boolean aftermathPlayed;
    private boolean nightSeen;
+   private boolean sanctuaryLocated;
    private long introEndTick;
    private long introCompletedAt;
    private long foundationAt;
@@ -54,6 +55,9 @@ public final class CampaignSavedData extends SavedData {
    private int foundationX;
    private int foundationY;
    private int foundationZ;
+   private int sanctuaryX;
+   private int sanctuaryY;
+   private int sanctuaryZ;
    private int settlementIndex;
    private String foundationDimension = "minecraft:overworld";
    private String foundationName = "";
@@ -96,6 +100,7 @@ public final class CampaignSavedData extends SavedData {
       d.migration = t.getBoolean("Migration");
       d.aftermathPlayed = t.getBoolean("AftermathPlayed");
       d.nightSeen = t.getBoolean("NightSeen");
+      d.sanctuaryLocated = t.getBoolean("SanctuaryLocated");
       d.introEndTick = t.getLong("IntroEndTick");
       d.introCompletedAt = t.getLong("IntroCompletedAt");
       d.foundationAt = t.getLong("FoundationAt");
@@ -114,6 +119,9 @@ public final class CampaignSavedData extends SavedData {
       d.foundationX = t.getInt("FoundationX");
       d.foundationY = t.getInt("FoundationY");
       d.foundationZ = t.getInt("FoundationZ");
+      d.sanctuaryX = t.getInt("SanctuaryX");
+      d.sanctuaryY = t.getInt("SanctuaryY");
+      d.sanctuaryZ = t.getInt("SanctuaryZ");
       d.settlementIndex = t.getInt("SettlementIndex");
       d.foundationDimension = t.getString("FoundationDimension");
       d.foundationName = t.getString("FoundationName");
@@ -183,6 +191,7 @@ public final class CampaignSavedData extends SavedData {
       t.putBoolean("Migration", this.migration);
       t.putBoolean("AftermathPlayed", this.aftermathPlayed);
       t.putBoolean("NightSeen", this.nightSeen);
+      t.putBoolean("SanctuaryLocated", this.sanctuaryLocated);
       t.putLong("IntroEndTick", this.introEndTick);
       t.putLong("IntroCompletedAt", this.introCompletedAt);
       t.putLong("FoundationAt", this.foundationAt);
@@ -201,6 +210,9 @@ public final class CampaignSavedData extends SavedData {
       t.putInt("FoundationX", this.foundationX);
       t.putInt("FoundationY", this.foundationY);
       t.putInt("FoundationZ", this.foundationZ);
+      t.putInt("SanctuaryX", this.sanctuaryX);
+      t.putInt("SanctuaryY", this.sanctuaryY);
+      t.putInt("SanctuaryZ", this.sanctuaryZ);
       t.putInt("SettlementIndex", this.settlementIndex);
       t.putString("FoundationDimension", this.foundationDimension);
       t.putString("FoundationName", this.foundationName);
@@ -279,6 +291,23 @@ public final class CampaignSavedData extends SavedData {
 
    public boolean isCompleted(String id) {
       return this.done.contains(id);
+   }
+
+   /** Position canonique du Sanctuaire. Elle ne dépend plus d'un cache de session. */
+   public boolean hasSanctuaryLocation() {
+      return this.sanctuaryLocated;
+   }
+
+   public BlockPos sanctuaryPos() {
+      return new BlockPos(this.sanctuaryX, this.sanctuaryY, this.sanctuaryZ);
+   }
+
+   public void setSanctuaryLocation(BlockPos pos) {
+      this.sanctuaryLocated = true;
+      this.sanctuaryX = pos.getX();
+      this.sanctuaryY = pos.getY();
+      this.sanctuaryZ = pos.getZ();
+      this.setDirty();
    }
 
    public int progress() {

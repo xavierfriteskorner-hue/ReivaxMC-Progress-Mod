@@ -36,9 +36,9 @@ public final class F8SanctuaryEngine {
    // Portes physiques : seuil/Porte 1 = z+22 ; extérieure/Porte 2 = z+7 ; chambre = z-7.
    //   w1,w2 = DEVANT la Porte 1 (extérieur, z+25) -> à tuer + 2 Sceaux pour ouvrir la Porte 1.
    //   w3,w4 = dans le HALL (entre Porte 1 et Porte 2, z+14) -> à tuer pour ouvrir la Porte 2.
-   //   w5,w6 = RÔDEURS du périmètre proche (z+26, plus larges) -> OPTIONNELS, ne bloquent rien.
+   //   w5,w6 = RÔDEURS des jardins latéraux -> OPTIONNELS, ne bloquent rien.
    static final int[][] WATCHER_OFFSETS = {
-      {-4, 25}, {4, 25}, {-4, 14}, {4, 14}, {-16, 17}, {16, 17}
+      {-4, 25}, {4, 25}, {-4, 14}, {4, 14}, {-25, 18}, {25, 18}
    };
    // Indices des Veilleurs par rôle
    static final int[] W_FRONT = {0, 1};
@@ -83,8 +83,10 @@ public final class F8SanctuaryEngine {
             }
 
             int[] var7 = var6.target;
-            if (!isV84StructurePresent(var0, var7)) {
-               buildSanctuary(var0, var7[0], var7[1], var7[2], completed(var5, "F8_FOUNDATION_BEACON_RECOVERED"));
+            // Un seul constructeur est désormais autoritaire. L'ancien bâtiment et la coque
+            // additionnelle ne peuvent plus se reconstruire l'un par-dessus l'autre.
+            if (!C110SanctuaryArchitecture.isPresent(var0, var7)) {
+               C110SanctuaryArchitecture.build(var0, var7);
                if (!completed(var5, "F8_SANCTUARY_BUILT")) {
                   complete(var5, "F8_SANCTUARY_BUILT");
                }
@@ -92,17 +94,13 @@ public final class F8SanctuaryEngine {
                complete(var5, "F8_SANCTUARY_BUILT");
             }
 
-            // Migration sans reconstruction : les ailes futures manquantes sont ajoutées une seule fois,
-            // puis restent physiquement présentes et scellées pour les chapitres suivants.
-            if (!F94SanctuaryShell.isPresent(var0, var7)) F94SanctuaryShell.build(var0, var7);
-
             ensureProtectors(var0, var7, var5);
             F90Sanctuary.runtimeTick(var0, target(var0));
             if (completed(var5, "F84_SEAL_INSERTED")) {
                openThresholdGate(var0, var7);
             }
 
-            if (completed(var5, "F8_GUARDS_CLEARED")) {
+            if (hallCleared(var5)) {
                openOuterGate(var0, var7);
             }
 
@@ -645,6 +643,19 @@ public final class F8SanctuaryEngine {
    }
 
    private static int[] findTarget(Object var0, int var1, int var2) throws Exception {
+      if (var0 instanceof net.minecraft.server.MinecraftServer server) {
+         fr.reivaxmc.progress.progression.CampaignSavedData data = fr.reivaxmc.progress.progression.CampaignSavedData.get(server);
+         if (data.hasSanctuaryLocation()) {
+            net.minecraft.core.BlockPos p = data.sanctuaryPos();
+            return new int[]{p.getX(), p.getY(), p.getZ()};
+         }
+         // Un ancien monde doit retrouver exactement son monument avant que sa position soit figée.
+         int[] found = data.isCompleted(K_BUILT)
+            ? F90Terrain.findLegacyTarget(var0, var1, var2)
+            : F90Terrain.findTarget(var0, var1, var2);
+         data.setSanctuaryLocation(new net.minecraft.core.BlockPos(found[0], found[1], found[2]));
+         return found;
+      }
       return F90Terrain.findTarget(var0, var1, var2);
    }
 
@@ -1328,12 +1339,11 @@ public final class F8SanctuaryEngine {
    private static void ensureProtectors(Object var0, int[] var1, Object var2) {
       try {
          Object var3 = invokeNoArg(var0, "overworld");
-         // SPAWN UNE SEULE FOIS par gardien (flag persistant dans la campagne). Avant, le spawn dépendait
-         // de hasTaggedEntity qui échouait -> re-spawn toutes les 5 s -> DES DIZAINES de Veilleurs empilés.
-         // Le flag persiste au rechargement et les entités sont PersistenceRequired -> aucun doublon.
+         // Chaque poste est auto-réparé : une entité absente revient si elle n'a pas été vaincue.
+         // Le tag évite les doublons et le délai protège contre un chargement d'entité tardif.
          for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
-            String var6 = "F8_SPAWNED_W" + (var5 + 1);
-            if (!completed(var2, K_WATCHERS[var5]) && !completed(var2, var6) && !hasTaggedEntity(var3, TAG_WATCHERS[var5])) {
+            String spawnKey = "watcher:" + var1[0] + ":" + var1[2] + ":" + var5;
+            if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(spawnKey)) {
                summonProtector(
                   var0,
                   var1[0] + WATCHER_OFFSETS[var5][0],
@@ -1344,13 +1354,12 @@ public final class F8SanctuaryEngine {
                   false,
                   var5 % 2 == 1
                );
-               complete(var2, var6);
             }
          }
 
-         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !completed(var2, "F8_SPAWNED_FG1") && !hasTaggedEntity(var3, "reivax_f83_fg1")) {
+         String protectorKey = "protector:" + var1[0] + ":" + var1[2];
+         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn(protectorKey)) {
             summonProtector(var0, var1[0], var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Protecteur de la Borne", true, true);
-            complete(var2, "F8_SPAWNED_FG1");
          }
 
          if (completed(var2, "F8_GUARDS_AWAKENED")) {

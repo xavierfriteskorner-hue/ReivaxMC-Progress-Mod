@@ -13,7 +13,46 @@ public final class F90Terrain {
    private F90Terrain() {
    }
 
-   public static int[] findTarget(Object var0, int var1, int var2) {
+   /**
+    * Recherche 0.12.1 : le choix porte sur toute l'emprise du monument et non plus
+    * sur cinq blocs devant sa porte. Cela évite les lacs, falaises et montagnes qui
+    * traversaient ensuite les ailes du Sanctuaire.
+    */
+   public static int[] findTarget(Object server, int traceX, int traceZ) {
+      try {
+         Object level = F8SanctuaryEngine.invokeNoArg(server, "overworld");
+         if (level == null) throw new IllegalStateException("Monde principal indisponible");
+         long seed = worldSeed(level) ^ (long)traceX << 32 ^ (long)traceZ & 4294967295L ^ 0xF1215A4CL;
+         double start = unit(seed ^ -7046029254386353131L) * Math.PI * 2.0;
+         Site best = null;
+         for (int index = 0; index < 36; index++) {
+            long mixed = mix(seed + (long)(index + 1) * -7046029254386353131L);
+            int distance = SAFE_MIN + (int)Math.floorMod(mixed, SAFE_MAX - SAFE_MIN + 1L);
+            double angle = start + index * GOLDEN_ANGLE + (unit(mixed ^ -3335678366873096957L) - .5) * .22;
+            int entranceX = traceX + (int)Math.round(Math.cos(angle) * distance);
+            int entranceZ = traceZ + (int)Math.round(Math.sin(angle) * distance);
+            Site site = evaluateFullFootprint(level, traceX, traceZ, entranceX, entranceZ);
+            if (site == null) continue;
+            if (best == null || site.score < best.score) best = site;
+            if (site.roughness <= 8) {
+               prepareNaturalEntrance(level, site);
+               return site.target();
+            }
+         }
+         if (best != null) {
+            prepareNaturalEntrance(level, best);
+            return best.target();
+         }
+         return findLegacyTarget(server, traceX, traceZ);
+      } catch (RuntimeException error) {
+         throw error;
+      } catch (Throwable error) {
+         throw new IllegalStateException("Placement du Sanctuaire impossible: " + error.getClass().getSimpleName() + ": " + error.getMessage(), error);
+      }
+   }
+
+   /** Algorithme 0.12.0 conservé uniquement pour retrouver un Sanctuaire déjà créé. */
+   public static int[] findLegacyTarget(Object var0, int var1, int var2) {
       try {
          Object var3 = F8SanctuaryEngine.invokeNoArg(var0, "overworld");
          if (var3 == null) {
@@ -72,6 +111,39 @@ public final class F90Terrain {
       } catch (Throwable var21) {
          throw new IllegalStateException("Placement du Sanctuaire impossible: " + var21.getClass().getSimpleName() + ": " + var21.getMessage(), var21);
       }
+   }
+
+   private static Site evaluateFullFootprint(Object level, int traceX, int traceZ, int entranceX, int entranceZ) throws Exception {
+      int distance = (int)Math.round(Math.hypot((double)entranceX - traceX, (double)entranceZ - traceZ));
+      if (distance < MIN_DISTANCE || distance > MAX_DISTANCE) return null;
+      int[] xs = {-34, 0, 34};
+      // Le centre architectural se trouve 31 blocs derrière le point d'entrée.
+      int[] zs = {-72, -54, -36, -18, 4};
+      ArrayList<Integer> heights = new ArrayList<>();
+      int wet = 0;
+      for (int dx : xs) for (int dz : zs) {
+         int x = entranceX + dx;
+         int z = entranceZ + dz;
+         forceChunk(level, x, z);
+         int surface = height(level, "WORLD_SURFACE", x, z) - 1;
+         if (surface < 24) return null;
+         if (isWet(level, x, surface, z)) {
+            wet++;
+            continue;
+         }
+         int ground = groundY(level, x, z);
+         if (ground < 24) return null;
+         heights.add(ground);
+      }
+      if (wet > 0 || heights.size() < xs.length * zs.length) return null;
+      Collections.sort(heights);
+      int low = heights.get(0);
+      int high = heights.get(heights.size() - 1);
+      int roughness = high - low;
+      if (roughness > 14) return null;
+      int floor = heights.get(heights.size() / 2);
+      int score = roughness * 300 + Math.abs(distance - 3000) / 3;
+      return new Site(entranceX, floor, entranceZ, distance, score, roughness, false);
    }
 
    private static F90Terrain.Site evaluateNaturalEntrance(Object var0, int var1, int var2, int var3, int var4) throws Exception {
