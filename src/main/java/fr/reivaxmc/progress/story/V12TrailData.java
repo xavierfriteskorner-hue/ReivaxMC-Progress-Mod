@@ -15,6 +15,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** Sauvegarde mondiale et idempotente du Chapitre III. */
 public final class V12TrailData extends SavedData {
    public static final String DATA_NAME="reivaxmc_chapter3_names";
+   public static final int SCHEMA_VERSION=StorySaveMigrationRules.SCHEMA_VERSION;
    private String stage=V12TrailRules.LOCKED, actor="", policy="";
    private long stageTick, leftTick, rightTick;
    private BlockPos procession=BlockPos.ZERO, house=BlockPos.ZERO;
@@ -27,18 +28,25 @@ public final class V12TrailData extends SavedData {
    public static V12TrailData get(MinecraftServer s){return s.overworld().getDataStorage().computeIfAbsent(
       new SavedData.Factory<V12TrailData>(V12TrailData::new,V12TrailData::load,null),DATA_NAME);}
    public static V12TrailData load(CompoundTag t,Provider p){
-      V12TrailData d=new V12TrailData(); d.stage=t.getString("Stage"); if(d.stage.isBlank())d.stage=V12TrailRules.LOCKED;
+      V12TrailData d=new V12TrailData();int sourceSchema=t.contains("SchemaVersion")?Math.max(1,t.getInt("SchemaVersion")):1;d.stage=t.getString("Stage"); if(d.stage.isBlank())d.stage=V12TrailRules.LOCKED;
       d.actor=t.getString("Actor"); d.policy=t.getString("Policy"); d.stageTick=t.getLong("StageTick"); d.leftTick=t.getLong("LeftTick"); d.rightTick=t.getLong("RightTick");
       d.procession=new BlockPos(t.getInt("PX"),t.getInt("PY"),t.getInt("PZ")); d.house=new BlockPos(t.getInt("HX"),t.getInt("HY"),t.getInt("HZ"));
       d.sitesBuilt=t.getBoolean("SitesBuilt"); d.optionalFound=t.getBoolean("OptionalFound"); d.rewarded=t.getBoolean("Rewarded"); d.traceMask=t.getInt("TraceMask"); d.vanished=t.getInt("Vanished");
       d.leftPlayer=t.getString("LeftPlayer"); d.rightPlayer=t.getString("RightPlayer");
-      readSet(t,"Participants",d.participants); readSet(t,"Acks",d.acknowledgements); readMap(t,"Perceptions",d.perceptions); readMap(t,"Votes",d.votes); return d;
+      readSet(t,"Participants",d.participants); readSet(t,"Acks",d.acknowledgements); readMap(t,"Perceptions",d.perceptions); readMap(t,"Votes",d.votes);d.migrate(t,sourceSchema);return d;
    }
    @Override public synchronized CompoundTag save(CompoundTag t,Provider p){
-      t.putString("Stage",stage);t.putString("Actor",actor);t.putString("Policy",policy);t.putLong("StageTick",stageTick);t.putLong("LeftTick",leftTick);t.putLong("RightTick",rightTick);
+      t.putInt("SchemaVersion",SCHEMA_VERSION);t.putString("Stage",stage);t.putString("Actor",actor);t.putString("Policy",policy);t.putLong("StageTick",stageTick);t.putLong("LeftTick",leftTick);t.putLong("RightTick",rightTick);
       t.putInt("PX",procession.getX());t.putInt("PY",procession.getY());t.putInt("PZ",procession.getZ());t.putInt("HX",house.getX());t.putInt("HY",house.getY());t.putInt("HZ",house.getZ());
       t.putBoolean("SitesBuilt",sitesBuilt);t.putBoolean("OptionalFound",optionalFound);t.putBoolean("Rewarded",rewarded);t.putInt("TraceMask",traceMask);t.putInt("Vanished",vanished);
       t.putString("LeftPlayer",leftPlayer);t.putString("RightPlayer",rightPlayer);writeSet(t,"Participants",participants);writeSet(t,"Acks",acknowledgements);writeMap(t,"Perceptions",perceptions);writeMap(t,"Votes",votes);return t;
+   }
+   private void migrate(CompoundTag t,int sourceSchema){
+      StorySaveMigrationRules.Chapter3State clean=StorySaveMigrationRules.chapter3(traceMask,vanished);traceMask=clean.traceMask();vanished=clean.vanished();
+      if(!t.contains("SitesBuilt")&&(!BlockPos.ZERO.equals(procession)||!BlockPos.ZERO.equals(house)))sitesBuilt=true;
+      if(participants.isEmpty())participants.addAll(StorySaveMigrationRules.participants(participants,perceptions.keySet(),leftPlayer,rightPlayer));
+      acknowledgements.retainAll(participants);votes.keySet().retainAll(participants);
+      if(sourceSchema<SCHEMA_VERSION)setDirty();
    }
    private static void readSet(CompoundTag t,String k,Set<String> out){ListTag l=t.getList(k,8);for(int i=0;i<l.size();i++)out.add(l.getString(i));}
    private static void writeSet(CompoundTag t,String k,Set<String> in){ListTag l=new ListTag();for(String s:in)l.add(StringTag.valueOf(s));t.put(k,l);}

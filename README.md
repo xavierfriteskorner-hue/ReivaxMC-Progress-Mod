@@ -22,7 +22,7 @@ Le socle du Narrateur a été stabilisé en **0.8.8** avec 97/100 événements r
 
 Les événements du Narrateur ne sont pas du contenu jetable : ils forment le vocabulaire réutilisable de la campagne, des Pistes, des réactions de la Voix et des futurs moments de civilisation.
 
-Pour valider le gros lot sur un monde neuf sans rejouer les chapitres précédents : `/reivax dev on`, `/reivax dev goto foundation`, posez la Borne, puis `/reivax dev chapter4 start`. Ouvrez ensuite la Borne et cliquez **Suivre cette Piste** : le raccourci prépare le Sanctuaire et vous conduit directement dans la Galerie. La commande `/reivax dev chapter4 next` avance d'un grand acte. La procédure condensée se trouve dans `docs/tests/VALIDATION_UNIQUE_0.13.0.md`.
+Pour valider le gros lot sur un monde neuf sans rejouer les chapitres précédents : `/reivax dev on`, `/reivax dev goto foundation`, posez la Borne, puis `/reivax dev chapter4 start`. Ouvrez ensuite la Borne et cliquez **Suivre cette Piste** : le raccourci prépare le Sanctuaire et vous conduit directement dans la Galerie. La commande `/reivax dev chapter4 next` avance d'un grand acte. La procédure condensée se trouve dans `docs/tests/VALIDATION_UNIQUE_0.13.1.md`.
 
 Pour contrôler tout l'enchaînement du prologue à la fin du Chapitre IV, utiliser `/reivax dev storytest start` dans un monde créatif neuf, puis `/reivax dev storytest next` après chaque observation. `/reivax dev storytest check` affiche le bilan des états et signale tout chevauchement. Le guide complet se trouve dans `docs/tests/PARCOURS_EXPRESS_0.13.1.md`.
 

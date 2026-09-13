@@ -1,5 +1,14 @@
 # 0.13.1 — Correctif du parcours du chapitre IV
 
+## Consolidation des sauvegardes
+
+- les quatre chapitres principaux possèdent maintenant un schéma de sauvegarde explicite ;
+- le chargement répare les anciens états incomplets sans réinitialiser la progression narrative ;
+- les participants SOLO/DUO des Chapitres III et IV sont récupérés depuis les traces déjà enregistrées lorsque l'ancienne liste manque ;
+- les compteurs et masques invalides sont bornés afin d'éviter une piste impossible à terminer ;
+- `/reivax dev auditstate` signale maintenant toute étape de chapitre inconnue ;
+- un auto-test dédié rejoue les migrations depuis des données 0.9–0.13 minimales.
+
 ## Stabilisation globale de la campagne
 
 - ajout d'un coordinateur unique pour les Chapitres I à IV ;

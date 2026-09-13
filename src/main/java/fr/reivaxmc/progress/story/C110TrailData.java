@@ -14,7 +14,7 @@ import net.minecraft.world.level.saveddata.SavedData.Factory;
 /** Sauvegarde mondiale, partagée en SOLO/DUO, de La Dette du Foyer. */
 public final class C110TrailData extends SavedData {
    public static final String DATA_NAME = "reivaxmc_chapter2_debt";
-   public static final int SCHEMA_VERSION = 2;
+   public static final int SCHEMA_VERSION = StorySaveMigrationRules.SCHEMA_VERSION;
 
    private String stage = C110TrailRules.LOCKED;
    private long stageTick;
@@ -42,6 +42,7 @@ public final class C110TrailData extends SavedData {
 
    public static C110TrailData load(CompoundTag tag, Provider provider) {
       C110TrailData data = new C110TrailData();
+      int sourceSchema = tag.contains("SchemaVersion") ? Math.max(1, tag.getInt("SchemaVersion")) : 1;
       data.stage = tag.getString("Stage");
       if (data.stage.isBlank()) data.stage = C110TrailRules.LOCKED;
       data.stageTick = tag.getLong("StageTick");
@@ -56,11 +57,29 @@ public final class C110TrailData extends SavedData {
       data.registryOpened = tag.getBoolean("RegistryOpened");
       data.completed = tag.getBoolean("Completed");
       data.optionalRewarded = tag.getBoolean("OptionalRewarded");
-      data.bastionDay = tag.getLong("BastionDay");
-      data.solidarityDay = tag.getLong("SolidarityDay");
+      data.bastionDay = tag.contains("BastionDay") ? tag.getLong("BastionDay") : -1L;
+      data.solidarityDay = tag.contains("SolidarityDay") ? tag.getLong("SolidarityDay") : -1L;
       ListTag rewards = tag.getList("RewardedPlayers", 8);
       for (int i = 0; i < rewards.size(); i++) data.rewardedPlayers.add(rewards.getString(i));
+      data.migrate(tag, sourceSchema);
       return data;
+   }
+
+   /** Migration conservatrice des sauvegardes antérieures au suivi de schéma. */
+   private void migrate(CompoundTag tag, int sourceSchema) {
+      placedMask &= 0b111;
+      if (!tag.contains("PlacedMask")) {
+         for (int i = 0; i < sites.length; i++) if (!BlockPos.ZERO.equals(sites[i])) placedMask |= 1 << i;
+      }
+      StorySaveMigrationRules.DebtState clean = StorySaveMigrationRules.debt(stage, placedMask, discoveredMask,
+         witnessMask, concordance, registryOpened, completed);
+      stage = clean.stage();
+      placedMask = clean.placedMask();
+      discoveredMask = clean.discoveredMask();
+      witnessMask = clean.witnessMask();
+      concordance = clean.concordance();
+      completed = clean.completed();
+      if (sourceSchema < SCHEMA_VERSION) setDirty();
    }
 
    @Override public synchronized CompoundTag save(CompoundTag tag, Provider provider) {

@@ -20,6 +20,10 @@ public final class CampaignCoordinatorSelfTest {
       CampaignCoordinator.StageAudit brokenFour = CampaignCoordinator.auditStages(
          F91ChapterRules.COMPLETE, C110TrailRules.COMPLETE, V12TrailRules.MEMORY_COUNCIL, V13Chapter4Rules.TESTIMONIES, true, true);
       check(brokenFour.issues().stream().anyMatch(s -> s.contains("Chapitre IV")), "prérequis IV signalé");
+
+      CampaignCoordinator.StageAudit unknown = CampaignCoordinator.auditStages(
+         "ANCIEN_ETAT_INCONNU", C110TrailRules.LOCKED, V12TrailRules.LOCKED, V13Chapter4Rules.LOCKED, false, false);
+      check(unknown.issues().stream().anyMatch(s -> s.contains("étape inconnue")), "étape inconnue signalée");
       System.out.println("CampaignCoordinatorSelfTest: OK");
    }
 

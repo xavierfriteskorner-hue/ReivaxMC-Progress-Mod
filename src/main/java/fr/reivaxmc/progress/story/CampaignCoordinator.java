@@ -3,6 +3,7 @@ package fr.reivaxmc.progress.story;
 import fr.reivaxmc.progress.progression.CampaignSavedData;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -18,6 +19,20 @@ public final class CampaignCoordinator {
    public static final int CHAPTER_2 = 2;
    public static final int CHAPTER_3 = 3;
    public static final int CHAPTER_4 = 4;
+   private static final Set<String> CHAPTER_1_STAGES = Set.of(F91ChapterRules.LOCKED, F91ChapterRules.SHAPE_FOYER,
+      F91ChapterRules.CHOOSE_PRIORITY, F91ChapterRules.FIND_ECHO, F91ChapterRules.RETURN_FRAGMENT,
+      F91ChapterRules.DEFEND_FOYER, F91ChapterRules.COMPLETE);
+   private static final Set<String> CHAPTER_2_STAGES = Set.of(C110TrailRules.LOCKED, C110TrailRules.OFFERED,
+      C110TrailRules.SEEK_RIFTS, C110TrailRules.RETURN_FOYER, C110TrailRules.CENSUS,
+      C110TrailRules.RETURN_SANCTUARY, C110TrailRules.REGISTRY, C110TrailRules.COMPLETE);
+   private static final Set<String> CHAPTER_3_STAGES = Set.of(V12TrailRules.LOCKED, V12TrailRules.OFFERED,
+      V12TrailRules.EIGHTH_LINE, V12TrailRules.PROCESSION_LOCATE, V12TrailRules.PROCESSION_OBSERVE,
+      V12TrailRules.HOUSE_LOCATE, V12TrailRules.HOUSE_INSPECT, V12TrailRules.RETURN_REGISTRY,
+      V12TrailRules.CROSS_CALL, V12TrailRules.MEMORY_COUNCIL, V12TrailRules.COMPLETE);
+   private static final Set<String> CHAPTER_4_STAGES = Set.of(V13Chapter4Rules.LOCKED, V13Chapter4Rules.OFFERED,
+      V13Chapter4Rules.TESTIMONIES, V13Chapter4Rules.SEEK_FRAGMENT, V13Chapter4Rules.RETURN_GALLERY,
+      V13Chapter4Rules.STRONG_CONCORDANCE, V13Chapter4Rules.MATRIX_READY, V13Chapter4Rules.REVELATION,
+      V13Chapter4Rules.COMPLETE);
 
    private CampaignCoordinator() {}
 
@@ -102,6 +117,10 @@ public final class CampaignCoordinator {
       if (active(four, V13Chapter4Rules.LOCKED, V13Chapter4Rules.COMPLETE)) active++;
 
       List<String> issues = new ArrayList<>();
+      reportUnknown(issues, "I", one, CHAPTER_1_STAGES);
+      reportUnknown(issues, "II", two, CHAPTER_2_STAGES);
+      reportUnknown(issues, "III", three, CHAPTER_3_STAGES);
+      reportUnknown(issues, "IV", four, CHAPTER_4_STAGES);
       if (active > 1) issues.add("Plusieurs chapitres principaux sont actifs simultanément (" + active + ").");
       if (active(two, C110TrailRules.LOCKED, C110TrailRules.COMPLETE) && !oneComplete)
          issues.add("Le Chapitre II est actif avant la fin du Chapitre I.");
@@ -118,6 +137,11 @@ public final class CampaignCoordinator {
 
    private static boolean active(String stage, String locked, String complete) {
       return stage != null && !stage.equals(locked) && !stage.equals(complete);
+   }
+
+   private static void reportUnknown(List<String> issues, String chapter, String stage, Set<String> knownStages) {
+      if (stage == null || !knownStages.contains(stage))
+         issues.add("Le Chapitre " + chapter + " contient une étape inconnue : " + String.valueOf(stage) + ".");
    }
 
    static record StageAudit(int activeCount, List<String> issues) {}

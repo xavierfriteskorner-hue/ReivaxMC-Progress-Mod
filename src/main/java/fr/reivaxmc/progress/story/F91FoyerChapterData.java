@@ -16,7 +16,7 @@ import net.minecraft.world.level.saveddata.SavedData.Factory;
 /** État partagé SOLO/DUO et persistant du Chapitre I — Le Foyer emprunté. */
 public final class F91FoyerChapterData extends SavedData {
    public static final String DATA_NAME = "reivaxmc_chapter1_foyer";
-   public static final int SCHEMA_VERSION = 2;
+   public static final int SCHEMA_VERSION = StorySaveMigrationRules.SCHEMA_VERSION;
 
    private String stage = F91ChapterRules.LOCKED;
    private int homeSignals;
@@ -49,6 +49,7 @@ public final class F91FoyerChapterData extends SavedData {
 
    public static F91FoyerChapterData load(CompoundTag tag, Provider provider) {
       F91FoyerChapterData data = new F91FoyerChapterData();
+      int sourceSchema = tag.contains("SchemaVersion") ? Math.max(1, tag.getInt("SchemaVersion")) : 1;
       data.stage = tag.getString("Stage");
       if (data.stage.isBlank()) data.stage = F91ChapterRules.LOCKED;
       data.homeSignals = tag.getInt("HomeSignals");
@@ -76,7 +77,21 @@ public final class F91FoyerChapterData extends SavedData {
       data.completed = tag.getBoolean("Completed");
       ListTag rewards = tag.getList("RewardedPlayers", 8);
       for (int i = 0; i < rewards.size(); i++) data.rewardedPlayers.add(rewards.getString(i));
+      data.migrate(sourceSchema);
       return data;
+   }
+
+   /** Répare uniquement les invariants sûrs des sauvegardes 0.9–0.13. */
+   private void migrate(int sourceSchema) {
+      StorySaveMigrationRules.FoyerState clean = StorySaveMigrationRules.foyer(stage, homeSignals, witnessTarget,
+         witnessesDefeated, echoPlaced, echoExamined, completed);
+      stage = clean.stage();
+      homeSignals = clean.signals();
+      witnessTarget = clean.target();
+      witnessesDefeated = clean.defeated();
+      echoPlaced = clean.echoPlaced();
+      completed = clean.completed();
+      if (sourceSchema < SCHEMA_VERSION) setDirty();
    }
 
    @Override
