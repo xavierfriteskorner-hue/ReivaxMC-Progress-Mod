@@ -25,7 +25,10 @@ public final class SanctuaryArchitectureSelfTest {
       check(architecture.contains("if(!(dz>=3&&Math.abs(dx)<=1))"), "approche du Protecteur préservée");
       check(dev.contains("runCommand(var0, \"tp \" + var3"), "téléportation DEV réelle");
       check(engine.contains("else entity.discard()"), "un seul gardien autorisé par poste");
-      check(engine.contains("discardTaggedEntities(var3, \"reivax_f83_foundation_guardian\")"), "anciens Protecteurs nettoyés après le combat");
+      check(engine.contains("discardTaggedEntities(var3, var1, \"reivax_f83_foundation_guardian\")"), "anciens Protecteurs nettoyés après le combat");
+      check(!engine.contains("level.getAllEntities()"), "aucun balayage global des entités du monde");
+      check(engine.contains("guardianSearchBox(origin)"), "recherche des gardiens bornée au Sanctuaire");
+      check(engine.contains("distance=..64"), "activation des gardiens bornée au Sanctuaire");
       check(dev.contains("chapter4Sanctuary") && dev.contains("gotoChapter4Gallery"), "téléportation chapitre IV sans reset général");
       check(dev.contains("putInt(\"ReivaxCompassMode\",2)"), "Boussole DEV réglée sur la Piste actuelle");
       check(chapter4.contains("F81DevTools.gotoChapter4Gallery(s,p)"), "suivi DEV conduit directement à la Galerie");

@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 
 public final class F8SanctuaryEngine {
    static final String K_STARTED = "F8_SANCTUARY_QUEST_STARTED";
@@ -1351,13 +1352,13 @@ public final class F8SanctuaryEngine {
          // Les chapitres suivants et les raccourcis DEV ont déjà achevé ces combats.
          // Toute entité résiduelle (ou issue d'une ancienne boucle de spawn) est alors supprimée.
          if (completed(var2, K_GUARDS_CLEARED)) {
-            discardTaggedEntities(var3, "reivax_f83_watcher");
+            discardTaggedEntities(var3, var1, "reivax_f83_watcher");
          } else {
             // Chaque poste est auto-réparé : une entité absente revient si elle n'a pas été vaincue.
             // hasTaggedEntity conserve au plus un exemplaire par poste et élimine les doublons.
             for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
                String spawnKey = "watcher:" + var1[0] + ":" + var1[2] + ":" + var5;
-               if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(spawnKey)) {
+               if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, var1, TAG_WATCHERS[var5]) && canRespawn(spawnKey)) {
                   summonProtector(
                      var0,
                      var1[0] + WATCHER_OFFSETS[var5][0],
@@ -1374,8 +1375,8 @@ public final class F8SanctuaryEngine {
 
          String protectorKey = "protector:" + var1[0] + ":" + var1[2];
          if (completed(var2, K_FG1) || completed(var2, K_FOUNDATION_GUARDS_CLEARED)) {
-            discardTaggedEntities(var3, "reivax_f83_foundation_guardian");
-         } else if (!hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn(protectorKey)) {
+            discardTaggedEntities(var3, var1, "reivax_f83_foundation_guardian");
+         } else if (!hasTaggedEntity(var3, var1, "reivax_f83_fg1") && canRespawn(protectorKey)) {
             summonProtector(var0, var1[0], var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Protecteur de la Borne", true, true);
          }
 
@@ -1460,7 +1461,7 @@ public final class F8SanctuaryEngine {
    private static void activateProtectorGroup(Object var0, int[] var1, boolean var2, int var3) {
       try {
          String var4 = var2 ? "reivax_f83_foundation_guardian" : "reivax_f83_watcher";
-         String var5 = "@e[tag=" + var4 + "]";
+         String var5 = "@e[tag=" + var4 + ",x=" + var1[0] + ",y=" + var1[1] + ",z=" + var1[2] + ",distance=..64]";
          runCommand(var0, "execute as " + var5 + " run data merge entity @s {NoAI:0b,Silent:1b,PersistenceRequired:1b}");
          groupAttr(var0, var5, "max_health", var2 ? 100.0 : 40.0);
          groupAttr(var0, var5, "attack_damage", var2 ? 8.0 : 5.0);
@@ -1506,10 +1507,10 @@ public final class F8SanctuaryEngine {
       }
    }
 
-   private static boolean hasTaggedEntity(Object levelObject, String tag) {
+   private static boolean hasTaggedEntity(Object levelObject, int[] origin, String tag) {
       if (levelObject instanceof ServerLevel level) {
          Entity keeper = null;
-         for (Entity entity : level.getAllEntities()) {
+         for (Entity entity : level.getEntities((Entity)null, guardianSearchBox(origin), candidate -> candidate.getTags().contains(tag))) {
             if (!entity.isAlive() || !entity.getTags().contains(tag)) continue;
             if (keeper == null) keeper = entity;
             else entity.discard();
@@ -1519,11 +1520,14 @@ public final class F8SanctuaryEngine {
       return false;
    }
 
-   private static void discardTaggedEntities(Object levelObject, String tag) {
+   private static void discardTaggedEntities(Object levelObject, int[] origin, String tag) {
       if (!(levelObject instanceof ServerLevel level)) return;
-      for (Entity entity : level.getAllEntities()) {
-         if (entity.getTags().contains(tag)) entity.discard();
-      }
+      for (Entity entity : level.getEntities((Entity)null, guardianSearchBox(origin), candidate -> candidate.getTags().contains(tag))) entity.discard();
+   }
+
+   private static AABB guardianSearchBox(int[] origin) {
+      return new AABB(origin[0] - 48, origin[1] - 8, origin[2] - 48,
+         origin[0] + 48, origin[1] + 32, origin[2] + 48);
    }
 
    static Object sanctuaryStoneBlock() throws Exception {
