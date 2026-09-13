@@ -26,4 +26,6 @@ Pour valider le gros lot sur un monde neuf sans rejouer les chapitres précéden
 
 Pour contrôler tout l'enchaînement du prologue à la fin du Chapitre IV, utiliser `/reivax dev storytest start` dans un monde créatif neuf, puis `/reivax dev storytest next` après chaque observation. `/reivax dev storytest check` affiche le bilan des états et signale tout chevauchement. Le guide complet se trouve dans `docs/tests/PARCOURS_EXPRESS_0.13.1.md`.
 
+Le statut issu de l'audit global, les points corrigés et les conditions à remplir avant le Chapitre V sont suivis dans `docs/technique/SUIVI_AUDIT_0.13.1.md`.
+
 Règle d'or : *on construit le moteur une fois, ensuite on nourrit le monde.*
