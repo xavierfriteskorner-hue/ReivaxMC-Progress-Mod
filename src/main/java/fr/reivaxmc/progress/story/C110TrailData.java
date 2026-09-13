@@ -168,6 +168,17 @@ public final class C110TrailData extends SavedData {
       bastionDay = solidarityDay = -1L; rewardedPlayers.clear(); setDirty();
    }
 
+   /** État terminal cohérent réservé aux profils DEV et aux tests accélérés. */
+   public synchronized void devComplete(long tick, String actor) {
+      stage = C110TrailRules.COMPLETE;
+      stageTick = Math.max(0L, tick);
+      lastActor = safe(actor);
+      placedMask = discoveredMask = 0b111;
+      witnessMask = 0b111;
+      censusSpawned = concordance = registryOpened = completed = true;
+      setDirty();
+   }
+
    public synchronized Snapshot snapshot() {
       return new Snapshot(stage, stageTick, lastActor, sites.clone(), placedMask, siteLayoutVersion, discoveredMask, witnessMask, censusSpawned,
          concordance, registryOpened, completed, optionalRewarded, Set.copyOf(rewardedPlayers));

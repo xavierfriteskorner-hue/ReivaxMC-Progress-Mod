@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.143'
 }
 
-version = '0.13.0'
+version = '0.13.1'
 group = 'fr.reivaxmc.progress'
 
 base {
@@ -153,6 +153,14 @@ tasks.register('checkSanctuary', JavaExec) {
     mainClass = 'fr.reivaxmc.progress.story.SanctuaryArchitectureSelfTest'
 }
 
+tasks.register('checkCampaignCoordinator', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie l ordre des chapitres, leurs prérequis et la détection des chevauchements.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'fr.reivaxmc.progress.story.CampaignCoordinatorSelfTest'
+}
+
 // Le projet utilise un auto-test Java autonome et n'embarque pas encore de tests JUnit.
 // Gradle 9 doit donc accepter que la tâche test ne découvre aucune classe JUnit.
 tasks.named('test') {
@@ -173,4 +181,5 @@ tasks.named('check') {
     dependsOn tasks.named('checkChapter3')
     dependsOn tasks.named('checkChapter4')
     dependsOn tasks.named('checkSanctuary')
+    dependsOn tasks.named('checkCampaignCoordinator')
 }

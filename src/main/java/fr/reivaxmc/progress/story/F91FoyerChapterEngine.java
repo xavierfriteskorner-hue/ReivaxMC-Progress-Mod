@@ -179,7 +179,8 @@ public final class F91FoyerChapterEngine {
       if (server == null) return;
       CampaignSavedData campaign = CampaignSavedData.get(server);
       F91FoyerChapterData data = F91FoyerChapterData.get(server);
-      if (campaign.foundationPlaced() && F91ChapterRules.LOCKED.equals(data.snapshot().stage())) startChapter(server, player, data);
+      if (campaign.foundationPlaced() && F91ChapterRules.LOCKED.equals(data.snapshot().stage())
+         && CampaignCoordinator.canStart(server, CampaignCoordinator.CHAPTER_1)) startChapter(server, player, data);
    }
 
    private static void startChapter(MinecraftServer server, ServerPlayer actor, F91FoyerChapterData data) {

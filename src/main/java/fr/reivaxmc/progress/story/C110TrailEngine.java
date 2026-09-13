@@ -180,7 +180,8 @@ public final class C110TrailEngine {
 
    private static void offerIfReady(ServerPlayer player) {
       MinecraftServer server = player.getServer();
-      if (server == null || !F91FoyerChapterData.get(server).snapshot().completed()) return;
+      if (server == null || !F91FoyerChapterData.get(server).snapshot().completed()
+         || !CampaignCoordinator.canStart(server, CampaignCoordinator.CHAPTER_2)) return;
       C110TrailData data = C110TrailData.get(server);
       if (!data.offer(player.serverLevel().getGameTime())) return;
       CampaignSavedData campaign = CampaignSavedData.get(server);

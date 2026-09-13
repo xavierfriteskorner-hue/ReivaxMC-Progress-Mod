@@ -232,6 +232,28 @@ public final class F91FoyerChapterData extends SavedData {
       setDirty();
    }
 
+   /**
+    * État terminal cohérent réservé aux profils DEV. Il permet de préparer un
+    * chapitre ultérieur sans laisser le Chapitre I actif en arrière-plan.
+    */
+   public synchronized void devComplete(long tick, String actor, String chosenDoctrine) {
+      stage = F91ChapterRules.COMPLETE;
+      homeSignals = F91ChapterRules.REST | F91ChapterRules.STORAGE | F91ChapterRules.WORK;
+      doctrine = Set.of(F91ChapterRules.BASTION, F91ChapterRules.MEMORY, F91ChapterRules.SOLIDARITY).contains(chosenDoctrine)
+         ? chosenDoctrine : F91ChapterRules.MEMORY;
+      councilVoters.clear();
+      councilVotes.clear();
+      lastActor = safe(actor);
+      echoPlaced = true;
+      echoExamined = true;
+      witnessTarget = 1;
+      witnessesDefeated = 1;
+      stageTick = Math.max(0L, tick);
+      lastSpawnTick = stageTick;
+      completed = true;
+      setDirty();
+   }
+
    public synchronized Snapshot snapshot() {
       return new Snapshot(stage, homeSignals, doctrine, Set.copyOf(councilVoters), Map.copyOf(councilVotes), lastActor, echoDimension, new BlockPos(echoX, echoY, echoZ), echoPlaced, echoExamined,
          witnessTarget, witnessesDefeated, stageTick, lastSpawnTick, completed, Set.copyOf(rewardedPlayers));

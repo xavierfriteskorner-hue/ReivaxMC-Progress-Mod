@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 
 public final class F8SanctuaryEngine {
    static final String K_STARTED = "F8_SANCTUARY_QUEST_STARTED";
@@ -1321,6 +1323,13 @@ public final class F8SanctuaryEngine {
       }
    }
 
+   /** Ouvre uniquement les accès hérités nécessaires au chapitre IV, sans réinitialiser la campagne. */
+   static void openChapter4Access(Object server, int[] origin) {
+      openThresholdGate(server, origin);
+      openOuterGate(server, origin);
+      openFoundationGate(server, origin, 3);
+   }
+
    // Anti-boucle de spawn : un protecteur donné ne peut réapparaître qu'au plus toutes les 5 s.
    // Le temps que la vérification d'existence (hasTaggedEntity) prenne le relais, ça empêche
    // l'entassement d'entités au même endroit (mort « a subi trop de pression » = cramming).
@@ -1339,26 +1348,34 @@ public final class F8SanctuaryEngine {
    private static void ensureProtectors(Object var0, int[] var1, Object var2) {
       try {
          Object var3 = invokeNoArg(var0, "overworld");
-         // Chaque poste est auto-réparé : une entité absente revient si elle n'a pas été vaincue.
-         // Le tag évite les doublons et le délai protège contre un chargement d'entité tardif.
-         for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
-            String spawnKey = "watcher:" + var1[0] + ":" + var1[2] + ":" + var5;
-            if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(spawnKey)) {
-               summonProtector(
-                  var0,
-                  var1[0] + WATCHER_OFFSETS[var5][0],
-                  var1[1] + 1,
-                  var1[2] + WATCHER_OFFSETS[var5][1],
-                  TAG_WATCHERS[var5],
-                  "Veilleur du Sanctuaire",
-                  false,
-                  var5 % 2 == 1
-               );
+         // Les chapitres suivants et les raccourcis DEV ont déjà achevé ces combats.
+         // Toute entité résiduelle (ou issue d'une ancienne boucle de spawn) est alors supprimée.
+         if (completed(var2, K_GUARDS_CLEARED)) {
+            discardTaggedEntities(var3, "reivax_f83_watcher");
+         } else {
+            // Chaque poste est auto-réparé : une entité absente revient si elle n'a pas été vaincue.
+            // hasTaggedEntity conserve au plus un exemplaire par poste et élimine les doublons.
+            for (int var5 = 0; var5 < WATCHER_COUNT; var5++) {
+               String spawnKey = "watcher:" + var1[0] + ":" + var1[2] + ":" + var5;
+               if (!completed(var2, K_WATCHERS[var5]) && !hasTaggedEntity(var3, TAG_WATCHERS[var5]) && canRespawn(spawnKey)) {
+                  summonProtector(
+                     var0,
+                     var1[0] + WATCHER_OFFSETS[var5][0],
+                     var1[1] + 1,
+                     var1[2] + WATCHER_OFFSETS[var5][1],
+                     TAG_WATCHERS[var5],
+                     "Veilleur du Sanctuaire",
+                     false,
+                     var5 % 2 == 1
+                  );
+               }
             }
          }
 
          String protectorKey = "protector:" + var1[0] + ":" + var1[2];
-         if (!completed(var2, "F82_FOUNDATION_GUARD_1_DEFEATED") && !hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn(protectorKey)) {
+         if (completed(var2, K_FG1) || completed(var2, K_FOUNDATION_GUARDS_CLEARED)) {
+            discardTaggedEntities(var3, "reivax_f83_foundation_guardian");
+         } else if (!hasTaggedEntity(var3, "reivax_f83_fg1") && canRespawn(protectorKey)) {
             summonProtector(var0, var1[0], var1[1] + 1, var1[2] - 15, "reivax_f83_fg1", "Protecteur de la Borne", true, true);
          }
 
@@ -1489,49 +1506,24 @@ public final class F8SanctuaryEngine {
       }
    }
 
-   private static boolean hasTaggedEntity(Object var0, String var1) {
-      try {
-         Object var2 = null;
-
-         try {
-            var2 = invokeNoArg(var0, "getAllEntities");
-         } catch (Throwable var11) {
+   private static boolean hasTaggedEntity(Object levelObject, String tag) {
+      if (levelObject instanceof ServerLevel level) {
+         Entity keeper = null;
+         for (Entity entity : level.getAllEntities()) {
+            if (!entity.isAlive() || !entity.getTags().contains(tag)) continue;
+            if (keeper == null) keeper = entity;
+            else entity.discard();
          }
-
-         if (var2 == null) {
-            try {
-               Object var3 = invokeNoArg(var0, "getEntities");
-               var2 = invokeNoArg(var3, "getAll");
-            } catch (Throwable var10) {
-            }
-         }
-
-         if (var2 instanceof Iterable var14) {
-            Iterator var4 = var14.iterator();
-
-            while (true) {
-               if (!var4.hasNext()) {
-                  return false;
-               }
-
-               Object var5 = var4.next();
-               if (invokeNoArg(var5, "getTags") instanceof Set var7 && var7.contains(var1)) {
-                  try {
-                     if (!(invokeNoArg(var5, "isAlive") instanceof Boolean var9) || var9) {
-                        break;
-                     }
-                  } catch (Throwable var12) {
-                     break;
-                  }
-               }
-            }
-
-            return true;
-         }
-      } catch (Throwable var13) {
+         return keeper != null;
       }
-
       return false;
+   }
+
+   private static void discardTaggedEntities(Object levelObject, String tag) {
+      if (!(levelObject instanceof ServerLevel level)) return;
+      for (Entity entity : level.getAllEntities()) {
+         if (entity.getTags().contains(tag)) entity.discard();
+      }
    }
 
    static Object sanctuaryStoneBlock() throws Exception {

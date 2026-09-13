@@ -59,6 +59,12 @@ public final class V12TrailData extends SavedData {
    public synchronized boolean reward(){if(!V12TrailRules.COMPLETE.equals(stage)||rewarded)return false;rewarded=true;setDirty();return true;}
    public synchronized void optional(){if(!optionalFound){optionalFound=true;setDirty();}}
    public synchronized void reset(){stage=V12TrailRules.LOCKED;actor=policy=leftPlayer=rightPlayer="";stageTick=leftTick=rightTick=0;procession=house=BlockPos.ZERO;sitesBuilt=optionalFound=rewarded=false;traceMask=vanished=0;participants.clear();acknowledgements.clear();perceptions.clear();votes.clear();setDirty();}
+   /** État terminal cohérent réservé aux profils DEV et aux tests accélérés. */
+   public synchronized void devComplete(long tick,String who,String chosenPolicy){
+      stage=V12TrailRules.COMPLETE;actor=who==null?"":who;policy=switch(chosenPolicy){case"RESTORE_NAMES","KEEP_BOTH","LEAVE_BLANKS"->chosenPolicy;default->"KEEP_BOTH";};
+      stageTick=Math.max(0L,tick);traceMask=0b1111;vanished=6;sitesBuilt=true;leftPlayer=rightPlayer=actor;leftTick=stageTick;rightTick=stageTick;
+      participants.clear();if(!actor.isBlank())participants.add(actor);acknowledgements.clear();acknowledgements.addAll(participants);votes.clear();for(String id:participants)votes.put(id,policy);rewarded=true;setDirty();
+   }
    public synchronized Snapshot snapshot(){return new Snapshot(stage,stageTick,procession,house,sitesBuilt,traceMask,vanished,Set.copyOf(participants),Set.copyOf(acknowledgements),Map.copyOf(perceptions),Map.copyOf(votes),policy,optionalFound,rewarded);}
    public record Snapshot(String stage,long stageTick,BlockPos procession,BlockPos house,boolean sitesBuilt,int traceMask,int vanished,Set<String> participants,Set<String> acknowledgements,Map<String,String> perceptions,Map<String,String> votes,String policy,boolean optionalFound,boolean rewarded){public int traceCount(){return Integer.bitCount(traceMask);}}
 }

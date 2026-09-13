@@ -30,6 +30,9 @@ public final class F81DevTools {
       "F84_SEAL_INSERTED",
       "F84_BOOK_RECOVERED",
       "F84_RELIQUARY_CLAIMED",
+      "F82_FOUNDATION_GUARDS_AWAKENED",
+      "F82_FOUNDATION_GUARD_1_DEFEATED",
+      "F82_FOUNDATION_GUARDS_CLEARED",
       "F8_VOICE_FOUNDATION_1",
       "F8_VOICE_FOUNDATION_2",
       "F8_FOUNDATION_BEACON_RECOVERED",
@@ -51,6 +54,7 @@ public final class F81DevTools {
             then(var3, literalExec("on", F81DevTools::cmdOn));
             then(var3, literalExec("off", F81DevTools::cmdOff));
             then(var3, literalExec("status", F81DevTools::cmdStatus));
+            then(var3, literalExec("auditstate", F81DevTools::cmdAuditState));
             then(var3, literalExec("reset", F81DevTools::cmdReset));
             Object var4 = literal("qa");
             then(var4, literalExec("on", var0x -> cmdQa(var0x, true)));
@@ -93,6 +97,14 @@ public final class F81DevTools {
             then(var12, literalExec("status", ctx -> cmdChapter4(ctx, "status")));
             then(var12, literalExec("reset", ctx -> cmdChapter4(ctx, "reset")));
             then(var3, var12);
+            Object storyTest = literal("storytest");
+            then(storyTest, literalExec("start", ctx -> cmdStoryTest(ctx, "start")));
+            then(storyTest, literalExec("next", ctx -> cmdStoryTest(ctx, "next")));
+            then(storyTest, literalExec("back", ctx -> cmdStoryTest(ctx, "back")));
+            then(storyTest, literalExec("replay", ctx -> cmdStoryTest(ctx, "replay")));
+            then(storyTest, literalExec("check", ctx -> cmdStoryTest(ctx, "check")));
+            then(storyTest, literalExec("stop", ctx -> cmdStoryTest(ctx, "stop")));
+            then(var3, storyTest);
             then(var2, var3);
             invoke(var1, "register", var2);
             System.out.println("[REIVAX 0.9.0] DEV/QA commands registered.");
@@ -135,7 +147,7 @@ public final class F81DevTools {
       if (!allowed(var0)) {
          return denied(var1);
       } else {
-         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · qa on|off · goto ... · tp foundation · chapter1|chapter2|chapter3|chapter4 start|next|status|reset");
+         msg(var1, "§6REIVAX DEV §8• §f/reivax dev on|off · status · auditstate · qa on|off · goto ... · chapter1|chapter2|chapter3|chapter4 ... · storytest start|next|back|replay|check|stop");
          return 1;
       }
    }
@@ -154,7 +166,7 @@ public final class F81DevTools {
             var3.qaAntiSpoil = true;
             sendQaAll(var2, true);
             msg(var1, "§6REIVAX DEV §8• §aACTIVÉ §7· QA anti-spoil activé par défaut.");
-            msg(var1, "§8Utilisez §f/reivax dev goto sanctuary §8ou §f/reivax dev goto foundation §8pour tester sans tout recommencer.");
+            msg(var1, "§8Chapitre IV : §f/reivax dev goto foundation §8→ posez la Borne → §f/reivax dev chapter4 start §8→ suivez la Piste dans la Borne.");
             return 1;
          }
       }
@@ -272,7 +284,9 @@ public final class F81DevTools {
                return 0;
             } else {
                try {
-                  prepareCheckpoint(var3, var2);
+                  boolean chapter4Sanctuary = "sanctuary".equals(var1) && chapter4Prepared(var3);
+                  // Une téléportation de confort ne doit jamais effacer le chapitre IV déjà préparé.
+                  if (!chapter4Sanctuary) prepareCheckpoint(var3, var2);
                   switch (var1) {
                      case "trace":
                         gotoTrace(var3, var2);
@@ -281,7 +295,8 @@ public final class F81DevTools {
                         gotoNight(var3, var2);
                         break;
                      case "sanctuary":
-                        gotoSanctuary(var3, var2);
+                        if (chapter4Sanctuary) gotoChapter4Gallery(var3, var2);
+                        else gotoSanctuary(var3, var2);
                         break;
                      case "foundation":
                         gotoFoundation(var3, var2);
@@ -343,6 +358,19 @@ public final class F81DevTools {
             return 0;
          }
       }
+   }
+
+   private static int cmdAuditState(Object context) {
+      Object rawPlayer = player(context);
+      if (!allowed(context)) return denied(rawPlayer);
+      Object rawServer = serverFromContext(context);
+      if (!(rawServer instanceof net.minecraft.server.MinecraftServer server)) return 0;
+      CampaignCoordinator.Snapshot state = CampaignCoordinator.inspect(server);
+      msg(rawPlayer, "§6AUDIT NARRATIF §8• §fCampagne " + state.campaignStage() + " §8• §fActifs " + state.activeCount());
+      msg(rawPlayer, "§7I=" + state.chapter1() + " · II=" + state.chapter2() + " · III=" + state.chapter3() + " · IV=" + state.chapter4());
+      if (state.coherent()) msg(rawPlayer, "§aCOHÉRENT §8• §7Aucun chevauchement de chapitre détecté.");
+      else for (String issue : state.issues()) msg(rawPlayer, "§cINCOHÉRENCE §8• §f" + issue);
+      return state.coherent() ? 1 : 0;
    }
 
    private static int cmdTpFoundation(Object context) {
@@ -409,6 +437,7 @@ public final class F81DevTools {
          return 0;
       }
       if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
+         if ("start".equals(action)) CampaignCoordinator.prepareDevChapter(player.getServer(), player, CampaignCoordinator.CHAPTER_1);
          return F91FoyerChapterEngine.devCommand(player, action);
       }
       return 0;
@@ -424,6 +453,7 @@ public final class F81DevTools {
          return 0;
       }
       if (rawPlayer instanceof net.minecraft.server.level.ServerPlayer player) {
+         if ("start".equals(action)) CampaignCoordinator.prepareDevChapter(player.getServer(), player, CampaignCoordinator.CHAPTER_2);
          return C110TrailEngine.devCommand(player, action);
       }
       return 0;
@@ -433,7 +463,7 @@ public final class F81DevTools {
       Object rawPlayer=player(context);if(!allowed(context))return denied(rawPlayer);Object server=serverFromContext(context);
       F81DevTools.DevState dev=STATES.computeIfAbsent(server,ignored->new F81DevTools.DevState());
       if(!dev.enabled){msg(rawPlayer,"§cActivez d'abord /reivax dev on.");return 0;}
-      if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)return V12Chapter3Engine.devCommand(p,action);
+      if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p){if("start".equals(action))CampaignCoordinator.prepareDevChapter(p.getServer(),p,CampaignCoordinator.CHAPTER_3);return V12Chapter3Engine.devCommand(p,action);}
       return 0;
    }
 
@@ -441,8 +471,227 @@ public final class F81DevTools {
       Object rawPlayer=player(context);if(!allowed(context))return denied(rawPlayer);Object server=serverFromContext(context);
       F81DevTools.DevState dev=STATES.computeIfAbsent(server,ignored->new F81DevTools.DevState());
       if(!dev.enabled){msg(rawPlayer,"§cActivez d'abord /reivax dev on.");return 0;}
+      if("start".equals(action)) {
+         try {
+            if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)CampaignCoordinator.prepareDevChapter(p.getServer(),p,CampaignCoordinator.CHAPTER_4);
+            prepareChapter4Test(server,rawPlayer);
+         } catch(Throwable error) {
+            msg(rawPlayer,"§cCHAPITRE IV DEV §8• §fPréparation impossible : "+error.getClass().getSimpleName()+".");
+            return 0;
+         }
+      }
       if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer p)return V13Chapter4Engine.devCommand(p,action);
       return 0;
+   }
+
+   private static int cmdStoryTest(Object context,String action) {
+      Object rawPlayer=player(context);
+      if(!allowed(context))return denied(rawPlayer);
+      Object rawServer=serverFromContext(context);
+      if(!(rawServer instanceof net.minecraft.server.MinecraftServer server)||!(rawPlayer instanceof net.minecraft.server.level.ServerPlayer player))return 0;
+      DevState dev=STATES.computeIfAbsent(server,ignored->new DevState());
+      try {
+         switch(action) {
+            case "start" -> {
+               dev.enabled=true;
+               dev.qaAntiSpoil=false;
+               dev.storyTest=true;
+               dev.storyTestChapter=0;
+               dev.storyTestPrelude=0;
+               prepareCheckpoint(server,player);
+               CampaignCoordinator.resetChapters(server);
+               resetStoryToLauncher(server);
+               gotoTrace(server,player);
+               sendQaAll(server,false);
+               msg(player,"§6PARCOURS EXPRESS §8• §aDÉMARRÉ §7· contenu narratif visible · monde de test recommandé.");
+               storyTestStatus(player,dev);
+            }
+            case "next" -> {
+               if(!requireStoryTest(player,dev))return 0;
+               storyTestNext(context,server,player,dev);
+            }
+            case "back" -> {
+               if(!requireStoryTest(player,dev))return 0;
+               if(dev.storyTestChapter==0&&dev.storyTestPrelude>0){dev.storyTestPrelude--;loadPrelude(context,dev.storyTestPrelude);}
+               else if(dev.storyTestChapter>0){startStoryTestChapter(context,dev.storyTestChapter);msg(player,"§8[EXPRESS] Retour = redémarrage du chapitre courant pour garantir un état propre.");}
+               storyTestStatus(player,dev);
+            }
+            case "replay","check" -> {
+               if(!requireStoryTest(player,dev))return 0;
+               storyTestStatus(player,dev);
+               if("check".equals(action))cmdAuditState(context);
+            }
+            case "stop" -> {
+               if(!dev.storyTest){msg(player,"§6PARCOURS EXPRESS §8• §7Aucune session active.");return 1;}
+               prepareCheckpoint(server,player);
+               CampaignCoordinator.resetChapters(server);
+               resetStoryToLauncher(server);
+               dev.storyTest=false;
+               dev.storyTestChapter=0;
+               dev.storyTestPrelude=0;
+               msg(player,"§6PARCOURS EXPRESS §8• §aARRÊTÉ §7· états narratifs nettoyés. Les structures déjà construites restent dans ce monde de test.");
+            }
+            default -> msg(player,"§6PARCOURS EXPRESS §8• §fstart · next · back · replay · check · stop");
+         }
+         return 1;
+      } catch(Throwable error) {
+         System.err.println("[REIVAX 0.13.1] storytest "+action+" failed: "+error);
+         msg(player,"§cPARCOURS EXPRESS §8• §fÉchec : "+error.getClass().getSimpleName()+" · "+error.getMessage());
+         return 0;
+      }
+   }
+
+   private static boolean requireStoryTest(Object player,DevState dev) {
+      if(dev.storyTest)return true;
+      msg(player,"§cAucun parcours actif. Lancez /reivax dev storytest start.");
+      return false;
+   }
+
+   private static void storyTestNext(Object context,net.minecraft.server.MinecraftServer server,net.minecraft.server.level.ServerPlayer player,DevState dev) throws Exception {
+      if(dev.storyTestChapter==0) {
+         if(dev.storyTestPrelude<3){dev.storyTestPrelude++;loadPrelude(context,dev.storyTestPrelude);storyTestStatus(player,dev);return;}
+         dev.storyTestChapter=1;
+         startStoryTestChapter(context,1);
+         storyTestStatus(player,dev);
+         return;
+      }
+
+      boolean complete=switch(dev.storyTestChapter){
+         case 1->F91FoyerChapterData.get(server).snapshot().completed();
+         case 2->C110TrailData.get(server).snapshot().completed();
+         case 3->V12TrailRules.COMPLETE.equals(V12TrailData.get(server).snapshot().stage());
+         case 4->V13Chapter4Rules.COMPLETE.equals(V13Chapter4Data.get(server).snapshot().stage());
+         default->true;
+      };
+      if(complete) {
+         if(dev.storyTestChapter>=4){msg(player,"§6PARCOURS EXPRESS §8• §aTERMINÉ §7· lancez §f/reivax dev storytest check §7pour le bilan final.");return;}
+         dev.storyTestChapter++;
+         startStoryTestChapter(context,dev.storyTestChapter);
+      } else {
+         switch(dev.storyTestChapter){
+            case 1->cmdChapter1(context,"next");
+            case 2->cmdChapter2(context,"next");
+            case 3->cmdChapter3(context,"next");
+            case 4->cmdChapter4(context,"next");
+            default->throw new IllegalStateException("chapter="+dev.storyTestChapter);
+         }
+      }
+      storyTestStatus(player,dev);
+   }
+
+   private static void loadPrelude(Object context,int checkpoint) {
+      switch(checkpoint){
+         case 0->cmdGoto(context,"trace");
+         case 1->cmdGoto(context,"night");
+         case 2->cmdGoto(context,"sanctuary");
+         case 3->cmdGoto(context,"foundation");
+         default->throw new IllegalArgumentException("prelude="+checkpoint);
+      }
+   }
+
+   private static void startStoryTestChapter(Object context,int chapter) {
+      switch(chapter){
+         case 1->cmdChapter1(context,"start");
+         case 2->cmdChapter2(context,"start");
+         case 3->cmdChapter3(context,"start");
+         case 4->cmdChapter4(context,"start");
+         default->throw new IllegalArgumentException("chapter="+chapter);
+      }
+   }
+
+   private static void storyTestStatus(net.minecraft.server.level.ServerPlayer player,DevState dev) {
+      net.minecraft.server.MinecraftServer server=player.getServer();
+      if(server==null)return;
+      String label;
+      String expected;
+      if(dev.storyTestChapter==0) {
+         label="PROLOGUE "+(dev.storyTestPrelude+1)+"/4";
+         expected=switch(dev.storyTestPrelude){
+            case 0->"Trace visible et interactive : observez son apparition puis faites clic droit.";
+            case 1->"Première Résonance : vérifiez l'ambiance, les indications et le Sceau obtenu.";
+            case 2->"Sanctuaire extérieur : porte fermée, deux monolithes et Veilleurs attendus devant l'entrée.";
+            default->"Fondation : placez la Borne dans un lieu sûr et vérifiez le lancement du Chapitre I.";
+         };
+      } else {
+         label="CHAPITRE "+roman(dev.storyTestChapter)+" · "+currentStoryStage(server,dev.storyTestChapter);
+         expected=currentStoryObjective(server,dev.storyTestChapter);
+      }
+      msg(player,"§6PARCOURS EXPRESS §8• §f"+label);
+      msg(player,"§eÀ VÉRIFIER §8• §f"+expected);
+      msg(player,"§8Quand la scène est vérifiée : §f/reivax dev storytest next §8· bilan : §f... check");
+   }
+
+   private static String currentStoryStage(net.minecraft.server.MinecraftServer server,int chapter) {
+      return switch(chapter){
+         case 1->F91FoyerChapterData.get(server).snapshot().stage();
+         case 2->C110TrailData.get(server).snapshot().stage();
+         case 3->V12TrailData.get(server).snapshot().stage();
+         case 4->V13Chapter4Data.get(server).snapshot().stage();
+         default->"—";
+      };
+   }
+
+   private static String currentStoryObjective(net.minecraft.server.MinecraftServer server,int chapter) {
+      if(chapter==1){F91FoyerChapterData.Snapshot q=F91FoyerChapterData.get(server).snapshot();return switch(q.stage()){
+         case F91ChapterRules.SHAPE_FOYER->"Construisez trois signes de foyer et vérifiez leur détection.";
+         case F91ChapterRules.CHOOSE_PRIORITY->"Ouvrez la Borne et vérifiez le choix de doctrine.";
+         case F91ChapterRules.FIND_ECHO->"Vérifiez la direction, le site extérieur et le Fragment inconnu.";
+         case F91ChapterRules.RETURN_FRAGMENT->"Rapportez le Fragment à la Borne.";
+         case F91ChapterRules.DEFEND_FOYER->"Vérifiez le combat du Foyer et l'absence de doublons.";
+         case F91ChapterRules.COMPLETE->"Vérifiez la conclusion, la récompense et l'unique piste suivante.";
+         default->"Le chapitre doit être prêt sans autre chapitre actif.";};}
+      if(chapter==2){C110TrailData.Snapshot q=C110TrailData.get(server).snapshot();return C110TrailRules.objective(q.stage(),q.discoveredCount(),q.witnessCount());}
+      if(chapter==3){V12TrailData.Snapshot q=V12TrailData.get(server).snapshot();return V12TrailRules.objective(q.stage(),q.traceCount(),q.vanished());}
+      V13Chapter4Data.Snapshot q=V13Chapter4Data.get(server).snapshot();return V13Chapter4Rules.objective(q.stage(),q.testimonies(),q.acknowledgements().size());
+   }
+
+   private static String roman(int chapter){return switch(chapter){case 1->"I";case 2->"II";case 3->"III";case 4->"IV";default->"?";};}
+
+   /**
+    * Prépare tous les prérequis persistants du chapitre IV sur un monde neuf.
+    * Le raccourci DEV doit ouvrir le parcours à tester, sans rejouer les combats,
+    * les Sceaux ni les chapitres précédents.
+    */
+   private static void prepareChapter4Test(Object server,Object rawPlayer) throws Exception {
+      // Initialise une origine cohérente près du joueur sans faire apparaître la Trace géante.
+      forceStoryCheckpoint(server,rawPlayer,true,false);
+      Object campaign=F8SanctuaryEngine.campaign(server);
+      for(String key:F8_KEYS) F8SanctuaryEngine.complete(campaign,key);
+
+      int[] origin=F8SanctuaryEngine.target(server);
+      if(!C110SanctuaryArchitecture.isPresent(server,origin)) C110SanctuaryArchitecture.build(server,origin);
+      // Sécurise aussi un Sanctuaire qui aurait été construit avant l'activation du raccourci.
+      F8SanctuaryEngine.openChapter4Access(server,origin);
+      if(server instanceof net.minecraft.server.MinecraftServer minecraftServer) {
+         C110SanctuaryArchitecture.openRegistry(minecraftServer,origin);
+         C110SanctuaryArchitecture.openGallery(minecraftServer);
+         fr.reivaxmc.progress.progression.CampaignSavedData data=
+            fr.reivaxmc.progress.progression.CampaignSavedData.get(minecraftServer);
+         if(!data.fragmentFound()) data.markFragmentFound();
+      }
+      killGuardians(server);
+      giveItemIfMissing(rawPlayer,"UNKNOWN_FRAGMENT");
+      giveItemIfMissing(rawPlayer,"RESONANCE_COMPASS");
+      if(rawPlayer instanceof net.minecraft.server.level.ServerPlayer player)
+         player.getPersistentData().putInt("ReivaxCompassMode",2);
+      msg(rawPlayer,"§8[DEV] Chapitres I à III considérés terminés : anciennes portes ouvertes, aucun gardien ancien, Galerie accessible.");
+   }
+
+   private static boolean chapter4Prepared(Object server) {
+      if (!(server instanceof net.minecraft.server.MinecraftServer minecraftServer)) return false;
+      String stage=V13Chapter4Data.get(minecraftServer).snapshot().stage();
+      return !V13Chapter4Rules.LOCKED.equals(stage);
+   }
+
+   static void gotoChapter4Gallery(Object server,Object rawPlayer) throws Exception {
+      prepareChapter4Test(server,rawPlayer);
+      int[] origin=F8SanctuaryEngine.target(server);
+      String name=F8SanctuaryEngine.playerName(rawPlayer);
+      // Point sûr au centre de la Galerie, face aux trois témoignages.
+      runCommand(server,"tp "+name+" "+origin[0]+" "+(origin[1]+2)+" "+(origin[2]-34)+" 180 0");
+      F7NarrativeEngine.routeStoryMessage(rawPlayer,
+         "§6CHAPITRE IV §8• §fVous êtes dans la Galerie des Absents. Cliquez les trois consoles cyan du mur du fond, puis validez chaque témoignage.",true);
+      msg(rawPlayer,"§8[DEV] Les portes derrière vous sont volontairement ouvertes : les chapitres I à III ont été sautés.");
    }
 
    private static void gotoTrace(Object var0, Object var1) throws Exception {
@@ -788,6 +1037,17 @@ public final class F81DevTools {
          } catch (Throwable var8) {
          }
       }
+   }
+
+   private static void giveItemIfMissing(Object player,String registryName) throws Exception {
+      Object wanted=registryObject(registryName);
+      Object inventory=invokeNoArg(player,"getInventory");
+      int size=number(invokeNoArg(inventory,"getContainerSize")).intValue();
+      for(int slot=0;slot<size;slot++) {
+         Object stack=invoke(inventory,"getItem",slot);
+         if(stack!=null&&invokeNoArg(stack,"getItem")==wanted) return;
+      }
+      giveItem(player,registryName);
    }
 
    private static Object registryObject(String var0) throws Exception {
@@ -1154,6 +1414,9 @@ public final class F81DevTools {
    private static final class DevState {
       boolean enabled;
       boolean qaAntiSpoil;
+      boolean storyTest;
+      int storyTestChapter;
+      int storyTestPrelude;
    }
 
    private interface Handler {
