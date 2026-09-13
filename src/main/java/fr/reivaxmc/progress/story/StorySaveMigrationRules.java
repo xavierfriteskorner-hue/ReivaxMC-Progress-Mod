@@ -5,7 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /** Règles pures et testables utilisées lors du chargement des anciennes sauvegardes. */
-final class StorySaveMigrationRules {
+public final class StorySaveMigrationRules {
    static final int SCHEMA_VERSION = 2;
 
    private StorySaveMigrationRules() {}
@@ -36,6 +36,14 @@ final class StorySaveMigrationRules {
       return new Chapter4State(testimonyMask & 0b111, optionalMask & 0b11);
    }
 
+   public static CampaignState campaign(String stage, int progress, int score, int civilizationSpent,
+      boolean introRunning, boolean introCompleted, boolean matrixDiscovered, boolean matrixInstalled) {
+      int cleanScore = Math.max(0, score);
+      return new CampaignState(stage == null || stage.isBlank() ? "DORMANT" : stage,
+         Math.max(0, progress), cleanScore, Math.max(0, Math.min(cleanScore, civilizationSpent)),
+         introRunning && !introCompleted, matrixDiscovered || matrixInstalled);
+   }
+
    static Set<String> participants(Collection<String> existing, Collection<String> perceptionIds,
       String leftPlayer, String rightPlayer) {
       Set<String> result = new LinkedHashSet<>(existing);
@@ -52,4 +60,6 @@ final class StorySaveMigrationRules {
    record DebtState(String stage, int placedMask, int discoveredMask, int witnessMask, boolean concordance, boolean completed) {}
    record Chapter3State(int traceMask, int vanished) {}
    record Chapter4State(int testimonyMask, int optionalMask) {}
+   public record CampaignState(String stage, int progress, int score, int civilizationSpent,
+      boolean introRunning, boolean matrixDiscovered) {}
 }

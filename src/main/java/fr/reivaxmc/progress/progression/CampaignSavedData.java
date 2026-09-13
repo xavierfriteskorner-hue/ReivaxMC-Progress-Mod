@@ -1,5 +1,6 @@
 package fr.reivaxmc.progress.progression;
 
+import fr.reivaxmc.progress.story.StorySaveMigrationRules;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.saveddata.SavedData.Factory;
 
 public final class CampaignSavedData extends SavedData {
    public static final String DATA_NAME = "reivaxmc_campaign";
+   public static final int SCHEMA_VERSION = 2;
    public static final int MAIN_TERRITORY_RADIUS = 96;
    private int progress;
    private int score;
@@ -83,6 +85,7 @@ public final class CampaignSavedData extends SavedData {
 
    public static CampaignSavedData load(CompoundTag t, Provider p) {
       CampaignSavedData d = new CampaignSavedData();
+      int sourceSchema = t.contains("SchemaVersion") ? Math.max(1, t.getInt("SchemaVersion")) : 1;
       d.progress = t.getInt("Progress");
       d.score = t.getInt("Score");
       d.civilizationSpent = t.getInt("CivilizationSpent");
@@ -170,10 +173,23 @@ public final class CampaignSavedData extends SavedData {
             );
       }
 
+      StorySaveMigrationRules.CampaignState clean = StorySaveMigrationRules.campaign(d.stage, d.progress, d.score,
+         d.civilizationSpent, d.introRunning, d.introCompleted, d.matrixDiscovered, d.matrixInstalled);
+      d.stage = clean.stage();
+      d.progress = clean.progress();
+      d.score = clean.score();
+      d.civilizationSpent = clean.civilizationSpent();
+      d.introRunning = clean.introRunning();
+      d.matrixDiscovered = clean.matrixDiscovered();
+      if (d.foundationDimension.isBlank()) d.foundationDimension = "minecraft:overworld";
+      if (!t.contains("SanctuaryLocated") && (d.sanctuaryX != 0 || d.sanctuaryY != 0 || d.sanctuaryZ != 0)) d.sanctuaryLocated = true;
+      if (sourceSchema < SCHEMA_VERSION) d.setDirty();
+
       return d;
    }
 
    public CompoundTag save(CompoundTag t, Provider p) {
+      t.putInt("SchemaVersion", SCHEMA_VERSION);
       t.putInt("Progress", this.progress);
       t.putInt("Score", this.score);
       t.putInt("CivilizationSpent", this.civilizationSpent);

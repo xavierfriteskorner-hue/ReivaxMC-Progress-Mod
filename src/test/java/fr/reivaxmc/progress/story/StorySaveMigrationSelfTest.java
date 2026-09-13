@@ -28,6 +28,12 @@ public final class StorySaveMigrationSelfTest {
       Set<String> fromLecterns = StorySaveMigrationRules.participants(Set.of(), Set.of(), "joueur-a", "joueur-b");
       check(fromLecterns.equals(Set.of("joueur-a", "joueur-b")), "participants IV restaurés depuis les pupitres");
 
+      StorySaveMigrationRules.CampaignState campaign = StorySaveMigrationRules.campaign(
+         "", -20, 40, 90, true, true, false, true);
+      check("DORMANT".equals(campaign.stage()) && campaign.progress() == 0, "socle narratif historique normalisé");
+      check(campaign.score() == 40 && campaign.civilizationSpent() == 40, "solde de civilisation borné");
+      check(!campaign.introRunning() && campaign.matrixDiscovered(), "drapeaux de campagne réparés");
+
       check(StorySaveMigrationRules.SCHEMA_VERSION == 2, "version de schéma attendue");
       System.out.println("StorySaveMigrationSelfTest: OK");
    }
